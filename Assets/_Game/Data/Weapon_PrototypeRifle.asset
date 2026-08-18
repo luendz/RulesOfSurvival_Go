@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780d0a94668b4ae4d9234a000990f76e, type: 3}
+  m_Name: Weapon_PrototypeRifle
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponDefinition
+  weaponId: prototype_rifle
+  displayName: Prototype Rifle
+  fireMode: 2
+  damage: 28
+  shotsPerSecond: 9
+  magazineSize: 30
+  reloadTime: 2.2
+  range: 250
+  hipSpreadDegrees: 1.35
+  adsSpreadDegrees: 0.28
+  walkSpreadMultiplier: 1.25
+  runSpreadMultiplier: 1.65
+  sprintSpreadMultiplier: 2.4
+  crouchSpreadMultiplier: 0.72
+  airborneSpreadMultiplier: 2.75
+  spreadBloomPerShot: 0.1
+  maxSpreadBloom: 1.2
+  spreadRecoveryPerSecond: 3.5
+  spreadDegrees: 0.7
+  burstCount: 3

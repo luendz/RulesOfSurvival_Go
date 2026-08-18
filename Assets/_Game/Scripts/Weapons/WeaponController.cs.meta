@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: e6b8063042989df44888b62a8b3a8a3d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - definition: {instanceID: 0}
+  - input: {instanceID: 0}
+  - aimController: {instanceID: 0}
+  - muzzle: {instanceID: 0}
+  - aimCamera: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

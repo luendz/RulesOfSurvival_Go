@@ -1,0 +1,595 @@
+using System;
+using System.Collections;
+using ROS.Game.Character;
+using ROS.Game.Combat;
+using ROS.Game.Core;
+using ROS.Game.Input;
+using UnityEngine;
+
+namespace ROS.Game.Weapons
+{
+    public sealed class WeaponController : MonoBehaviour
+    {
+        [Header("Definition")]
+        [SerializeField] private WeaponDefinition definition;
+
+        [Header("References")]
+        [SerializeField] private PlayerInputReader input;
+        [SerializeField] private PlayerMotor motor;
+        [SerializeField] private WeaponEquipmentController equipment;
+        [SerializeField] private PlayerAimController aimController;
+        [SerializeField] private Transform muzzle;
+        [SerializeField] private UnityEngine.Camera aimCamera;
+        [SerializeField] private WeaponEffects weaponEffects;
+        [SerializeField] private WeaponRecoil weaponRecoil;
+
+        [Header("Raycast")]
+        [SerializeField] private LayerMask hitMask = ~0;
+
+        [Header("Ammo")]
+        [SerializeField] private int reserveAmmo = 120;
+
+        [Header("Debug Shot")]
+        [SerializeField] private bool drawShotDebug = true;
+        [SerializeField] private float debugShotDuration = 0.15f;
+        [SerializeField] private float debugImpactSize = 0.08f;
+
+        [Header("Runtime Debug")]
+        [SerializeField] private int debugAmmoInMagazine;
+        [SerializeField] private int debugReserveAmmo;
+        [SerializeField] private bool debugIsReloading;
+        [SerializeField] private bool debugLastShotHit;
+        [SerializeField] private Vector3 debugLastHitPoint;
+        [SerializeField] private Vector3 debugLastHitNormal;
+        [SerializeField] private float debugCurrentSpread;
+        [SerializeField] private float debugSpreadBloom;
+
+        public WeaponDefinition Definition => definition;
+        public int AmmoInMagazine { get; private set; }
+        public int ReserveAmmo => reserveAmmo;
+        public bool IsReloading { get; private set; }
+
+        public event Action AmmoChanged;
+        public event Action Fired;
+
+        private float _nextShotTime;
+        private bool _singleLatch;
+        private Coroutine _reloadRoutine;
+        private float _spreadBloom;
+        private float _lastShotTime = -999f;
+
+        private void Awake()
+        {
+            EnsureReferences();
+
+            AmmoInMagazine =
+                definition != null
+                    ? definition.magazineSize
+                    : 0;
+
+            UpdateDebugValues();
+        }
+
+        private void OnEnable()
+        {
+            EnsureReferences();
+        }
+
+        private void EnsureReferences()
+        {
+            if (input == null)
+                input = GetComponentInParent<PlayerInputReader>();
+
+            if (aimController == null)
+                aimController = GetComponentInParent<PlayerAimController>();
+
+            if (motor == null)
+                motor = GetComponentInParent<PlayerMotor>();
+
+            if (equipment == null)
+                equipment = GetComponentInParent<WeaponEquipmentController>();
+
+            if (aimCamera == null)
+                aimCamera = UnityEngine.Camera.main;
+
+            if (muzzle == null)
+            {
+                Transform[] children = GetComponentsInChildren<Transform>(true);
+                foreach (Transform child in children)
+                {
+                    if (child != null && child.name == "MuzzlePoint")
+                    {
+                        muzzle = child;
+                        break;
+                    }
+                }
+            }
+
+            if (weaponEffects == null)
+                weaponEffects = GetComponent<WeaponEffects>();
+
+            if (weaponRecoil == null)
+                weaponRecoil = GetComponent<WeaponRecoil>();
+
+            if (weaponEffects != null)
+                weaponEffects.EnsureRuntimeSetup();
+        }
+
+        private void Update()
+        {
+            EnsureReferences();
+
+            if (definition == null || input == null)
+            {
+                UpdateDebugValues();
+                return;
+            }
+
+            // Defensive ownership check: only the weapon currently equipped by
+            // WeaponEquipmentController may process reload/fire input. This also
+            // protects against an incorrectly-enabled holstered WeaponController.
+            if (equipment != null && equipment.EquippedWeapon != this)
+            {
+                _singleLatch = false;
+                RecoverSpreadBloom();
+                UpdateDebugValues();
+                return;
+            }
+
+            if (input.ReloadPressed)
+            {
+                TryReload();
+            }
+
+            RecoverSpreadBloom();
+            HandleFire();
+            UpdateDebugValues();
+        }
+
+        private void HandleFire()
+        {
+            if (IsReloading)
+            {
+                return;
+            }
+
+            bool wantsFire = input.FireHeld;
+
+            if (!wantsFire)
+            {
+                _singleLatch = false;
+                return;
+            }
+
+            if (
+                definition.fireMode == WeaponFireMode.Single &&
+                _singleLatch
+            )
+            {
+                return;
+            }
+
+            if (Time.time < _nextShotTime)
+            {
+                return;
+            }
+
+            if (AmmoInMagazine <= 0)
+            {
+                TryReload();
+                return;
+            }
+
+            FireOneShot();
+
+            _singleLatch =
+                definition.fireMode ==
+                WeaponFireMode.Single;
+        }
+
+        private void FireOneShot()
+        {
+            AmmoInMagazine--;
+
+            _nextShotTime =
+                Time.time +
+                1f / definition.shotsPerSecond;
+
+            Vector3 origin =
+                GetShotOrigin();
+
+            Vector3 direction =
+                GetShotDirection(origin);
+
+            float currentSpread = ResolveCurrentSpread();
+
+            direction =
+                ApplySpread(direction, currentSpread);
+
+            ProcessHit(
+                origin,
+                direction,
+                out bool hasHit,
+                out Vector3 hitPoint,
+                out Vector3 hitNormal
+            );
+
+            debugLastShotHit = hasHit;
+            debugLastHitPoint = hitPoint;
+            debugLastHitNormal = hitNormal;
+
+            if (drawShotDebug)
+            {
+                DrawShotDebug(
+                    origin,
+                    hitPoint,
+                    hitNormal,
+                    hasHit
+                );
+            }
+
+            if (weaponEffects != null)
+            {
+                weaponEffects.PlayShot(
+                    hitPoint,
+                    hitNormal,
+                    hasHit
+                );
+            }
+
+            if (weaponRecoil != null)
+            {
+                weaponRecoil.AddRecoil();
+            }
+
+            _spreadBloom = Mathf.Min(
+                definition.maxSpreadBloom,
+                _spreadBloom + definition.spreadBloomPerShot
+            );
+            _lastShotTime = Time.time;
+
+            UpdateDebugValues();
+
+            AmmoChanged?.Invoke();
+            Fired?.Invoke();
+        }
+
+        private Vector3 GetShotOrigin()
+        {
+            if (muzzle != null)
+            {
+                return muzzle.position;
+            }
+
+            if (aimCamera != null)
+            {
+                return aimCamera.transform.position;
+            }
+
+            return transform.position;
+        }
+
+        private Vector3 GetShotDirection(Vector3 origin)
+        {
+            if (aimController != null)
+            {
+                return aimController.GetDirectionFrom(origin);
+            }
+
+            if (aimCamera != null)
+            {
+                return aimCamera.transform.forward;
+            }
+
+            if (muzzle != null)
+            {
+                return muzzle.forward;
+            }
+
+            return transform.forward;
+        }
+
+        private float ResolveCurrentSpread()
+        {
+            if (definition == null)
+            {
+                return 0f;
+            }
+
+            float spread = input != null && input.AimHeld
+                ? definition.adsSpreadDegrees
+                : definition.hipSpreadDegrees;
+
+            if (motor != null)
+            {
+                if (!motor.IsGrounded)
+                {
+                    spread *= definition.airborneSpreadMultiplier;
+                }
+                else if (motor.IsCrouching)
+                {
+                    spread *= definition.crouchSpreadMultiplier;
+                }
+                else
+                {
+                    float moveAmount = motor.MoveInput.magnitude;
+
+                    if (input != null && input.SprintHeld && motor.MoveInput.y > 0.25f)
+                    {
+                        spread *= definition.sprintSpreadMultiplier;
+                    }
+                    else if (moveAmount > 0.65f)
+                    {
+                        spread *= definition.runSpreadMultiplier;
+                    }
+                    else if (moveAmount > 0.05f)
+                    {
+                        spread *= definition.walkSpreadMultiplier;
+                    }
+                }
+            }
+
+            spread += _spreadBloom;
+            return Mathf.Max(0f, spread);
+        }
+
+        private void RecoverSpreadBloom()
+        {
+            if (definition == null || _spreadBloom <= 0f)
+            {
+                return;
+            }
+
+            // Do not start recovering in the exact frame in which a shot was fired.
+            if (Time.time <= _lastShotTime)
+            {
+                return;
+            }
+
+            _spreadBloom = Mathf.MoveTowards(
+                _spreadBloom,
+                0f,
+                definition.spreadRecoveryPerSecond * Time.deltaTime
+            );
+        }
+
+        private Vector3 ApplySpread(Vector3 direction, float spreadDegrees)
+        {
+            if (spreadDegrees <= 0f)
+            {
+                return direction.normalized;
+            }
+
+            float spreadRadius = Mathf.Tan(spreadDegrees * Mathf.Deg2Rad);
+            Vector2 spread = UnityEngine.Random.insideUnitCircle * spreadRadius;
+
+            Vector3 right;
+            Vector3 up;
+
+            if (aimCamera != null)
+            {
+                right = aimCamera.transform.right;
+                up = aimCamera.transform.up;
+            }
+            else
+            {
+                right = transform.right;
+                up = transform.up;
+            }
+
+            return (
+                direction +
+                right * spread.x +
+                up * spread.y
+            ).normalized;
+        }
+
+        private void ProcessHit(
+            Vector3 origin,
+            Vector3 direction,
+            out bool hasHit,
+            out Vector3 hitPoint,
+            out Vector3 hitNormal)
+        {
+            hasHit = false;
+
+            hitPoint =
+                origin +
+                direction * definition.range;
+
+            hitNormal = -direction;
+
+            RaycastHit[] hits =
+                Physics.RaycastAll(
+                    origin,
+                    direction,
+                    definition.range,
+                    hitMask,
+                    QueryTriggerInteraction.Ignore
+                );
+
+            Array.Sort(
+                hits,
+                (a, b) =>
+                    a.distance.CompareTo(b.distance)
+            );
+
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.collider == null)
+                {
+                    continue;
+                }
+
+                if (
+                    hit.collider.transform.root ==
+                    transform.root
+                )
+                {
+                    continue;
+                }
+
+                hasHit = true;
+                hitPoint = hit.point;
+                hitNormal = hit.normal;
+
+                IDamageable damageable =
+                    hit.collider
+                        .GetComponentInParent<IDamageable>();
+
+                if (damageable != null)
+                {
+                    damageable.ApplyDamage(
+                        new DamageInfo(
+                            definition.damage,
+                            hit.point,
+                            direction,
+                            gameObject
+                        )
+                    );
+                }
+
+                break;
+            }
+        }
+
+        private void DrawShotDebug(
+            Vector3 origin,
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            bool hasHit)
+        {
+            Color shotColor =
+                hasHit
+                    ? Color.green
+                    : Color.red;
+
+            Debug.DrawLine(
+                origin,
+                hitPoint,
+                shotColor,
+                debugShotDuration
+            );
+
+            if (!hasHit)
+            {
+                return;
+            }
+
+            Vector3 right =
+                Vector3.right *
+                debugImpactSize;
+
+            Vector3 up =
+                Vector3.up *
+                debugImpactSize;
+
+            Vector3 forward =
+                Vector3.forward *
+                debugImpactSize;
+
+            Debug.DrawLine(
+                hitPoint - right,
+                hitPoint + right,
+                Color.yellow,
+                debugShotDuration
+            );
+
+            Debug.DrawLine(
+                hitPoint - up,
+                hitPoint + up,
+                Color.yellow,
+                debugShotDuration
+            );
+
+            Debug.DrawLine(
+                hitPoint - forward,
+                hitPoint + forward,
+                Color.yellow,
+                debugShotDuration
+            );
+
+            Debug.DrawRay(
+                hitPoint,
+                hitNormal * 0.35f,
+                Color.cyan,
+                debugShotDuration
+            );
+        }
+
+        public void TryReload()
+        {
+            if (equipment != null && equipment.EquippedWeapon != this)
+                return;
+
+            if (
+                IsReloading ||
+                definition == null ||
+                AmmoInMagazine >= definition.magazineSize ||
+                reserveAmmo <= 0
+            )
+            {
+                return;
+            }
+
+            if (_reloadRoutine != null)
+            {
+                StopCoroutine(_reloadRoutine);
+            }
+
+            _reloadRoutine =
+                StartCoroutine(
+                    ReloadRoutine()
+                );
+        }
+
+        private IEnumerator ReloadRoutine()
+        {
+            IsReloading = true;
+
+            UpdateDebugValues();
+
+            yield return new WaitForSeconds(
+                definition.reloadTime
+            );
+
+            int needed =
+                definition.magazineSize -
+                AmmoInMagazine;
+
+            int amount =
+                Mathf.Min(
+                    needed,
+                    reserveAmmo
+                );
+
+            AmmoInMagazine += amount;
+            reserveAmmo -= amount;
+
+            IsReloading = false;
+            _reloadRoutine = null;
+
+            UpdateDebugValues();
+
+            AmmoChanged?.Invoke();
+        }
+
+        private void UpdateDebugValues()
+        {
+            debugAmmoInMagazine =
+                AmmoInMagazine;
+
+            debugReserveAmmo =
+                reserveAmmo;
+
+            debugIsReloading =
+                IsReloading;
+
+            debugCurrentSpread =
+                definition != null ? ResolveCurrentSpread() : 0f;
+
+            debugSpreadBloom =
+                _spreadBloom;
+        }
+    }
+}

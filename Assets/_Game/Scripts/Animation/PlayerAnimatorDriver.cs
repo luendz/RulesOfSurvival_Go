@@ -1,0 +1,204 @@
+using ROS.Game.Character;
+using ROS.Game.Input;
+using ROS.Game.Weapons;
+using UnityEngine;
+
+namespace ROS.Game.Animation
+{
+    public sealed class PlayerAnimatorDriver : MonoBehaviour
+    {
+        [Header("References")]
+        [SerializeField] private Animator animator;
+        [SerializeField] private PlayerMotor motor;
+        [SerializeField] private PlayerInputReader input;
+        [SerializeField] private WeaponEquipmentController equipment;
+
+        [Header("Smoothing")]
+        [SerializeField] private float dampTime = 0.12f;
+
+        private static readonly int MoveX =
+            Animator.StringToHash("MoveX");
+
+        private static readonly int MoveY =
+            Animator.StringToHash("MoveY");
+
+        private static readonly int Speed =
+            Animator.StringToHash("Speed");
+
+        private static readonly int Grounded =
+            Animator.StringToHash("Grounded");
+
+        private static readonly int Crouch =
+            Animator.StringToHash("Crouch");
+
+        private static readonly int Prone =
+            Animator.StringToHash("Prone");
+
+        private static readonly int Aim =
+            Animator.StringToHash("Aim");
+
+        private static readonly int VerticalVelocity =
+            Animator.StringToHash("VerticalVelocity");
+
+        private static readonly int HasRifle =
+            Animator.StringToHash("HasRifle");
+
+        private void Awake()
+        {
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>();
+            }
+
+            if (motor == null)
+            {
+                motor = GetComponentInParent<PlayerMotor>();
+            }
+
+            if (input == null)
+            {
+                input = GetComponentInParent<PlayerInputReader>();
+            }
+
+            if (equipment == null)
+            {
+                equipment = GetComponentInParent<WeaponEquipmentController>();
+            }
+        }
+
+        private void Reset()
+        {
+            animator = GetComponentInChildren<Animator>();
+            motor = GetComponentInParent<PlayerMotor>();
+            input = GetComponentInParent<PlayerInputReader>();
+            equipment = GetComponentInParent<WeaponEquipmentController>();
+        }
+
+        private void Update()
+        {
+            if (animator == null || motor == null || input == null)
+            {
+                return;
+            }
+
+            UpdateMovement();
+            UpdateStates();
+        }
+
+        private void UpdateMovement()
+        {
+            Vector2 move = Vector2.ClampMagnitude(
+                input.Move,
+                1f
+            );
+
+            animator.SetFloat(
+                MoveX,
+                move.x,
+                dampTime,
+                Time.deltaTime
+            );
+
+            animator.SetFloat(
+                MoveY,
+                move.y,
+                dampTime,
+                Time.deltaTime
+            );
+
+            float animationSpeed =
+                ResolveAnimationSpeed(move);
+
+            animator.SetFloat(
+                Speed,
+                animationSpeed,
+                dampTime,
+                Time.deltaTime
+            );
+        }
+
+        private float ResolveAnimationSpeed(Vector2 move)
+        {
+            if (move.sqrMagnitude <= 0.01f)
+            {
+                return 0f;
+            }
+
+            if (motor.IsCrouching)
+            {
+                return 0.33f;
+            }
+
+            if (motor.IsProne)
+            {
+                return 0.33f;
+            }
+
+            // Mientras apuntamos no queremos entrar
+            // visualmente en Sprint.
+            if (IsAimActive())
+            {
+                return 0.33f;
+            }
+
+            if (
+                input.SprintHeld &&
+                move.y > 0.25f
+            )
+            {
+                return 1f;
+            }
+
+            if (move.magnitude > 0.65f)
+            {
+                return 0.66f;
+            }
+
+            return 0.33f;
+        }
+
+        private bool IsAimActive()
+        {
+            if (input == null)
+                return false;
+
+            if (equipment != null)
+                return equipment.CombatState == ROS.Game.Core.PlayerCombatState.Aiming;
+
+            return input.AimHeld;
+        }
+
+        private void UpdateStates()
+        {
+            animator.SetBool(
+                Grounded,
+                motor.IsGrounded
+            );
+
+            animator.SetBool(
+                Crouch,
+                motor.IsCrouching
+            );
+
+            animator.SetBool(
+                Prone,
+                motor.IsProne
+            );
+
+            animator.SetBool(
+                Aim,
+                IsAimActive()
+            );
+
+            animator.SetBool(
+                HasRifle,
+                equipment != null && equipment.HasEquippedWeapon
+            );
+
+            animator.SetFloat(
+                VerticalVelocity,
+                motor.Velocity.y
+            );
+        }
+    }
+}
