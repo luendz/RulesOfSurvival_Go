@@ -1,4 +1,5 @@
 using ROS.Game.Character;
+using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Weapons;
 using UnityEngine;
@@ -42,6 +43,9 @@ namespace ROS.Game.Animation
 
         private static readonly int HasRifle =
             Animator.StringToHash("HasRifle");
+
+        private static readonly int Reloading =
+            Animator.StringToHash("Reloading");
 
         private void Awake()
         {
@@ -134,8 +138,6 @@ namespace ROS.Game.Animation
                 return 0.33f;
             }
 
-            // Mientras apuntamos no queremos entrar
-            // visualmente en Sprint.
             if (IsAimActive())
             {
                 return 0.33f;
@@ -163,9 +165,21 @@ namespace ROS.Game.Animation
                 return false;
 
             if (equipment != null)
-                return equipment.CombatState == ROS.Game.Core.PlayerCombatState.Aiming;
+            {
+                return equipment.CombatState ==
+                       PlayerCombatState.Aiming;
+            }
 
             return input.AimHeld;
+        }
+
+        private bool IsReloading()
+        {
+            if (equipment == null)
+                return false;
+
+            return equipment.CombatState ==
+                   PlayerCombatState.Reloading;
         }
 
         private void UpdateStates()
@@ -192,7 +206,13 @@ namespace ROS.Game.Animation
 
             animator.SetBool(
                 HasRifle,
-                equipment != null && equipment.HasEquippedWeapon
+                equipment != null &&
+                equipment.HasEquippedWeapon
+            );
+
+            animator.SetBool(
+                Reloading,
+                IsReloading()
             );
 
             animator.SetFloat(

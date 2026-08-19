@@ -58,7 +58,10 @@ namespace ROS.Game.Character
                     return false;
 
                 if (equipment != null)
-                    return equipment.CombatState == PlayerCombatState.Aiming;
+                {
+                    return equipment.CombatState ==
+                           PlayerCombatState.Aiming;
+                }
 
                 return _input.AimHeld;
             }
@@ -141,8 +144,25 @@ namespace ROS.Game.Character
             HandleMovement();
         }
 
+        private bool IsReloading()
+        {
+            EnsureReferences();
+
+            return equipment != null &&
+                   equipment.CombatState ==
+                   PlayerCombatState.Reloading;
+        }
+
         private void HandleStance()
         {
+            // Durante la recarga mantenemos la postura
+            // con la que comenzó:
+            // Standing o Crouch.
+            if (IsReloading())
+            {
+                return;
+            }
+
             if (_input.PronePressed)
             {
                 IsProne = !IsProne;
@@ -175,7 +195,8 @@ namespace ROS.Game.Character
         }
 
         private void ApplyStanceHeight(
-            float height)
+            float height
+        )
         {
             if (_controller == null)
             {
@@ -201,7 +222,8 @@ namespace ROS.Game.Character
         }
 
         private void ApplyStanceHeightImmediate(
-            float height)
+            float height
+        )
         {
             if (_controller == null)
             {
@@ -223,6 +245,12 @@ namespace ROS.Game.Character
 
         private void HandleMovement()
         {
+            if (IsReloading())
+            {
+                HandleReloadMovementLock();
+                return;
+            }
+
             Vector2 input =
                 Vector2.ClampMagnitude(
                     _input.Move,
@@ -288,8 +316,44 @@ namespace ROS.Game.Character
             );
         }
 
+        private void HandleReloadMovementLock()
+        {
+            // Durante la recarga:
+            // - sin desplazamiento
+            // - sin sprint
+            // - sin salto
+            // - sin cambiar crouch/prone
+            //
+            // La gravedad sigue activa para mantener
+            // al CharacterController correctamente
+            // apoyado sobre el suelo.
+
+            if (_controller.isGrounded &&
+                _velocity.y < 0f)
+            {
+                _velocity.y =
+                    groundedGravity;
+            }
+
+            _velocity.y +=
+                gravity *
+                Time.deltaTime;
+
+            _controller.Move(
+                Vector3.up *
+                _velocity.y *
+                Time.deltaTime
+            );
+
+            MovementState =
+                IsCrouching
+                    ? PlayerMovementState.Crouching
+                    : PlayerMovementState.Idle;
+        }
+
         private Vector3 ResolveFreeLookMovement(
-            Vector2 input)
+            Vector2 input
+        )
         {
             Vector3 characterForward =
                 transform.forward;
@@ -311,7 +375,8 @@ namespace ROS.Game.Character
 
         private void HandleRotation(
             Vector3 move,
-            Vector3 camForward)
+            Vector3 camForward
+        )
         {
             if (_input.FreeLookHeld)
             {
@@ -333,7 +398,8 @@ namespace ROS.Game.Character
         }
 
         private void RotateTowardMovement(
-            Vector3 move)
+            Vector3 move
+        )
         {
             if (move.sqrMagnitude <= 0.001f)
             {
@@ -356,7 +422,8 @@ namespace ROS.Game.Character
         }
 
         private void RotateTowardCamera(
-            Vector3 camForward)
+            Vector3 camForward
+        )
         {
             if (camForward.sqrMagnitude <= 0.001f)
             {
@@ -405,7 +472,8 @@ namespace ROS.Game.Character
         }
 
         private float ResolveSpeed(
-            Vector2 input)
+            Vector2 input
+        )
         {
             if (IsProne)
             {
@@ -431,7 +499,8 @@ namespace ROS.Game.Character
 
         private void UpdateMovementState(
             Vector2 input,
-            float speed)
+            float speed
+        )
         {
             if (!_controller.isGrounded)
             {
