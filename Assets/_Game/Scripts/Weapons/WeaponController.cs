@@ -48,6 +48,7 @@ namespace ROS.Game.Weapons
         public int AmmoInMagazine { get; private set; }
         public int ReserveAmmo => reserveAmmo;
         public bool IsReloading { get; private set; }
+        public float CurrentSpread => ResolveCurrentSpread();
 
         public event Action AmmoChanged;
         public event Action Fired;
