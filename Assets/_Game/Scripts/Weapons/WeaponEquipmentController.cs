@@ -5,7 +5,6 @@ using ROS.Game.Character;
 using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Input;
-using ROS.Game.UI;
 using UnityEngine;
 
 namespace ROS.Game.Weapons
@@ -137,8 +136,6 @@ namespace ROS.Game.Weapons
                     return PlayerCombatState.Reloading;
                 }
 
-                // Mientras cambiamos de arma no permitimos
-                // entrar visualmente en Aim.
                 if (IsSwitchingWeapon)
                 {
                     return PlayerCombatState.HipFire;
@@ -439,8 +436,6 @@ namespace ROS.Game.Weapons
             debugPendingSlot =
                 targetSlot;
 
-            // Deshabilitamos la lógica de disparo
-            // del arma actual inmediatamente.
             if (EquippedWeapon != null)
             {
                 SetWeaponCombatEnabled(
@@ -1062,18 +1057,6 @@ namespace ROS.Game.Weapons
                 aim.SetCamera(
                     Camera.main
                 );
-            }
-
-            HudPresenter hud =
-                GetComponent<
-                    HudPresenter
-                >();
-
-            if (hud == null)
-            {
-                gameObject.AddComponent<
-                    HudPresenter
-                >();
             }
         }
 
