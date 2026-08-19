@@ -8,53 +8,177 @@ namespace ROS.Game.BattleRoyale
 {
     public sealed class BattleRoyaleManager : MonoBehaviour
     {
+        [Header("Safe Zone")]
         [SerializeField] private SafeZoneController safeZone;
         [SerializeField] private float initialZoneRadius = 350f;
 
-        public MatchState State { get; private set; } = MatchState.WaitingPlayers;
-        public int AliveCount { get; private set; }
+        [Header("Match")]
+        [Min(0)]
+        [SerializeField] private int finalCirclePhaseIndex = 3;
+
+        public MatchState State
+        {
+            get;
+            private set;
+        } = MatchState.WaitingPlayers;
+
+        public int AliveCount
+        {
+            get;
+            private set;
+        }
+
         public event Action<MatchState> StateChanged;
         public event Action<int> AliveCountChanged;
 
-        private readonly List<Health> _players = new List<Health>();
+        private readonly List<Health> _players =
+            new List<Health>();
 
         public void RegisterPlayer(Health health)
         {
-            if (health == null || _players.Contains(health)) return;
+            if (health == null)
+                return;
+
+            if (_players.Contains(health))
+                return;
+
             _players.Add(health);
-            health.Died += _ => RefreshAliveCount();
+
+            health.Died +=
+                _ => RefreshAliveCount();
+
             RefreshAliveCount();
         }
 
         public void BeginMatch()
         {
-            SetState(MatchState.Playing);
-            if (safeZone != null) safeZone.Begin(Vector3.zero, initialZoneRadius);
+            SetState(
+                MatchState.Playing
+            );
+
+            if (safeZone != null)
+            {
+                safeZone.Begin(
+                    Vector3.zero,
+                    initialZoneRadius
+                );
+            }
+
             RefreshAliveCount();
         }
 
         private void Update()
         {
-            if (State != MatchState.Playing && State != MatchState.FinalCircle) return;
-            for (int i = 0; i < _players.Count; i++)
-                if (_players[i] != null && safeZone != null) safeZone.ApplyZoneDamage(_players[i]);
+            if (
+                State != MatchState.Playing &&
+                State != MatchState.FinalCircle
+            )
+            {
+                return;
+            }
 
-            if (AliveCount <= 1 && _players.Count > 1) SetState(MatchState.Finished);
+            ApplyZoneDamage();
+
+            UpdateMatchState();
+
+            CheckMatchFinished();
+        }
+
+        private void ApplyZoneDamage()
+        {
+            if (safeZone == null)
+                return;
+
+            for (
+                int i = 0;
+                i < _players.Count;
+                i++
+            )
+            {
+                Health player =
+                    _players[i];
+
+                if (player == null)
+                    continue;
+
+                safeZone.ApplyZoneDamage(
+                    player
+                );
+            }
+        }
+
+        private void UpdateMatchState()
+        {
+            if (safeZone == null)
+                return;
+
+            if (
+                State == MatchState.FinalCircle
+            )
+            {
+                return;
+            }
+
+            if (
+                safeZone.CurrentPhase >=
+                finalCirclePhaseIndex
+            )
+            {
+                SetState(
+                    MatchState.FinalCircle
+                );
+            }
+        }
+
+        private void CheckMatchFinished()
+        {
+            if (_players.Count <= 1)
+                return;
+
+            if (AliveCount <= 1)
+            {
+                SetState(
+                    MatchState.Finished
+                );
+            }
         }
 
         private void RefreshAliveCount()
         {
             int alive = 0;
-            foreach (var player in _players) if (player != null && player.IsAlive) alive++;
+
+            foreach (
+                Health player in _players
+            )
+            {
+                if (
+                    player != null &&
+                    player.IsAlive
+                )
+                {
+                    alive++;
+                }
+            }
+
             AliveCount = alive;
-            AliveCountChanged?.Invoke(alive);
+
+            AliveCountChanged?.Invoke(
+                alive
+            );
         }
 
-        private void SetState(MatchState state)
+        private void SetState(
+            MatchState state
+        )
         {
-            if (State == state) return;
+            if (State == state)
+                return;
+
             State = state;
-            StateChanged?.Invoke(state);
+
+            StateChanged?.Invoke(
+                state
+            );
         }
     }
 }
