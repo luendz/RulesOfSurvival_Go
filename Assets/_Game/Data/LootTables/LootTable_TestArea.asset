@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8bfdc4e809843b895ed740b75301219, type: 3}
+  m_Name: LootTable_TestArea
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.LootTableDefinition
+  entries:
+  - item: {fileID: 11400000, guid: 6e0d6443964330845b3cdb4f5fbfc353, type: 2}
+    weight: 30
+    minAmount: 20
+    maxAmount: 60
+  - item: {fileID: 11400000, guid: 6dd906208e2c4be4d98a67c679ac3c38, type: 2}
+    weight: 22
+    minAmount: 20
+    maxAmount: 60
+  - item: {fileID: 11400000, guid: eaf4277079811174ab81a9bb6268625c, type: 2}
+    weight: 16
+    minAmount: 10
+    maxAmount: 40
+  - item: {fileID: 11400000, guid: 696cd24569b76a645b5a6c8870fefea1, type: 2}
+    weight: 14
+    minAmount: 5
+    maxAmount: 20
+  - item: {fileID: 11400000, guid: 3633c70a736c5934a98af8ea57346c4c, type: 2}
+    weight: 8
+    minAmount: 5
+    maxAmount: 15
+  - item: {fileID: 11400000, guid: c1507fd33d1d6ad48a0921c44c27ae83, type: 2}
+    weight: 20
+    minAmount: 1
+    maxAmount: 5
+  - item: {fileID: 11400000, guid: f843bc6aebe35a044b068721a2b6e776, type: 2}
+    weight: 5
+    minAmount: 1
+    maxAmount: 1
