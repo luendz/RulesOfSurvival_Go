@@ -1,4 +1,5 @@
 using ROS.Game.Input;
+using ROS.Game.Parachute;
 using ROS.Game.Weapons;
 using UnityEngine;
 
@@ -45,6 +46,10 @@ namespace ROS.Game.CameraSystem
         [SerializeField] private float rotationSmoothTime = 12f;
         [SerializeField] private float positionSmoothTime = 18f;
 
+        [Header("Air Drop Camera")]
+        [SerializeField] private float airDropDistanceMultiplier = 9f;
+        [SerializeField] private float airDropPitch = 32f;
+
         [Header("Collision")]
         [SerializeField] private LayerMask collisionMask = ~0;
         [SerializeField] private float collisionRadius = 0.2f;
@@ -67,6 +72,7 @@ namespace ROS.Game.CameraSystem
         private UnityEngine.Camera _camera;
         private bool _deathView;
         private float _distanceMultiplier = 1f;
+        private ParachuteController _parachute;
 
         public Transform Target => target;
         public bool IsDeathView => _deathView;
@@ -86,6 +92,12 @@ namespace ROS.Game.CameraSystem
         public void ExitAirplaneView()
         {
             _distanceMultiplier = 1f;
+        }
+
+        public void EnterAirDropView(float distanceMultiplier = 9f)
+        {
+            _distanceMultiplier = Mathf.Max(1f, distanceMultiplier);
+            _pitch = airDropPitch;
         }
 
         private void Awake()
@@ -118,6 +130,7 @@ namespace ROS.Game.CameraSystem
 
             FindEquipment();
             FindWeaponRecoil();
+            FindParachute();
 
             if (_camera != null)
                 _camera.fieldOfView = normalFov;
@@ -139,6 +152,7 @@ namespace ROS.Game.CameraSystem
 
             FindEquipment();
             FindWeaponRecoil();
+            FindParachute();
 
             if (_camera != null)
                 _camera.fieldOfView = normalFov;
@@ -170,6 +184,7 @@ namespace ROS.Game.CameraSystem
             if (input == null)
                 return;
 
+            FindParachute();
             HandleShoulderSwitch();
             HandleAim();
             HandleLook();
@@ -250,7 +265,7 @@ namespace ROS.Game.CameraSystem
 
             float targetDistance =
                 (isAiming ? aimDistance : normalDistance) *
-                _distanceMultiplier;
+                GetActiveDistanceMultiplier();
             float targetAimShoulderX = isAiming ? aimShoulderX : normalShoulderX;
 
             _currentDistance = Mathf.Lerp(
@@ -355,6 +370,27 @@ namespace ROS.Game.CameraSystem
                 return;
 
             weaponRecoil = target.GetComponentInChildren<WeaponRecoil>(true);
+        }
+
+        private void FindParachute()
+        {
+            if (_parachute == null && target != null)
+            {
+                _parachute = target.GetComponent<ParachuteController>();
+            }
+        }
+
+        private float GetActiveDistanceMultiplier()
+        {
+            if (_parachute != null && _parachute.IsAirbornePhase)
+            {
+                return Mathf.Max(
+                    _distanceMultiplier,
+                    airDropDistanceMultiplier
+                );
+            }
+
+            return _distanceMultiplier;
         }
 
         private bool IsAimActive()

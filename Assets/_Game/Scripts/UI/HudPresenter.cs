@@ -1,6 +1,8 @@
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using ROS.Game.Input;
+using ROS.Game.Parachute;
 using ROS.Game.Weapons;
 using UnityEngine;
 
@@ -8,7 +10,7 @@ namespace ROS.Game.UI
 {
     /// <summary>
     /// HUD de combate provisional del prototipo.
-    /// Usa OnGUI para no depender todavía de un Canvas.
+    /// Usa OnGUI para no depender todavÃ­a de un Canvas.
     ///
     /// El crosshair utiliza el spread real del arma equipada.
     /// </summary>
@@ -20,23 +22,24 @@ namespace ROS.Game.UI
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private PlayerAimController aim;
         [SerializeField] private BattleRoyaleManager battleRoyale;
+        [SerializeField] private ParachuteController parachute;
 
         [Header("Crosshair")]
         [SerializeField] private bool showCrosshair = true;
 
-        [Tooltip("Longitud de cada línea del crosshair.")]
+        [Tooltip("Longitud de cada lÃ­nea del crosshair.")]
         [SerializeField] private float crosshairArmLength = 8f;
 
-        [Tooltip("Grosor de las líneas.")]
+        [Tooltip("Grosor de las lÃ­neas.")]
         [SerializeField] private float crosshairThickness = 2f;
 
-        [Tooltip("Separación mínima del centro.")]
+        [Tooltip("SeparaciÃ³n mÃ­nima del centro.")]
         [SerializeField] private float minCrosshairGap = 3f;
 
-        [Tooltip("Separación máxima del centro.")]
+        [Tooltip("SeparaciÃ³n mÃ¡xima del centro.")]
         [SerializeField] private float maxCrosshairGap = 45f;
 
-        [Tooltip("Conversión aproximada de grados de spread a píxeles.")]
+        [Tooltip("ConversiÃ³n aproximada de grados de spread a pÃ­xeles.")]
         [SerializeField] private float pixelsPerSpreadDegree = 10f;
 
         [Tooltip("Velocidad con la que se abre/cierra el crosshair.")]
@@ -118,6 +121,11 @@ namespace ROS.Game.UI
                 battleRoyale =
                     FindFirstObjectByType<BattleRoyaleManager>();
             }
+
+            if (parachute == null)
+            {
+                parachute = FindFirstObjectByType<ParachuteController>();
+            }
         }
 
         private void UpdateCrosshair()
@@ -185,6 +193,7 @@ namespace ROS.Game.UI
 
             if (
                 showCrosshair &&
+                IsCrosshairAllowed() &&
                 equipment != null &&
                 equipment.HasEquippedWeapon
             )
@@ -240,6 +249,18 @@ namespace ROS.Game.UI
                     _smallStyle
                 );
             }
+        }
+
+        private bool IsCrosshairAllowed()
+        {
+            if (parachute == null)
+            {
+                return true;
+            }
+
+            return parachute.State != AirDropState.InPlane &&
+                   parachute.State != AirDropState.FreeFall &&
+                   parachute.State != AirDropState.Parachuting;
         }
 
         private void DrawStatus()
@@ -299,7 +320,7 @@ namespace ROS.Game.UI
                         700,
                         25
                     ),
-                    $"SLOT {equipment.EquippedSlot}   SPREAD {weapon.CurrentSpread:0.00}°",
+                    $"SLOT {equipment.EquippedSlot}   SPREAD {weapon.CurrentSpread:0.00}Â°",
                     _smallStyle
                 );
 

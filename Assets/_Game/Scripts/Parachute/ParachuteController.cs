@@ -10,6 +10,9 @@ namespace ROS.Game.Parachute
     [RequireComponent(typeof(CharacterController))]
     public sealed class ParachuteController : MonoBehaviour
     {
+        public static readonly Vector3 ModelEulerAngles =
+            new Vector3(-120f, 0f, 0f);
+
         [Header("References")]
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private PlayerMotor motor;

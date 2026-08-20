@@ -79,5 +79,14 @@ namespace ROS.Game.Tests.EditMode
                 Is.EqualTo(new Vector3(-90f, -90f, 0f))
             );
         }
+
+        [Test]
+        public void ParachuteModel_UsesRequestedLocalRotation()
+        {
+            Assert.That(
+                ParachuteController.ModelEulerAngles,
+                Is.EqualTo(new Vector3(-120f, 0f, 0f))
+            );
+        }
     }
 }

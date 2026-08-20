@@ -84,6 +84,14 @@ namespace ROS.Game.Parachute
             parachuteVisual.transform.localPosition =
                 new Vector3(0f, 3.2f, 0f);
             parachuteVisual.transform.localRotation = Quaternion.identity;
+            if (parachuteVisual.transform.childCount > 0)
+            {
+                parachuteVisual.transform.GetChild(0).localRotation =
+                    Quaternion.Euler(
+                        ParachuteController.ModelEulerAngles
+                    );
+            }
+
             parachute.ConfigureVisual(parachuteVisual);
 
             GameObject airplaneObject = Object.Instantiate(airplanePrefab);

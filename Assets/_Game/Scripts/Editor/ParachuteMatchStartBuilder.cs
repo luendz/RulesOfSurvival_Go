@@ -1,3 +1,4 @@
+using ROS.Game.Parachute;
 using ROS.Game.World;
 using UnityEditor;
 using UnityEngine;
@@ -28,7 +29,7 @@ namespace ROS.Game.Editor
                 ParachutePrefabPath,
                 "PF_ParachuteVisual",
                 5.5f,
-                null,
+                ParachuteController.ModelEulerAngles,
                 false
             );
             bool airplaneCreated = CreateVisualPrefab(
@@ -70,7 +71,16 @@ namespace ROS.Game.Editor
             valid &= ValidateVisual(airplane, "avión");
             valid &= airplane != null &&
                      airplane.GetComponent<AirplaneController>() != null;
-            valid &= ValidateAirplaneRotation(airplane);
+            valid &= ValidateModelRotation(
+                parachute,
+                ParachuteController.ModelEulerAngles,
+                "paracaídas"
+            );
+            valid &= ValidateModelRotation(
+                airplane,
+                AirplaneController.ModelEulerAngles,
+                "avión"
+            );
 
             if (!valid)
             {
@@ -193,18 +203,24 @@ namespace ROS.Game.Editor
             return true;
         }
 
-        private static bool ValidateAirplaneRotation(GameObject airplane)
+        private static bool ValidateModelRotation(
+            GameObject prefab,
+            Vector3 expectedEulerAngles,
+            string label
+        )
         {
-            if (airplane == null || airplane.transform.childCount == 0)
+            if (prefab == null || prefab.transform.childCount == 0)
             {
-                Debug.LogError("El prefab de avión no tiene modelo 3D.");
+                Debug.LogError(
+                    $"El prefab de {label} no tiene modelo 3D."
+                );
                 return false;
             }
 
             Quaternion expected = Quaternion.Euler(
-                AirplaneController.ModelEulerAngles
+                expectedEulerAngles
             );
-            Quaternion actual = airplane.transform.GetChild(0).localRotation;
+            Quaternion actual = prefab.transform.GetChild(0).localRotation;
 
             if (Quaternion.Angle(expected, actual) <= 0.1f)
             {
@@ -212,8 +228,8 @@ namespace ROS.Game.Editor
             }
 
             Debug.LogError(
-                "La rotación local del avión debe ser " +
-                "X -90°, Y -90°, Z 0°."
+                $"La rotación local del modelo de {label} no coincide " +
+                $"con {expectedEulerAngles}."
             );
             return false;
         }
