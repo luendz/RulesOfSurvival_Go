@@ -32,6 +32,13 @@ namespace ROS.Game.Loot
         [SerializeField]
         private float bobSpeed = 1.6f;
 
+        [Header("Rotación")]
+        [SerializeField]
+        private float spinSpeed = 35f;
+
+        [SerializeField]
+        private float rayOrbitSpeed = 50f;
+
         private readonly List<Transform> _auraLayers =
             new List<Transform>();
 
@@ -50,6 +57,9 @@ namespace ROS.Game.Loot
         private Vector3 _floatingBasePosition;
 
         private Vector3 _effectBasePosition;
+
+        private Quaternion _diamondRotation =
+            Quaternion.identity;
 
         public bool HasFloatingModel =>
             _floatingModel != null;
@@ -94,11 +104,24 @@ namespace ROS.Game.Loot
                     _floatingBasePosition +
                     Vector3.up * bobOffset;
 
+                _floatingModel.localRotation =
+                    Quaternion.AngleAxis(
+                        Time.time * spinSpeed,
+                        Vector3.up
+                    ) *
+                    _diamondRotation;
+
                 if (_effectRoot != null)
                 {
                     _effectRoot.localPosition =
                         _effectBasePosition +
                         Vector3.up * bobOffset;
+
+                    _effectRoot.localRotation =
+                        Quaternion.AngleAxis(
+                            Time.time * rayOrbitSpeed,
+                            Vector3.up
+                        );
                 }
             }
         }
@@ -107,15 +130,10 @@ namespace ROS.Game.Loot
             Transform model
         )
         {
-            _floatingModel = model;
-
-            if (_floatingModel != null)
+            if (model != null)
             {
-                _floatingBasePosition =
-                    _floatingModel.localPosition;
-
                 Renderer[] renderers =
-                    _floatingModel.GetComponentsInChildren<Renderer>(
+                    model.GetComponentsInChildren<Renderer>(
                         true
                     );
 
@@ -127,6 +145,24 @@ namespace ROS.Game.Loot
                     {
                         bounds.Encapsulate(renderers[i].bounds);
                     }
+
+                    GameObject pivotObject =
+                        new GameObject("Pivote_Caja_Flotante");
+
+                    Transform pivot = pivotObject.transform;
+                    pivot.SetParent(transform, false);
+                    pivot.position = bounds.center;
+                    model.SetParent(pivot, true);
+
+                    _floatingModel = pivot;
+                    _floatingBasePosition =
+                        _floatingModel.localPosition;
+
+                    _diamondRotation =
+                        Quaternion.FromToRotation(
+                            Vector3.one.normalized,
+                            Vector3.up
+                        );
 
                     _effectBasePosition =
                         transform.InverseTransformPoint(
@@ -160,16 +196,73 @@ namespace ROS.Game.Loot
             CreateAuraLayer(
                 "Aura_Azul_Exterior",
                 Vector3.zero,
-                new Vector3(0.36f, 0.18f, 0.42f),
-                0.03f
+                new Vector3(0.32f, 0.2f, 0.36f),
+                0.018f
             );
 
-            CreateAuraLayer(
-                "Halo_Azul_Base_Caja",
-                new Vector3(0f, -0.16f, 0f),
-                new Vector3(0.48f, 0.015f, 0.54f),
-                0.065f
-            );
+            CreateRayRing();
+        }
+
+        private void CreateRayRing()
+        {
+            GameObject rayRootObject =
+                new GameObject("Rayos_Azules");
+
+            Transform rayRoot = rayRootObject.transform;
+            rayRoot.SetParent(_effectRoot, false);
+
+            const int rayCount = 8;
+            const float radius = 0.3f;
+
+            for (int i = 0; i < rayCount; i++)
+            {
+                float angle = 360f * i / rayCount;
+                float radians = angle * Mathf.Deg2Rad;
+                float height = 0.18f + (i % 3) * 0.025f;
+
+                GameObject ray =
+                    GameObject.CreatePrimitive(
+                        PrimitiveType.Cylinder
+                    );
+
+                ray.name = $"Rayo_Azul_{i + 1:00}";
+                ray.transform.SetParent(rayRoot, false);
+                ray.transform.localPosition = new Vector3(
+                    Mathf.Cos(radians) * radius,
+                    Mathf.Sin(radians * 2f) * 0.04f,
+                    Mathf.Sin(radians) * radius
+                );
+                ray.transform.localRotation =
+                    Quaternion.Euler(
+                        Mathf.Sin(radians) * 18f,
+                        -angle,
+                        Mathf.Cos(radians) * 18f
+                    );
+                ray.transform.localScale =
+                    new Vector3(0.012f, height, 0.012f);
+
+                Collider collider = ray.GetComponent<Collider>();
+
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                    Destroy(collider);
+                }
+
+                Renderer renderer = ray.GetComponent<Renderer>();
+
+                if (renderer != null)
+                {
+                    Material material = CreateAuraMaterial(0.16f);
+                    renderer.sharedMaterial = material;
+                    renderer.shadowCastingMode =
+                        ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                }
+
+                _auraLayers.Add(ray.transform);
+                _baseScales.Add(ray.transform.localScale);
+            }
         }
 
         private void CreateLight()
