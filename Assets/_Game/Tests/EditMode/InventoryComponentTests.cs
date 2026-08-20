@@ -67,5 +67,37 @@ namespace ROS.Game.Tests.EditMode
             Assert.That(_inventory.Remove(_item, 3), Is.False);
             Assert.That(_inventory.Stacks[0].amount, Is.EqualTo(2));
         }
+
+        [Test]
+        public void TransferAllTo_MovesEveryStackAndClearsSource()
+        {
+            GameObject destinationOwner =
+                new GameObject("Inventory_TestDestination");
+
+            InventoryComponent destination =
+                destinationOwner.AddComponent<
+                    InventoryComponent
+                >();
+
+            destination.SetCapacity(50f);
+            _inventory.SetCapacity(20f);
+            _inventory.Add(_item, 5);
+
+            try
+            {
+                Assert.That(
+                    _inventory.TransferAllTo(destination),
+                    Is.True
+                );
+
+                Assert.That(_inventory.Stacks, Is.Empty);
+                Assert.That(destination.Stacks, Has.Count.EqualTo(3));
+                Assert.That(destination.UsedCapacity, Is.EqualTo(10f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(destinationOwner);
+            }
+        }
     }
 }

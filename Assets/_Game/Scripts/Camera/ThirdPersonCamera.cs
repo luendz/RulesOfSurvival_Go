@@ -49,6 +49,13 @@ namespace ROS.Game.CameraSystem
         [SerializeField] private LayerMask collisionMask = ~0;
         [SerializeField] private float collisionRadius = 0.2f;
 
+        [Header("Death Camera")]
+        [SerializeField] private Vector3 deathPivotOffset =
+            new Vector3(0f, 1f, 0f);
+        [SerializeField] private float deathDistance = 5.25f;
+        [SerializeField] private float deathPitch = 24f;
+        [SerializeField] private float deathFov = 64f;
+
         private float _yaw;
         private float _pitch = 12f;
         private bool _leftShoulder;
@@ -58,6 +65,10 @@ namespace ROS.Game.CameraSystem
         private Quaternion _currentRotation;
         private Vector3 _currentPosition;
         private UnityEngine.Camera _camera;
+        private bool _deathView;
+
+        public Transform Target => target;
+        public bool IsDeathView => _deathView;
 
         private void Awake()
         {
@@ -98,6 +109,7 @@ namespace ROS.Game.CameraSystem
         {
             target = newTarget;
             input = newInput;
+            _deathView = false;
             _yaw = target.eulerAngles.y;
             _camera = GetComponent<UnityEngine.Camera>();
             _currentRotation = transform.rotation;
@@ -114,15 +126,91 @@ namespace ROS.Game.CameraSystem
                 _camera.fieldOfView = normalFov;
         }
 
+        public void EnterDeathView(Transform focus)
+        {
+            if (focus != null)
+            {
+                target = focus;
+            }
+
+            _deathView = true;
+            equipment = null;
+            weaponRecoil = null;
+        }
+
         private void LateUpdate()
         {
-            if (target == null || input == null)
+            if (target == null)
+                return;
+
+            if (_deathView)
+            {
+                UpdateDeathCamera();
+                return;
+            }
+
+            if (input == null)
                 return;
 
             HandleShoulderSwitch();
             HandleAim();
             HandleLook();
             UpdateCameraTransform();
+        }
+
+        private void UpdateDeathCamera()
+        {
+            Quaternion targetRotation =
+                Quaternion.Euler(
+                    deathPitch,
+                    _yaw,
+                    0f
+                );
+
+            Vector3 pivot =
+                target.position +
+                deathPivotOffset;
+
+            Vector3 desired =
+                pivot -
+                targetRotation *
+                Vector3.forward *
+                deathDistance;
+
+            desired =
+                ResolveCollision(pivot, desired);
+
+            _currentRotation =
+                Quaternion.Slerp(
+                    _currentRotation,
+                    targetRotation,
+                    rotationSmoothTime *
+                    Time.deltaTime
+                );
+
+            _currentPosition =
+                Vector3.Lerp(
+                    _currentPosition,
+                    desired,
+                    positionSmoothTime *
+                    Time.deltaTime
+                );
+
+            transform.SetPositionAndRotation(
+                _currentPosition,
+                _currentRotation
+            );
+
+            if (_camera != null)
+            {
+                _camera.fieldOfView =
+                    Mathf.Lerp(
+                        _camera.fieldOfView,
+                        deathFov,
+                        aimTransitionSpeed *
+                        Time.deltaTime
+                    );
+            }
         }
 
         private void HandleShoulderSwitch()

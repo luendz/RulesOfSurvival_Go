@@ -35,7 +35,9 @@ El proyecto incluye pruebas EditMode y PlayMode en `Assets/_Game/Tests`. Se ejec
 
 ## Estado actual
 
-La locomoción, cámara, crouch, aim y el prototipo de rifle ya forman la base jugable. El rifle incluye munición, recarga, raycast de impacto, muzzle flash, tracer, partículas de impacto, bullet hole y recoil. Los sistemas de Battle Royale, vehículos, paracaídas, inventario y loot son bases que todavía requieren integración y pruebas de gameplay.
+La locomoción, cámara, crouch, aim y el prototipo de rifle ya forman la base jugable. El rifle incluye munición, recarga, raycast de impacto, muzzle flash, tracer, partículas de impacto, bullet hole y recoil.
+
+El ciclo de eliminación ya integra estado de muerte, bloqueo de controles, atribución de bajas, posición final, ganador, cámara posterior a la muerte y transferencia del inventario a una caja de loot. La representación visual usa una caída provisional generada en código; el clip humanoide final queda desacoplado para poder importarlo y retargetearlo más adelante. Los vehículos, el paracaídas y el loot avanzado siguen siendo bases que requieren integración y pruebas de gameplay.
 
 ## Control de versiones
 
