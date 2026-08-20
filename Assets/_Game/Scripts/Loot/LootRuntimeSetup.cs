@@ -1,3 +1,4 @@
+using ROS.Game.AI;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
 using ROS.Game.UI;
@@ -19,6 +20,11 @@ namespace ROS.Game.Loot
 
             foreach (PlayerInputReader input in players)
             {
+                if (BattleRoyaleBotController.IsBot(input))
+                {
+                    continue;
+                }
+
                 GameObject player = input.gameObject;
 
                 if (player.GetComponent<PlayerInteractor>() == null)

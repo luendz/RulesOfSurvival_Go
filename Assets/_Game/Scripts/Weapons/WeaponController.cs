@@ -99,6 +99,8 @@ namespace ROS.Game.Weapons
         private Coroutine _reloadRoutine;
         private float _spreadBloom;
         private float _lastShotTime = -999f;
+        private bool _usesExternalShotDirection;
+        private Vector3 _externalShotDirection;
 
         public void DisableForElimination()
         {
@@ -350,6 +352,48 @@ namespace ROS.Game.Weapons
             return true;
         }
 
+        public bool TryFireAt(Vector3 worldPoint)
+        {
+            EnsureReferences();
+
+            if (!isActiveAndEnabled ||
+                definition == null ||
+                IsReloading ||
+                Time.time < _nextShotTime ||
+                (equipment != null &&
+                 equipment.EquippedWeapon != this))
+            {
+                return false;
+            }
+
+            if (AmmoInMagazine <= 0)
+            {
+                TryReload();
+                return false;
+            }
+
+            Vector3 origin = GetShotOrigin();
+            Vector3 direction = worldPoint - origin;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            _usesExternalShotDirection = true;
+            _externalShotDirection = direction.normalized;
+
+            try
+            {
+                FireOneShot();
+            }
+            finally
+            {
+                _usesExternalShotDirection = false;
+            }
+
+            return true;
+        }
+
         private void FireOneShot()
         {
             AmmoInMagazine--;
@@ -456,6 +500,11 @@ namespace ROS.Game.Weapons
 
         private Vector3 GetShotDirection(Vector3 origin)
         {
+            if (_usesExternalShotDirection)
+            {
+                return _externalShotDirection;
+            }
+
             if (aimController != null)
             {
                 return aimController.GetDirectionFrom(origin);
@@ -548,19 +597,17 @@ namespace ROS.Game.Weapons
             float spreadRadius = Mathf.Tan(spreadDegrees * Mathf.Deg2Rad);
             Vector2 spread = UnityEngine.Random.insideUnitCircle * spreadRadius;
 
-            Vector3 right;
-            Vector3 up;
-
-            if (aimCamera != null)
-            {
-                right = aimCamera.transform.right;
-                up = aimCamera.transform.up;
-            }
-            else
-            {
-                right = transform.right;
-                up = transform.up;
-            }
+            Vector3 orientationUp =
+                Mathf.Abs(Vector3.Dot(direction.normalized, Vector3.up)) >
+                0.98f
+                    ? Vector3.forward
+                    : Vector3.up;
+            Quaternion orientation = Quaternion.LookRotation(
+                direction,
+                orientationUp
+            );
+            Vector3 right = orientation * Vector3.right;
+            Vector3 up = orientation * Vector3.up;
 
             return (
                 direction +

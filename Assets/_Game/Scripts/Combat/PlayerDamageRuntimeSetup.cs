@@ -1,3 +1,4 @@
+using ROS.Game.AI;
 using ROS.Game.Character;
 using ROS.Game.Input;
 using ROS.Game.UI;
@@ -39,6 +40,8 @@ namespace ROS.Game.Combat
                     continue;
                 }
 
+                bool isBot = BattleRoyaleBotController.IsBot(health);
+
                 if (health.GetComponent<ProtectiveEquipment>() == null)
                 {
                     health.gameObject.AddComponent<ProtectiveEquipment>();
@@ -60,7 +63,8 @@ namespace ROS.Game.Combat
                     health.gameObject.AddComponent<FallDamageReceiver>();
                 }
 
-                if (health.GetComponent<PlayerInputReader>() != null &&
+                if (!isBot &&
+                    health.GetComponent<PlayerInputReader>() != null &&
                     health.GetComponent<CombatFeedbackPresenter>() == null)
                 {
                     health.gameObject.AddComponent<CombatFeedbackPresenter>();
@@ -68,6 +72,7 @@ namespace ROS.Game.Combat
 
                 if (SceneManager.GetActiveScene().name ==
                         "07_BattleRoyaleTest" &&
+                    !isBot &&
                     health.GetComponent<PlayerInputReader>() != null &&
                     health.GetComponent<DamageDebugControls>() == null)
                 {

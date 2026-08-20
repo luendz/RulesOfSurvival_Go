@@ -1,3 +1,4 @@
+using ROS.Game.AI;
 using ROS.Game.Combat;
 using UnityEngine;
 using UnityEngine.UI;
@@ -51,7 +52,7 @@ namespace ROS.Game.UI
         {
             if (health == null)
             {
-                health = FindFirstObjectByType<Health>();
+                health = BattleRoyaleBotController.FindLocalPlayerHealth();
             }
         }
 

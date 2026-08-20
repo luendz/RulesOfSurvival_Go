@@ -42,6 +42,7 @@ namespace ROS.Game.Input
         public int WeaponScrollDirection { get; private set; }
 
         public bool UiBlocked { get; private set; }
+        public bool UsesExternalControl { get; private set; }
 
         private InputAction _move;
         private InputAction _look;
@@ -209,6 +210,11 @@ namespace ROS.Game.Input
 
         private void OnEnable()
         {
+            if (UsesExternalControl)
+            {
+                return;
+            }
+
             foreach (InputAction action in Actions())
             {
                 action.Enable();
@@ -227,6 +233,11 @@ namespace ROS.Game.Input
 
         private void Update()
         {
+            if (UsesExternalControl)
+            {
+                return;
+            }
+
             if (UiBlocked)
             {
                 ClearGameplayState();
@@ -322,6 +333,56 @@ namespace ROS.Game.Input
             }
 
             ApplyCursorState();
+        }
+
+        public void EnableExternalControl()
+        {
+            UsesExternalControl = true;
+            UiBlocked = false;
+
+            foreach (InputAction action in Actions())
+            {
+                action.Disable();
+            }
+
+            ClearGameplayState();
+        }
+
+        public void ApplyExternalControl(
+            Vector2 move,
+            bool sprint,
+            bool aim,
+            bool fire = false,
+            bool jump = false,
+            bool reload = false
+        )
+        {
+            if (!UsesExternalControl)
+            {
+                EnableExternalControl();
+            }
+
+            Move = Vector2.ClampMagnitude(move, 1f);
+            Look = Vector2.zero;
+            LookFromMouse = false;
+            SprintHeld = sprint;
+            AimHeld = aim;
+            FireHeld = fire;
+            JumpPressed = jump;
+            ReloadPressed = reload;
+            CrouchPressed = false;
+            PronePressed = false;
+            FireModePressed = false;
+            InteractPressed = false;
+            FreeLookHeld = false;
+            LeanLeftHeld = false;
+            LeanRightHeld = false;
+            ShoulderSwitchPressed = false;
+            WeaponSlot1Pressed = false;
+            WeaponSlot2Pressed = false;
+            WeaponSlot3Pressed = false;
+            HolsterWeaponPressed = false;
+            WeaponScrollDirection = 0;
         }
 
         private void ApplyCursorState()

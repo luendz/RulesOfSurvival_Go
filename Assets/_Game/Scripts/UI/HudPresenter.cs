@@ -1,3 +1,4 @@
+using ROS.Game.AI;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
 using ROS.Game.Core;
@@ -76,14 +77,29 @@ namespace ROS.Game.UI
 
         private void EnsureReferences()
         {
+            if (input == null)
+            {
+                input = GetComponent<PlayerInputReader>();
+            }
+
+            if (input == null)
+            {
+                input = BattleRoyaleBotController.FindLocalPlayerInput();
+            }
+
             if (health == null)
             {
                 health = GetComponent<Health>();
             }
 
+            if (health == null && input != null)
+            {
+                health = input.GetComponent<Health>();
+            }
+
             if (health == null)
             {
-                health = FindFirstObjectByType<Health>();
+                health = BattleRoyaleBotController.FindLocalPlayerHealth();
             }
 
             if (equipment == null)
@@ -93,17 +109,14 @@ namespace ROS.Game.UI
 
             if (equipment == null)
             {
+                equipment = input != null
+                    ? input.GetComponent<WeaponEquipmentController>()
+                    : null;
+            }
+
+            if (equipment == null)
+            {
                 equipment = FindFirstObjectByType<WeaponEquipmentController>();
-            }
-
-            if (input == null)
-            {
-                input = GetComponent<PlayerInputReader>();
-            }
-
-            if (input == null)
-            {
-                input = FindFirstObjectByType<PlayerInputReader>();
             }
 
             if (aim == null)
@@ -124,7 +137,9 @@ namespace ROS.Game.UI
 
             if (parachute == null)
             {
-                parachute = FindFirstObjectByType<ParachuteController>();
+                parachute = input != null
+                    ? input.GetComponent<ParachuteController>()
+                    : null;
             }
         }
 

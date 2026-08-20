@@ -1,3 +1,4 @@
+using ROS.Game.AI;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
 using UnityEngine;
@@ -45,9 +46,7 @@ namespace ROS.Game.Core
             }
 
             PlayerInputReader localInput =
-                FindFirstObjectByType<
-                    PlayerInputReader
-                >();
+                BattleRoyaleBotController.FindLocalPlayerInput();
 
             Health localHealth =
                 localInput != null

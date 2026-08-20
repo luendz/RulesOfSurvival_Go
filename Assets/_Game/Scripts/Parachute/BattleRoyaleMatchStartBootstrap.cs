@@ -1,3 +1,4 @@
+using ROS.Game.AI;
 using ROS.Game.BattleRoyale;
 using ROS.Game.CameraSystem;
 using ROS.Game.Core;
@@ -130,6 +131,17 @@ namespace ROS.Game.Parachute
                 RouteEnd,
                 3f,
                 28f
+            );
+
+            BattleRoyaleBotDirector botDirector =
+                flowObject.AddComponent<BattleRoyaleBotDirector>();
+            botDirector.Configure(
+                input.gameObject,
+                airplane,
+                manager,
+                parachutePrefab,
+                sequence,
+                BattleRoyaleBotDirector.DefaultBotCount
             );
 
             MatchStartHud hud = flowObject.AddComponent<MatchStartHud>();
