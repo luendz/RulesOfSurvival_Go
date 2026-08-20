@@ -5,4 +5,5 @@ namespace ROS.Game.Core
     public enum MatchState { WaitingPlayers, Warmup, Plane, Playing, FinalCircle, Finished }
     public enum WeaponFireMode { Single, Burst, Auto }
     public enum ItemType { Weapon, Ammo, Healing, Armor, Helmet, Backpack, Throwable, Attachment, Misc }
+    public enum DataConfidence { Unknown, Prototype, Verified, Community, Estimated, Contradictory }
 }

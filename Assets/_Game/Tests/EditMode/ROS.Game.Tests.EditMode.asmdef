@@ -1,0 +1,21 @@
+{
+  "name": "ROS.Game.Tests.EditMode",
+  "rootNamespace": "ROS.Game.Tests.EditMode",
+  "references": [
+    "ROS.Game"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

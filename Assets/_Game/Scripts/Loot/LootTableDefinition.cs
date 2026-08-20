@@ -63,9 +63,23 @@ namespace ROS.Game.Loot
 
         public bool TryPick(out LootEntry selected)
         {
+            return TryPickFromNormalizedRoll(
+                UnityEngine.Random.value,
+                out selected
+            );
+        }
+
+        public bool TryPickFromNormalizedRoll(
+            float normalizedRoll,
+            out LootEntry selected)
+        {
             selected = default;
 
-            if (entries == null || entries.Length == 0)
+            if (
+                float.IsNaN(normalizedRoll) ||
+                entries == null ||
+                entries.Length == 0
+            )
             {
                 return false;
             }
@@ -88,7 +102,8 @@ namespace ROS.Game.Loot
             }
 
             float roll =
-                UnityEngine.Random.value * totalWeight;
+                Mathf.Clamp01(normalizedRoll) *
+                totalWeight;
 
             LootEntry fallback = default;
             bool hasFallback = false;

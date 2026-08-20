@@ -20,6 +20,10 @@ Abra esta carpeta desde Unity Hub usando Unity 6000.3.11f1. No es necesario vers
 
 Use las escenas de `_Game/Scenes` para validar cada sistema de forma aislada antes de integrarlo en una partida completa.
 
+## Pruebas automatizadas
+
+El proyecto incluye pruebas EditMode y PlayMode en `Assets/_Game/Tests`. Se ejecutan desde `Window > General > Test Runner` en Unity. Los contratos y el alcance inicial están documentados en `Docs/Diseno/Base_Pruebas_y_Contratos.md`.
+
 ## Controles (equipo de armas)
 
 - `1` — equipar arma primaria slot 1

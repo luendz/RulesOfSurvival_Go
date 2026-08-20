@@ -4,12 +4,18 @@ using UnityEngine;
 namespace ROS.Game.Weapons
 {
     [CreateAssetMenu(menuName = "ROS/Weapons/Weapon Definition", fileName = "Weapon_")]
-    public sealed class WeaponDefinition : ScriptableObject
+    public sealed class WeaponDefinition :
+        ScriptableObject,
+        IGameDataDefinition
     {
         [Header("Identity")]
         public string weaponId = "rifle_001";
         public string displayName = "Prototype Rifle";
         public WeaponFireMode fireMode = WeaponFireMode.Auto;
+
+        [Header("Data Provenance")]
+        public DataConfidence dataConfidence =
+            DataConfidence.Prototype;
 
         [Header("Ballistics")]
         [Min(1f)] public float damage = 28f;
@@ -45,5 +51,10 @@ namespace ROS.Game.Weapons
         // Kept for compatibility with older assets/tools. New combat code uses
         // hipSpreadDegrees and adsSpreadDegrees instead.
         [HideInInspector] public float spreadDegrees = 0.9f;
+
+        public string StableId => weaponId;
+
+        public DataConfidence Confidence =>
+            dataConfidence;
     }
 }

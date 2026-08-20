@@ -1,0 +1,19 @@
+{
+  "name": "ROS.Game.Tests.PlayMode",
+  "rootNamespace": "ROS.Game.Tests.PlayMode",
+  "references": [
+    "ROS.Game"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

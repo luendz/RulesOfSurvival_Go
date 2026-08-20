@@ -8,7 +8,8 @@ namespace ROS.Game.Inventory
         fileName = "Item_"
     )]
     public sealed class InventoryItemDefinition :
-        ScriptableObject
+        ScriptableObject,
+        IGameDataDefinition
     {
         [Header("Identity")]
         public string itemId = "item_001";
@@ -17,6 +18,10 @@ namespace ROS.Game.Inventory
 
         public ItemType itemType =
             ItemType.Misc;
+
+        [Header("Data Provenance")]
+        public DataConfidence dataConfidence =
+            DataConfidence.Prototype;
 
         [Header("Inventory")]
         [Min(1)]
@@ -39,5 +44,10 @@ namespace ROS.Game.Inventory
 
         public Vector3 worldScale =
             Vector3.one;
+
+        public string StableId => itemId;
+
+        public DataConfidence Confidence =>
+            dataConfidence;
     }
 }
