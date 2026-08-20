@@ -1,0 +1,299 @@
+LISTA DE ESTADO DE IMPLEMENTACION - RULES OF SURVIVAL
+====================================================
+
+Actualizado: 20 de agosto de 2026
+Base revisada: commit caa9d55 (20 bots autonomos)
+
+Leyenda:
+[OK]        Implementado en el proyecto actual.
+[PARCIAL]   Existe una base funcional, pero faltan requisitos del punto.
+[PENDIENTE] Todavia no se ha implementado.
+
+
+0. BASE DE PRUEBAS Y CONTRATOS DE DATOS [PARCIAL]
+Rama realizada: codex/base-pruebas-y-contratos
+
+[OK] Pruebas EditMode.
+[OK] Pruebas PlayMode.
+[OK] Pruebas para dano, inventario, stacks y capacidad.
+[OK] Pruebas para seleccion e interaccion de loot.
+[OK] Pruebas del flujo de Battle Royale y Safe Zone.
+[PARCIAL] Integracion determinista creada mediante pruebas PlayMode; falta una
+          escena minima independiente dedicada exclusivamente a integracion.
+[OK] Identificadores estables para datos, objetos y armas.
+[OK] DataConfidence para datos verificados, comunitarios, estimados,
+     contradictorios y de prototipo.
+[OK] Textos principales corregidos: AVION, DANO y otros caracteres espanoles.
+
+
+1. ESTADO DE MUERTE Y BLOQUEO DEL JUGADOR [PARCIAL]
+Rama realizada: codex/muerte-eliminacion-fin-partida
+
+[OK] PlayerLifeState y estado Dead.
+[OK] Conexion con Health.Died.
+[OK] Bloqueo de movimiento, salto y posturas al morir.
+[OK] Bloqueo de interaccion, disparo, recarga y cambio de arma.
+[OK] Cancelacion de recargas activas.
+[PENDIENTE] Cancelacion de consumibles activos; el sistema de consumibles aun
+            no esta implementado.
+[OK] Estado de animacion de muerte y pose provisional de respaldo.
+[OK] Camara de eliminacion.
+[OK] Morir por disparo o Safe Zone deja al jugador inactivo.
+
+
+2. ELIMINACIONES, RESULTADOS Y VICTORIA [PARCIAL]
+Rama realizada: codex/muerte-eliminacion-fin-partida
+
+[PARCIAL] DamageInfo contiene atacante, tipo de dano y zona corporal. La
+          referencia explicita al arma y al equipo aun no forma parte del
+          contrato.
+[OK] Registro de killer y eliminaciones.
+[OK] Calculo de posicion final.
+[OK] Proteccion contra el registro duplicado de una muerte.
+[OK] Declaracion de ganador.
+[OK] Pantalla de eliminacion, victoria y resultados.
+[OK] Contrato y generacion de caja de loot al morir.
+[OK] La partida termina una sola vez cuando queda un superviviente.
+
+
+3. DANO COMPLETO, HITBOXES Y PROTECCION [PARCIAL]
+Rama realizada: codex/sistema-dano-completo
+
+[OK] Dano de bala, explosion, caida y zona.
+[OK] Hitboxes de cabeza, torso, brazos y piernas.
+[OK] Multiplicadores de dano configurables por zona.
+[PARCIAL] Casco y chaleco se definen mediante InventoryItemDefinition y niveles;
+          faltan ArmorDefinition y HelmetDefinition independientes.
+[OK] Cascos y chalecos de nivel 1, 2 y 3.
+[OK] Durabilidad y absorcion separadas para casco y chaleco.
+[PARCIAL] Eventos e interfaz de impactos e hitmarker disponibles; faltan sangre
+          y un indicador direccional de dano completo.
+[OK] Pruebas deterministas del sistema de dano.
+
+
+4. INVENTARIO, EQUIPAMIENTO Y MOCHILAS [PARCIAL]
+Ramas relacionadas: codex/loot-interaccion-completo y
+codex/armas-por-tipo-loot
+
+[PARCIAL] Existen dos slots primarios, secundaria, casco, chaleco y mochila.
+          Faltan slots finales de melee y granadas.
+[OK] Capacidad base y capacidad adicional por mochila.
+[OK] Mochilas nivel 1, 2 y 3.
+[OK] Equipar y reemplazar armas, casco, chaleco y mochila.
+[OK] Se impide recoger equipamiento de nivel inferior al equipado.
+[PARCIAL] Transferencia y manejo parcial de cantidades; falta una interfaz final
+          para dividir stacks y tirar cantidades concretas.
+[PENDIENTE] Las armas todavia usan reserva de municion propia y no consumen la
+            municion almacenada en InventoryComponent.
+[OK] No se pierde contenido al intentar cambiar a una mochila inferior porque
+     el cambio queda bloqueado.
+
+
+5. LOOT DEL MUNDO Y CAJA DE MUERTE [OK]
+Ramas realizadas: codex/caja-loot-jugador-eliminado y
+codex/loot-interaccion-completo
+
+[OK] Contenedor de objetos reutilizable.
+[OK] Transferencia del inventario al morir.
+[OK] Ventana para revisar y recoger loot de cajas.
+[OK] Tirar objetos y armas al mundo con su modelo 3D.
+[OK] Recogida parcial segun la capacidad disponible.
+[OK] Spawn de armas, municion, proteccion, mochilas y objetos de curacion.
+[OK] Soporte de semilla determinista en el spawner de loot.
+[OK] Caja de muerte 3D flotante, animada y sin halo.
+[OK] Transferencias protegidas contra duplicaciones y perdidas.
+
+
+6. PRIMERA ARMA VERTICAL COMPLETA: M4A1 [PARCIAL]
+Ramas relacionadas: codex/sistema-armas-completo y
+codex/armas-por-tipo-loot
+
+[OK] Definicion, prefab, modelo, materiales y pickup de M4A1.
+[OK] Modos Single, Burst y Auto.
+[PENDIENTE] Consumo de municion de rifle desde el inventario.
+[OK] Recarga tactica y recarga con cargador vacio con tiempos diferenciados.
+[OK] Recoil y dispersion configurables en WeaponDefinition.
+[OK] Cadencia expresada consistentemente como disparos por segundo.
+[OK] Fogonazo, trazado de disparo, impactos e hitmarker provisional.
+[OK] Atribucion de eliminacion y drop del arma al morir.
+[PARCIAL] El circuito completo funciona salvo la integracion de municion con el
+          inventario.
+
+
+7. CONSUMIBLES [PENDIENTE]
+
+[PARCIAL] Existen datos y loot provisional para vendaje y botiquin.
+[PENDIENTE] ConsumableDefinition funcional.
+[PENDIENTE] Tiempo de uso y barra de progreso.
+[PENDIENTE] Limites configurables de curacion.
+[PENDIENTE] Cancelacion por disparo, dano o movimiento.
+[PENDIENTE] Sistema de energia para bebidas.
+[PENDIENTE] Consumo de una unidad solamente al completar la accion.
+
+
+8. HUD INTEGRADO [PARCIAL]
+
+[PARCIAL] Existen paneles Canvas para vida, armadura, arma, modo de disparo,
+          municion, jugadores vivos y Safe Zone.
+[OK] Panel de loot cercano e interaccion.
+[OK] Panel de caja de muerte.
+[OK] Pantalla de muerte, victoria y resultados.
+[OK] Hitmarker provisional.
+[PENDIENTE] Direccion visual del dano.
+[PENDIENTE] Kill feed completo.
+[PENDIENTE] Slots y consumible rapido.
+[PENDIENTE] Estado visible de casco, chaleco y mochila en el HUD principal.
+[PARCIAL] El crosshair y algunos datos siguen usando HudPresenter con OnGUI.
+
+
+9. CICLO DE PARTIDA, SAFE ZONE, MAPA Y MINIMAPA [PARCIAL]
+
+[OK] Flujo Waiting -> Warmup -> Plane -> Playing -> FinalCircle -> Finished.
+[PARCIAL] Safe Zone configurable en el controlador actual; falta convertir sus
+          fases en SafeZonePhaseDefinition editables independientes.
+[OK] Circulo actual, dano por fase, temporizador y avisos de zona.
+[OK] Condicion de victoria y ganador.
+[OK] Inicio mediante avion y spawns aereos para jugador y bots.
+[PENDIENTE] Ruta del avion dibujada sobre el mapa.
+[PENDIENTE] Minimapa.
+[PENDIENTE] Mapa completo.
+[PENDIENTE] Brujula.
+
+
+10. AVION, CAIDA Y PARACAIDAS [PARCIAL]
+Ramas realizadas: codex/paracaidas-inicio-partida,
+codex/integrar-paracaidas-battle-royale y ramas de ajustes visuales
+
+[PENDIENTE] Ruta de avion visible en un mapa o minimapa.
+[OK] Entrada del jugador al avion.
+[OK] Salto voluntario y expulsion automatica al final de la ruta.
+[OK] Caida libre controlable.
+[OK] Apertura manual y automatica del paracaidas.
+[OK] Modelo visual de paracaidas.
+[PARCIAL] Estados de animacion conectados; faltan animaciones aereas finales y
+          sonido de paracaidas.
+[OK] Aterrizaje y transicion a locomocion.
+[OK] Camara diferenciada para avion y paracaidas.
+[OK] Efectos de jets, luces y estelas de viento del avion.
+
+
+11. PRIMER SECTOR DE MAPA JUGABLE [PARCIAL]
+
+[PARCIAL] Existe una zona greybox para probar movimiento, combate y loot.
+[PARCIAL] Existen coberturas y volumenes geometricos provisionales.
+[PENDIENTE] Casa pequena y casa grande terminadas.
+[PENDIENTE] Interiores y colisiones finales.
+[PENDIENTE] Puertas simples.
+[PARCIAL] Puntos de loot disponibles en el area de pruebas.
+[PENDIENTE] Validacion definitiva de escala del primer POI.
+
+
+12. PRUEBA MULTIJUGADOR TEMPRANA [PENDIENTE]
+
+[PARCIAL] Existe NetworkGameFacade como limite provisional de arquitectura.
+[PENDIENTE] Netcode for GameObjects y Unity Transport.
+[PENDIENTE] Autoridad real del servidor.
+[PENDIENTE] Sincronizacion de movimiento, posturas, armas y disparos.
+[PENDIENTE] Prueba local con dos jugadores.
+[PENDIENTE] Multiplayer Play Mode.
+[PENDIENTE] Simulacion de latencia y perdida de paquetes.
+[PENDIENTE] Pruebas con 4 y 16 clientes.
+[OK] No se ha contratado hosting ni servicios de pago.
+
+
+13. EXPANSION DE CONTENIDO [PARCIAL]
+
+[OK] M4A1 funcional.
+[OK] MP7 funcional y disponible en loot.
+[OK] M1887 funcional y disponible en loot.
+[OK] Desert Eagle funcional y disponible en loot.
+[OK] AWM funcional y disponible en loot.
+[PARCIAL] Modelo y materiales de M14EBR disponibles; falta su integracion como
+          arma funcional y pickup.
+[PARCIAL] Datos iniciales de accesorios disponibles; falta el sistema completo
+          de montaje y efectos de accesorios.
+[PARCIAL] Granada de fragmentacion disponible como objeto de loot; falta el
+          sistema completo para equipar, lanzar y detonar granadas.
+
+
+14. BOTS PARA PRUEBAS [PARCIAL]
+Rama realizada: codex/bots-battle-royale
+
+[OK] 20 bots clonados desde el personaje local con modelo y animaciones.
+[OK] Saltos escalonados desde el avion.
+[OK] Destinos de aterrizaje distribuidos por el mapa.
+[OK] Exploracion, deteccion y persecucion basicas.
+[OK] Apuntado, disparo y recarga autonomos.
+[OK] Los bots permiten completar una partida local sin mas jugadores humanos.
+[PENDIENTE] Movimiento especifico hacia la Safe Zone.
+[PENDIENTE] Busqueda y uso de coberturas.
+[PENDIENTE] Precision y tiempo de reaccion expuestos como configuracion.
+[PENDIENTE] AI Navigation, NavMesh, obstaculos y enlaces.
+[PENDIENTE] Autoridad de servidor; depende del punto multijugador.
+
+
+15. VEHICULOS [PARCIAL]
+
+[OK] Prototipo basico para entrar y salir del asiento del conductor.
+[PARCIAL] Movimiento fisico provisional con aceleracion, giro y frenado.
+[PENDIENTE] Cambio entre multiples asientos.
+[PENDIENTE] Suspension y fisica final.
+[PENDIENTE] Vida, dano por colisiones y explosion.
+[PENDIENTE] Combustible.
+[PENDIENTE] Camara y HUD de vehiculos.
+[PENDIENTE] Sincronizacion de red.
+[OK] Sedan colocado actualmente como modelo decorativo sin interaccion.
+
+
+16. MUNDO COMPLETO Y AUDIO [PENDIENTE]
+
+[PARCIAL] Greybox y piso verde degradado disponibles como base visual.
+[PENDIENTE] Expansion del mapa por sectores y POIs.
+[PENDIENTE] Terreno, agua, carreteras y edificios finales.
+[PENDIENTE] Distribucion definitiva de loot.
+[PENDIENTE] LOD, culling y streaming.
+[PENDIENTE] Pasos por superficie.
+[PARCIAL] Efectos visuales basicos de armas, impactos, avion y paracaidas.
+[PENDIENTE] Audio final de armas, recargas, vehiculos, zona, avion, paracaidas
+            y UI.
+[PENDIENTE] Indicadores direccionales conectados al audio real.
+
+
+17. LOBBY Y MATCHMAKING [PENDIENTE]
+
+[PARCIAL] Existe un menu local previo para iniciar la partida Battle Royale.
+[PENDIENTE] Crear y unirse a sesiones.
+[PENDIENTE] Modo Solo conectado a sesiones.
+[PENDIENTE] Duo y Squad.
+[PENDIENTE] Ready, carga de mapa y regreso al lobby.
+[PENDIENTE] Perfil y estadisticas.
+[PENDIENTE] Matchmaking remoto.
+
+
+18. OPTIMIZACION Y PREPARACION FINAL [PENDIENTE]
+
+[PENDIENTE] Pooling.
+[PENDIENTE] Perfilado de CPU, GPU y memoria.
+[PENDIENTE] Pruebas de red y carga.
+[PENDIENTE] Interest management.
+[PENDIENTE] LOD y occlusion finales.
+[PENDIENTE] Quality Settings definitivos.
+[PARCIAL] Existe una utilidad inicial para build de servidor dedicado.
+[PENDIENTE] Builds finales de cliente y servidor validadas.
+[PENDIENTE] Correccion, balance y pulido final.
+
+
+RESUMEN GENERAL
+---------------
+
+[OK] Punto completamente cubierto: 5.
+[PARCIAL] Puntos con base funcional: 0, 1, 2, 3, 4, 6, 8, 9, 10, 11, 13,
+          14 y 15.
+[PENDIENTE o inicial] Puntos principales por desarrollar: 7, 12, 16, 17 y 18.
+
+Prioridades inmediatas sugeridas segun las dependencias pendientes:
+1. Integrar municion con InventoryComponent y cerrar el punto 6.
+2. Implementar consumibles y su cancelacion.
+3. Sustituir por completo el HUD OnGUI provisional.
+4. Crear minimapa, mapa y brujula.
+5. Crear el primer POI jugable antes de avanzar al multijugador.
