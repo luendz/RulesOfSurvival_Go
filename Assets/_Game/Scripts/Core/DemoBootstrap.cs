@@ -1,9 +1,9 @@
 using ROS.Game.AI;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
-using UnityEngine;
 using ROS.Game.Input;
 using ROS.Game.UI;
+using UnityEngine;
 
 namespace ROS.Game.Core
 {
@@ -23,7 +23,13 @@ namespace ROS.Game.Core
             if (matchManager == null) matchManager = FindFirstObjectByType<BattleRoyaleManager>();
             if (players == null || players.Length == 0) players = FindObjectsByType<Health>(FindObjectsSortMode.None);
             if (matchManager == null) return;
-            foreach (var player in players) if (player != null) matchManager.RegisterPlayer(player);
+            foreach (var player in players)
+            {
+                if (player == null) continue;
+                matchManager.RegisterPlayer(player);
+                if (player.GetComponent<CharacterDeathDissolver>() == null)
+                    player.gameObject.AddComponent<CharacterDeathDissolver>();
+            }
             EnsureMatchResultPresenter();
             if (beginOnStart) matchManager.BeginMatch();
         }

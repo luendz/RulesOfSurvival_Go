@@ -6,6 +6,7 @@ using ROS.Game.Interaction;
 using ROS.Game.Parachute;
 using ROS.Game.Teams;
 using ROS.Game.UI;
+using ROS.Game.Combat;
 using ROS.Game.Weapons;
 using ROS.Game.World;
 using UnityEngine;
@@ -107,6 +108,7 @@ namespace ROS.Game.AI
 
                 BotHealthBar.Attach(botObject);
                 ApplyBotDamageScale(botObject, 0.20f);
+                botObject.AddComponent<CharacterDeathDissolver>();
 
                 _bots.Add(bot);
             }

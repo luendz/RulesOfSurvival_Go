@@ -9,11 +9,12 @@ namespace ROS.Game.UI
     {
         private const float VerticalOffset = 2.5f;
         private const float BarWidth       = 1.1f;
-        private const float BarHeight      = 0.13f;
+        private const float BarHeight      = 0.12f;
 
         private Health    _health;
         private Transform _root;
-        private RawImage  _fill;
+        private Transform _fillTransform;
+        private RawImage  _fillImage;
         private Camera    _cam;
 
         public static void Attach(GameObject botRoot)
@@ -53,31 +54,27 @@ namespace ROS.Game.UI
                 _root.gameObject.SetActive(alive);
         }
 
-        private void OnHealthChanged(float current, float max)
-        {
-            Refresh();
-        }
+        private void OnHealthChanged(float current, float max) => Refresh();
 
         private void Refresh()
         {
-            if (_fill == null || _health == null) return;
+            if (_fillTransform == null || _health == null) return;
 
             float t = _health.MaxHealth > 0f
                 ? Mathf.Clamp01(_health.CurrentHealth / _health.MaxHealth)
                 : 0f;
 
-            _fill.rectTransform.anchorMax = new Vector2(
-                t,
-                _fill.rectTransform.anchorMax.y
-            );
+            // Escalar desde el borde izquierdo (pivot = left-center)
+            Vector3 s = _fillTransform.localScale;
+            s.x = Mathf.Max(0f, t);
+            _fillTransform.localScale = s;
 
-            Color color;
-            if (t > 0.5f)
-                color = Color.Lerp(Color.yellow, Color.green, (t - 0.5f) * 2f);
-            else
-                color = Color.Lerp(Color.red, Color.yellow, t * 2f);
-
-            _fill.color = color;
+            if (_fillImage != null)
+            {
+                _fillImage.color = t > 0.5f
+                    ? Color.Lerp(Color.yellow, Color.green, (t - 0.5f) * 2f)
+                    : Color.Lerp(Color.red, Color.yellow, t * 2f);
+            }
         }
 
         private void BuildCanvas()
@@ -88,35 +85,38 @@ namespace ROS.Game.UI
             _root = canvasObj.transform;
 
             Canvas canvas = canvasObj.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.sortingOrder = 5;
+            canvas.renderMode   = RenderMode.WorldSpace;
+            canvas.sortingOrder = 10;
 
             RectTransform cr = canvasObj.GetComponent<RectTransform>();
             cr.sizeDelta = new Vector2(BarWidth, BarHeight);
 
-            // fondo oscuro
-            GameObject bgObj = new GameObject("BG");
+            // Fondo oscuro
+            GameObject bgObj  = new GameObject("BG");
             bgObj.transform.SetParent(canvasObj.transform, false);
-            RawImage bg = bgObj.AddComponent<RawImage>();
-            bg.texture = Texture2D.whiteTexture;
-            bg.color   = new Color(0.08f, 0.08f, 0.08f, 0.88f);
+            RawImage bg       = bgObj.AddComponent<RawImage>();
+            bg.texture        = Texture2D.whiteTexture;
+            bg.color          = new Color(0.1f, 0.1f, 0.1f, 0.9f);
             RectTransform bgr = bgObj.GetComponent<RectTransform>();
-            bgr.anchorMin = Vector2.zero;
-            bgr.anchorMax = Vector2.one;
-            bgr.offsetMin = Vector2.zero;
-            bgr.offsetMax = Vector2.zero;
+            bgr.anchorMin     = Vector2.zero;
+            bgr.anchorMax     = Vector2.one;
+            bgr.offsetMin     = Vector2.zero;
+            bgr.offsetMax     = Vector2.zero;
 
-            // relleno de vida
-            GameObject fillObj = new GameObject("Fill");
+            // Relleno: pivot en el borde izquierdo, sin offsets
+            // localScale.x controla qué fracción se muestra
+            GameObject fillObj  = new GameObject("Fill");
             fillObj.transform.SetParent(canvasObj.transform, false);
-            _fill         = fillObj.AddComponent<RawImage>();
-            _fill.texture = Texture2D.whiteTexture;
-            _fill.color   = Color.green;
-            RectTransform fr = fillObj.GetComponent<RectTransform>();
-            fr.anchorMin = new Vector2(0f, 0.12f);
-            fr.anchorMax = new Vector2(1f, 0.88f);
-            fr.offsetMin = new Vector2(2f, 0f);
-            fr.offsetMax = new Vector2(-2f, 0f);
+            _fillImage            = fillObj.AddComponent<RawImage>();
+            _fillImage.texture    = Texture2D.whiteTexture;
+            _fillImage.color      = Color.green;
+            RectTransform fr      = fillObj.GetComponent<RectTransform>();
+            fr.pivot              = new Vector2(0f, 0.5f); // pivot izquierdo
+            fr.anchorMin          = Vector2.zero;
+            fr.anchorMax          = Vector2.one;
+            fr.offsetMin          = Vector2.zero;
+            fr.offsetMax          = Vector2.zero;
+            _fillTransform        = fillObj.transform;
         }
     }
 }
