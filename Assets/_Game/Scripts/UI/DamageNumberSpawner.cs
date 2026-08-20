@@ -62,7 +62,7 @@ namespace ROS.Game.UI
             go.transform.position = origin;
 
             TextMesh tm       = go.AddComponent<TextMesh>();
-            tm.text           = fatal ? $"{amount}!" : amount.ToString();
+            tm.text           = amount.ToString();
             tm.fontSize       = fatal ? 46 : 36;
             tm.characterSize  = fatal ? 0.10f : 0.08f;
             tm.color          = color;

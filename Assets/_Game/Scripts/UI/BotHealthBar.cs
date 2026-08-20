@@ -66,13 +66,19 @@ namespace ROS.Game.UI
 
         private void OnHealthChanged(float current, float max) => Refresh();
 
-        private void OnDied(ROS.Game.Combat.DamageInfo _)
+        public void ForceDestroy()
         {
             if (_root != null)
             {
                 Destroy(_root.gameObject);
                 _root = null;
             }
+            enabled = false;
+        }
+
+        private void OnDied(ROS.Game.Combat.DamageInfo _)
+        {
+            ForceDestroy();
         }
 
         private void Refresh()

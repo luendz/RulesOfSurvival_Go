@@ -36,13 +36,18 @@ namespace ROS.Game.World
             new Color(0.65f, 0.9f, 1f, 0.55f);
         [SerializeField] private float jetLightIntensity = 5.5f;
         [SerializeField] private float navigationLightIntensity = 3.5f;
-        [SerializeField] private float windFadeSpeed = 1.35f;
+        [SerializeField] private float windSweepPeriod = 0.42f;
+        [SerializeField] private float windSweepHalf   = 2.8f;
 
         private readonly List<ParticleSystem> _jetParticles =
             new List<ParticleSystem>();
         private readonly List<Light> _jetLights = new List<Light>();
         private readonly List<TrailRenderer> _windLines =
             new List<TrailRenderer>();
+        private readonly List<Transform> _windLineTransforms =
+            new List<Transform>();
+        private readonly List<Vector3> _windLineOrigins =
+            new List<Vector3>();
         private readonly List<Material> _runtimeMaterials =
             new List<Material>();
 
@@ -95,7 +100,7 @@ namespace ROS.Game.World
                     navigationLightIntensity * navigationPulse;
             }
 
-            UpdateWindLineFade();
+            UpdateWindLines();
         }
 
         private void BuildEffects()
@@ -264,8 +269,11 @@ namespace ROS.Game.World
             line.transform.SetParent(parent, false);
             line.transform.localPosition = localPosition;
 
+            _windLineTransforms.Add(line.transform);
+            _windLineOrigins.Add(localPosition);
+
             TrailRenderer trail = line.AddComponent<TrailRenderer>();
-            trail.time = 0.95f + (index % 3) * 0.12f;
+            trail.time = 0.30f + (index % 3) * 0.05f;
             trail.minVertexDistance = 0.18f;
             trail.widthCurve = new AnimationCurve(
                 new Keyframe(0f, 0.025f),
@@ -282,15 +290,24 @@ namespace ROS.Game.World
             _windLines.Add(trail);
         }
 
-        private void UpdateWindLineFade()
+        private void UpdateWindLines()
         {
+            float sweepHalf = windSweepHalf;
+            float period    = Mathf.Max(0.05f, windSweepPeriod);
+
+            float lineCount = Mathf.Max(1, _windLines.Count);
             for (int i = 0; i < _windLines.Count; i++)
             {
-                float phase = i * 0.73f;
-                float wave = (Mathf.Sin(
-                    Time.time * windFadeSpeed + phase
-                ) + 1f) * 0.5f;
-                float fade = Mathf.SmoothStep(0f, 1f, wave);
+                float phase = i / lineCount;
+                float t     = Mathf.Repeat(Time.time / period + phase, 1f);
+
+                // Barrido lineal: de frente (+sweepHalf) a atrás (-sweepHalf)
+                Vector3 pos  = _windLineOrigins[i];
+                pos.z += Mathf.Lerp(sweepHalf, -sweepHalf, t);
+                _windLineTransforms[i].localPosition = pos;
+
+                // Aparece y desaparece con una campana centrada en t = 0.5
+                float fade = Mathf.SmoothStep(0f, 1f, Mathf.Sin(t * Mathf.PI));
                 _windLines[i].widthMultiplier = fade;
             }
         }

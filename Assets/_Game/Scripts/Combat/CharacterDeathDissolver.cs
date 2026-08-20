@@ -1,4 +1,5 @@
 using ROS.Game.Combat;
+using ROS.Game.UI;
 using UnityEngine;
 
 namespace ROS.Game.Combat
@@ -36,6 +37,9 @@ namespace ROS.Game.Combat
 
         private void HideBodyInstant()
         {
+            BotHealthBar bar = GetComponent<BotHealthBar>();
+            if (bar != null) bar.ForceDestroy();
+
             Collider[] cols = GetComponentsInChildren<Collider>(false);
             foreach (Collider col in cols)
                 if (col != null) col.enabled = false;
