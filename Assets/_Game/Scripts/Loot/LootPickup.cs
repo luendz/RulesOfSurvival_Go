@@ -23,6 +23,8 @@ namespace ROS.Game.Loot
 
         private GameObject _runtimeVisual;
 
+        private GameObject _fallbackVisual;
+
         private GameObject _temporarilyBlockedCollector;
 
         private float _collectableAt;
@@ -30,6 +32,8 @@ namespace ROS.Game.Loot
         public InventoryItemDefinition Item => item;
         public int Amount => amount;
         public bool IsConsumed => _consumed;
+        public bool IsUsingFallbackVisual => _fallbackVisual != null;
+        public GameObject RuntimeVisual => _runtimeVisual;
 
         public string InteractionLabel =>
             item == null
@@ -79,11 +83,17 @@ namespace ROS.Game.Loot
             }
 
             GameObject pickupObject =
-                GameObject.CreatePrimitive(PrimitiveType.Cube);
+                new GameObject();
 
             pickupObject.name = $"Loot_{definition.displayName}";
             pickupObject.transform.position = position;
-            pickupObject.transform.localScale = Vector3.one * 0.35f;
+
+            BoxCollider interactionCollider =
+                pickupObject.AddComponent<BoxCollider>();
+
+            interactionCollider.center = Vector3.up * 0.25f;
+            interactionCollider.size =
+                new Vector3(0.8f, 0.6f, 0.8f);
 
             LootPickup pickup =
                 pickupObject.AddComponent<LootPickup>();
@@ -309,21 +319,20 @@ namespace ROS.Game.Loot
         {
             EnsureVisualRoot();
 
-            if (_runtimeVisual != null)
-            {
-                Destroy(
-                    _runtimeVisual
-                );
-
-                _runtimeVisual = null;
-            }
+            DestroyVisual(ref _runtimeVisual);
+            DestroyVisual(ref _fallbackVisual);
 
             if (
                 item == null ||
-                item.worldModel == null ||
                 visualRoot == null
             )
             {
+                return;
+            }
+
+            if (item.worldModel == null)
+            {
+                CreateFallbackVisual();
                 return;
             }
 
@@ -350,6 +359,55 @@ namespace ROS.Game.Loot
             DisableVisualPhysics(
                 _runtimeVisual
             );
+        }
+
+        private void CreateFallbackVisual()
+        {
+            _fallbackVisual =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Cube
+                );
+
+            _fallbackVisual.name =
+                "Visual_Provisional_Sin_Modelo";
+
+            Transform fallbackTransform =
+                _fallbackVisual.transform;
+
+            fallbackTransform.SetParent(
+                visualRoot,
+                false
+            );
+
+            fallbackTransform.localPosition =
+                Vector3.up * 0.18f;
+            fallbackTransform.localScale =
+                Vector3.one * 0.35f;
+
+            DisableVisualPhysics(
+                _fallbackVisual
+            );
+        }
+
+        private static void DestroyVisual(
+            ref GameObject visual
+        )
+        {
+            if (visual == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(visual);
+            }
+            else
+            {
+                DestroyImmediate(visual);
+            }
+
+            visual = null;
         }
 
         private static void DisableVisualPhysics(

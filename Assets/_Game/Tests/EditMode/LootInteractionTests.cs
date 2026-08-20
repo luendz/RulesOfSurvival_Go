@@ -110,6 +110,65 @@ namespace ROS.Game.Tests.EditMode
             _created.Add(pickups[0].gameObject);
         }
 
+        [Test]
+        public void RuntimePickup_UsesAssignedWorldModelWithoutRootCube()
+        {
+            InventoryItemDefinition item = CreateItem(
+                "backpack_visual",
+                ItemType.Backpack,
+                1f
+            );
+            GameObject model = new GameObject("Backpack_Model");
+            item.worldModel = model;
+            _created.Add(model);
+
+            LootPickup pickup = LootPickup.SpawnRuntime(
+                item,
+                1,
+                Vector3.zero,
+                null,
+                0f
+            );
+            _created.Add(pickup.gameObject);
+
+            Assert.That(pickup.RuntimeVisual, Is.Not.Null);
+            Assert.That(pickup.IsUsingFallbackVisual, Is.False);
+            Assert.That(
+                pickup.GetComponent<MeshRenderer>(),
+                Is.Null
+            );
+            Assert.That(
+                pickup.transform.localScale,
+                Is.EqualTo(Vector3.one)
+            );
+        }
+
+        [Test]
+        public void RuntimePickup_UsesFallbackOnlyWhenWorldModelIsMissing()
+        {
+            InventoryItemDefinition item = CreateItem(
+                "item_without_art",
+                ItemType.Misc,
+                1f
+            );
+
+            LootPickup pickup = LootPickup.SpawnRuntime(
+                item,
+                1,
+                Vector3.zero,
+                null,
+                0f
+            );
+            _created.Add(pickup.gameObject);
+
+            Assert.That(pickup.RuntimeVisual, Is.Null);
+            Assert.That(pickup.IsUsingFallbackVisual, Is.True);
+            Assert.That(
+                pickup.GetComponent<MeshRenderer>(),
+                Is.Null
+            );
+        }
+
         private GameObject CreatePlayer(float capacity)
         {
             GameObject player = new GameObject("Loot_TestPlayer");
