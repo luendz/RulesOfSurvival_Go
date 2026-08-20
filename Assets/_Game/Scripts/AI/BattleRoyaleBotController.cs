@@ -295,11 +295,21 @@ namespace ROS.Game.AI
 
                 float sqr = (candidate.transform.position -
                              transform.position).sqrMagnitude;
-                if (sqr < nearestSqr)
+                if (sqr >= nearestSqr)
                 {
-                    nearestSqr = sqr;
-                    nearest = candidate;
+                    continue;
                 }
+
+                // Solo detectar si hay línea de visión directa (no a través de muros)
+                Vector3 aimPoint =
+                    candidate.transform.position + Vector3.up * 1.25f;
+                if (!HasLineOfSight(candidate, aimPoint))
+                {
+                    continue;
+                }
+
+                nearestSqr = sqr;
+                nearest = candidate;
             }
 
             return nearest;

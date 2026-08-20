@@ -336,13 +336,28 @@ namespace ROS.Game.Editor
                 loot.GetComponent<LootPickup>().Configure(ammo, Random.Range(15, 61));
             }
 
+            var rng = new System.Random(1337);
             for (int i = 0; i < 20; i++)
             {
-                var cover = GameObject.CreatePrimitive(i % 3 == 0 ? PrimitiveType.Cylinder : PrimitiveType.Cube);
-                cover.name = "EnvironmentPlaceholder_REPLACE_ME";
-                Vector2 p = Random.insideUnitCircle * 70f;
-                cover.transform.position = new Vector3(p.x, 1f, p.y);
-                cover.transform.localScale = new Vector3(Random.Range(1f, 4f), Random.Range(1f, 4f), Random.Range(1f, 4f));
+                var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                wall.name = $"Muro_{i + 1:00}";
+                float largo  = (float)(rng.NextDouble() * 5f + 4f);
+                float alto   = 2.8f;
+                float grosor = 0.5f;
+                bool  rotar  = rng.NextDouble() > 0.5;
+                wall.transform.localScale = rotar
+                    ? new Vector3(grosor, alto, largo)
+                    : new Vector3(largo,  alto, grosor);
+                double angle  = rng.NextDouble() * System.Math.PI * 2.0;
+                double radius = System.Math.Sqrt(rng.NextDouble()) * 68.0 + 8.0;
+                wall.transform.position = new Vector3(
+                    (float)(System.Math.Cos(angle) * radius),
+                    alto * 0.5f,
+                    (float)(System.Math.Sin(angle) * radius)
+                );
+                wall.transform.rotation = Quaternion.identity;
+                var box = wall.GetComponent<BoxCollider>();
+                if (box != null) box.isTrigger = false;
             }
 
             Save(scene, "07_BattleRoyaleTest");

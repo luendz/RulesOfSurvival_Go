@@ -129,7 +129,7 @@ namespace ROS.Game.Parachute
                 input,
                 RouteStart,
                 RouteEnd,
-                3f,
+                0f,
                 28f
             );
 
