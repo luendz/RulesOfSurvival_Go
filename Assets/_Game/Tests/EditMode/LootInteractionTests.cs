@@ -299,6 +299,11 @@ namespace ROS.Game.Tests.EditMode
                 Is.Not.Null
             );
             Assert.That(
+                container.GetComponentInChildren<DeathLootHalo>(true)
+                    .HasFloatingModel,
+                Is.True
+            );
+            Assert.That(
                 container.GetComponentsInChildren<Renderer>(true),
                 Is.Not.Empty
             );

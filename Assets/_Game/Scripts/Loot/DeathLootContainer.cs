@@ -269,10 +269,19 @@ namespace ROS.Game.Loot
             visual.transform.localPosition = Vector3.zero;
             visual.transform.localRotation = Quaternion.identity;
 
-            FitModelToContainer(visual);
+            Transform modelRoot =
+                FitModelToContainer(visual);
+
+            DeathLootHalo halo =
+                visual.GetComponent<DeathLootHalo>();
+
+            if (halo != null)
+            {
+                halo.ConfigureFloatingModel(modelRoot);
+            }
         }
 
-        private static void FitModelToContainer(
+        private static Transform FitModelToContainer(
             GameObject visual
         )
         {
@@ -281,7 +290,7 @@ namespace ROS.Game.Loot
 
             if (modelRoot == null)
             {
-                return;
+                return null;
             }
 
             Renderer[] modelRenderers =
@@ -289,7 +298,7 @@ namespace ROS.Game.Loot
 
             if (modelRenderers.Length == 0)
             {
-                return;
+                return modelRoot;
             }
 
             Bounds bounds = modelRenderers[0].bounds;
@@ -305,11 +314,11 @@ namespace ROS.Game.Loot
                 bounds.size.z <= 0.001f
             )
             {
-                return;
+                return modelRoot;
             }
 
             Vector3 targetSize =
-                new Vector3(0.85f, 0.55f, 1f);
+                new Vector3(0.425f, 0.275f, 0.5f);
 
             float scaleFactor = Mathf.Min(
                 targetSize.x / bounds.size.x,
@@ -334,6 +343,8 @@ namespace ROS.Game.Loot
                 targetBottom - bounds.min.y,
                 targetCenter.z - bounds.center.z
             );
+
+            return modelRoot;
         }
     }
 }

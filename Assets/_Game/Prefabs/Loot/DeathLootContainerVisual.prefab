@@ -49,6 +49,9 @@ MonoBehaviour:
   lightIntensity: 0.75
   lightRange: 2
   pulseSpeed: 1.25
+  hoverHeight: 0.12
+  bobAmplitude: 0.035
+  bobSpeed: 1.6
 --- !u!1001 &7580431304684697730
 PrefabInstance:
   m_ObjectHideFlags: 0

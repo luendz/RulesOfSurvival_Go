@@ -22,6 +22,16 @@ namespace ROS.Game.Loot
         [SerializeField]
         private float pulseSpeed = 1.25f;
 
+        [Header("Flotación del modelo")]
+        [SerializeField]
+        private float hoverHeight = 0.12f;
+
+        [SerializeField]
+        private float bobAmplitude = 0.035f;
+
+        [SerializeField]
+        private float bobSpeed = 1.6f;
+
         private readonly List<Transform> _auraLayers =
             new List<Transform>();
 
@@ -32,6 +42,13 @@ namespace ROS.Game.Loot
             new List<Material>();
 
         private Light _haloLight;
+
+        private Transform _floatingModel;
+
+        private Vector3 _floatingBasePosition;
+
+        public bool HasFloatingModel =>
+            _floatingModel != null;
 
         private void Awake()
         {
@@ -60,6 +77,31 @@ namespace ROS.Game.Loot
                 _auraLayers[i].localScale =
                     _baseScales[i] *
                     Mathf.Lerp(0.99f, 1.02f, pulse);
+            }
+
+            if (_floatingModel != null)
+            {
+                float bobOffset =
+                    hoverHeight +
+                    Mathf.Sin(Time.time * bobSpeed) *
+                    bobAmplitude;
+
+                _floatingModel.localPosition =
+                    _floatingBasePosition +
+                    Vector3.up * bobOffset;
+            }
+        }
+
+        public void ConfigureFloatingModel(
+            Transform model
+        )
+        {
+            _floatingModel = model;
+
+            if (_floatingModel != null)
+            {
+                _floatingBasePosition =
+                    _floatingModel.localPosition;
             }
         }
 
