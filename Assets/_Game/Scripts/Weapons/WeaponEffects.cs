@@ -19,8 +19,14 @@ namespace ROS.Game.Weapons
 
         [Header("Impact")]
         [SerializeField] private GameObject impactPrefab;
+        [SerializeField] private GameObject bloodImpactPrefab;
         [SerializeField] private float impactLifetime = 2f;
         [SerializeField] private float impactSurfaceOffset = 0.01f;
+
+        [Header("Impact Audio")]
+        [SerializeField] private AudioSource impactAudioSource;
+        [SerializeField] private AudioClip surfaceImpactClip;
+        [SerializeField] private AudioClip characterImpactClip;
 
         [Header("Bullet Hole")]
         [SerializeField] private GameObject bulletHolePrefab;
@@ -85,7 +91,11 @@ namespace ROS.Game.Weapons
                 Destroy(_runtimeTracerMaterial);
         }
 
-        public void PlayShot(Vector3 hitPoint, Vector3 hitNormal, bool hasHit)
+        public void PlayShot(
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            bool hasHit,
+            bool hitCharacter = false)
         {
             PlayMuzzleFlash();
             PlayTracer(hitPoint);
@@ -93,8 +103,18 @@ namespace ROS.Game.Weapons
             if (!hasHit)
                 return;
 
-            SpawnImpact(hitPoint, hitNormal);
-            SpawnBulletHole(hitPoint, hitNormal);
+            SpawnImpact(
+                hitPoint,
+                hitNormal,
+                hitCharacter
+            );
+
+            PlayImpactSound(hitCharacter);
+
+            if (!hitCharacter)
+            {
+                SpawnBulletHole(hitPoint, hitNormal);
+            }
         }
 
         private void EnsureTracer()
@@ -186,17 +206,41 @@ namespace ROS.Game.Weapons
             _tracerRoutine = null;
         }
 
-        private void SpawnImpact(Vector3 hitPoint, Vector3 hitNormal)
+        private void SpawnImpact(
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            bool hitCharacter)
         {
-            if (impactPrefab == null)
+            GameObject prefab = hitCharacter && bloodImpactPrefab != null
+                ? bloodImpactPrefab
+                : impactPrefab;
+
+            if (prefab == null)
                 return;
 
             Vector3 normal = GetSafeNormal(hitNormal);
             Vector3 spawnPosition = hitPoint + normal * impactSurfaceOffset;
             Quaternion spawnRotation = Quaternion.LookRotation(normal, Vector3.up);
 
-            GameObject impact = Instantiate(impactPrefab, spawnPosition, spawnRotation);
+            GameObject impact = Instantiate(prefab, spawnPosition, spawnRotation);
             Destroy(impact, impactLifetime);
+        }
+
+        private void PlayImpactSound(bool hitCharacter)
+        {
+            if (impactAudioSource == null)
+            {
+                return;
+            }
+
+            AudioClip clip = hitCharacter
+                ? characterImpactClip
+                : surfaceImpactClip;
+
+            if (clip != null)
+            {
+                impactAudioSource.PlayOneShot(clip);
+            }
         }
 
         private void SpawnBulletHole(Vector3 hitPoint, Vector3 hitNormal)

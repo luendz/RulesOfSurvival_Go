@@ -39,6 +39,12 @@ La locomoción, cámara, crouch, aim y el prototipo de rifle ya forman la base j
 
 El ciclo de eliminación ya integra estado de muerte, bloqueo de controles, atribución de bajas, posición final, ganador, cámara posterior a la muerte y transferencia del inventario a una caja de loot. La caja permite inspeccionar stacks, recoger objetos concretos, transferir solo la cantidad que cabe y recoger todo lo posible desde una interfaz que bloquea temporalmente el control de gameplay. La representación visual de muerte usa una caída provisional generada en código; el clip humanoide final queda desacoplado para poder importarlo y retargetearlo más adelante. Los vehículos, el paracaídas y el loot de mundo avanzado siguen siendo bases que requieren integración y pruebas de gameplay.
 
+El daño distingue disparos, explosiones, caídas y Safe Zone; aplica multiplicadores de cabeza, torso, brazos y piernas; y admite casco y chaleco de tres niveles con reducción y durabilidad. El feedback provisional incluye hitmarker, headshot, impacto fatal e indicador de dirección. El detalle funcional está en `Docs/Diseno/Sistema_Dano_Completo.md`.
+
+### Prueba rápida del daño
+
+En `07_BattleRoyaleTest` aparece durante Play Mode un objetivo de práctica con zonas corporales y protecciones. Los controles locales son `F5` para equipar casco/chaleco nivel 2, `F6` para daño de torso, `F7` para headshot, `F8` para explosión y `F9` para caída.
+
 ## Control de versiones
 
 El proyecto incluye `.gitignore` y `.gitattributes` apropiados para Unity. Para recursos binarios grandes se recomienda habilitar Git LFS en el repositorio antes de añadir grandes cantidades de FBX, audio, vídeo o texturas fuente.

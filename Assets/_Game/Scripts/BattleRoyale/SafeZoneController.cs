@@ -306,7 +306,11 @@ namespace ROS.Game.BattleRoyale
 
                     Vector3.zero,
 
-                    gameObject
+                    gameObject,
+
+                    ROS.Game.Core.DamageType.SafeZone,
+
+                    ROS.Game.Core.HitZone.Torso
                 )
             );
         }
