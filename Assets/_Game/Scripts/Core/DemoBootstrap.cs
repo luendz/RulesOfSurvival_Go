@@ -12,6 +12,11 @@ namespace ROS.Game.Core
         [SerializeField] private Health[] players;
         [SerializeField] private bool beginOnStart = true;
 
+        public void SetBeginOnStart(bool enabled)
+        {
+            beginOnStart = enabled;
+        }
+
         private void Start()
         {
             if (matchManager == null) matchManager = FindFirstObjectByType<BattleRoyaleManager>();

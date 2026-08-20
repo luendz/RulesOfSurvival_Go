@@ -11,6 +11,7 @@ namespace ROS.Game.UI
 
         private GUIStyle _titleStyle;
         private GUIStyle _detailStyle;
+        private float _landingMessageUntil;
 
         public void Configure(
             MatchStartController startSequence,
@@ -19,6 +20,12 @@ namespace ROS.Game.UI
         {
             sequence = startSequence;
             parachute = playerParachute;
+
+            if (parachute != null)
+            {
+                parachute.Landed -= HandleLanding;
+                parachute.Landed += HandleLanding;
+            }
         }
 
         private void OnGUI()
@@ -35,6 +42,11 @@ namespace ROS.Game.UI
             if (!sequence.SequenceRunning &&
                 parachute.State == AirDropState.Landed)
             {
+                if (Time.unscaledTime > _landingMessageUntil)
+                {
+                    return;
+                }
+
                 title = "EN PARTIDA";
                 detail = "Aterrizaje completado";
             }
@@ -115,6 +127,19 @@ namespace ROS.Game.UI
             };
             _detailStyle.normal.textColor =
                 new Color(0.45f, 0.78f, 1f);
+        }
+
+        private void HandleLanding()
+        {
+            _landingMessageUntil = Time.unscaledTime + 2.5f;
+        }
+
+        private void OnDestroy()
+        {
+            if (parachute != null)
+            {
+                parachute.Landed -= HandleLanding;
+            }
         }
     }
 }

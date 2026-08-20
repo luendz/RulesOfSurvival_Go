@@ -2,6 +2,7 @@ using NUnit.Framework;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Core;
 using ROS.Game.Parachute;
+using ROS.Game.World;
 using UnityEngine;
 
 namespace ROS.Game.Tests.EditMode
@@ -68,6 +69,15 @@ namespace ROS.Game.Tests.EditMode
             {
                 Object.DestroyImmediate(gameObject);
             }
+        }
+
+        [Test]
+        public void AirplaneModel_UsesRequestedLocalRotation()
+        {
+            Assert.That(
+                AirplaneController.ModelEulerAngles,
+                Is.EqualTo(new Vector3(-90f, -90f, 0f))
+            );
         }
     }
 }

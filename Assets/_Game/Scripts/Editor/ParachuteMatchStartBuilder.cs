@@ -28,7 +28,7 @@ namespace ROS.Game.Editor
                 ParachutePrefabPath,
                 "PF_ParachuteVisual",
                 5.5f,
-                false,
+                null,
                 false
             );
             bool airplaneCreated = CreateVisualPrefab(
@@ -36,7 +36,7 @@ namespace ROS.Game.Editor
                 AirplanePrefabPath,
                 "PF_AirplaneStart",
                 18f,
-                true,
+                AirplaneController.ModelEulerAngles,
                 true
             );
 
@@ -70,6 +70,7 @@ namespace ROS.Game.Editor
             valid &= ValidateVisual(airplane, "avión");
             valid &= airplane != null &&
                      airplane.GetComponent<AirplaneController>() != null;
+            valid &= ValidateAirplaneRotation(airplane);
 
             if (!valid)
             {
@@ -90,7 +91,7 @@ namespace ROS.Game.Editor
             string prefabPath,
             string prefabName,
             float targetMaximumSize,
-            bool alignLongestAxisToForward,
+            Vector3? modelEulerAngles,
             bool addAirplaneController
         )
         {
@@ -120,7 +121,7 @@ namespace ROS.Game.Editor
             NormalizeModel(
                 model,
                 targetMaximumSize,
-                alignLongestAxisToForward
+                modelEulerAngles
             );
 
             if (addAirplaneController)
@@ -136,18 +137,19 @@ namespace ROS.Game.Editor
         private static void NormalizeModel(
             GameObject model,
             float targetMaximumSize,
-            bool alignLongestAxisToForward
+            Vector3? modelEulerAngles
         )
         {
+            if (modelEulerAngles.HasValue)
+            {
+                model.transform.localRotation = Quaternion.Euler(
+                    modelEulerAngles.Value
+                );
+            }
+
             if (!TryGetBounds(model, out Bounds bounds))
             {
                 return;
-            }
-
-            if (alignLongestAxisToForward && bounds.size.x > bounds.size.z)
-            {
-                model.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
-                TryGetBounds(model, out bounds);
             }
 
             float maximumSize = Mathf.Max(
@@ -189,6 +191,31 @@ namespace ROS.Game.Editor
             }
 
             return true;
+        }
+
+        private static bool ValidateAirplaneRotation(GameObject airplane)
+        {
+            if (airplane == null || airplane.transform.childCount == 0)
+            {
+                Debug.LogError("El prefab de avión no tiene modelo 3D.");
+                return false;
+            }
+
+            Quaternion expected = Quaternion.Euler(
+                AirplaneController.ModelEulerAngles
+            );
+            Quaternion actual = airplane.transform.GetChild(0).localRotation;
+
+            if (Quaternion.Angle(expected, actual) <= 0.1f)
+            {
+                return true;
+            }
+
+            Debug.LogError(
+                "La rotación local del avión debe ser " +
+                "X -90°, Y -90°, Z 0°."
+            );
+            return false;
         }
 
         private static bool ValidateVisual(

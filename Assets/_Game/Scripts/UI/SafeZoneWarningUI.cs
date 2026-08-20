@@ -1,5 +1,6 @@
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +11,7 @@ namespace ROS.Game.UI
         [Header("References")]
         [SerializeField] private SafeZoneController safeZone;
         [SerializeField] private Health playerHealth;
+        [SerializeField] private BattleRoyaleManager battleRoyale;
 
         [Header("UI")]
         [SerializeField] private GameObject warningPanel;
@@ -51,6 +53,14 @@ namespace ROS.Game.UI
                 return;
             }
 
+            if (battleRoyale != null &&
+                battleRoyale.State != MatchState.Playing &&
+                battleRoyale.State != MatchState.FinalCircle)
+            {
+                SetWarningVisible(false);
+                return;
+            }
+
             if (!playerHealth.IsAlive)
             {
                 SetWarningVisible(false);
@@ -84,6 +94,12 @@ namespace ROS.Game.UI
                 playerHealth =
                     FindFirstObjectByType<Health>();
             }
+
+            if (battleRoyale == null)
+            {
+                battleRoyale =
+                    FindFirstObjectByType<BattleRoyaleManager>();
+            }
         }
 
         private void UpdateWarningText()
@@ -97,7 +113,7 @@ namespace ROS.Game.UI
             if (damage > 0f)
             {
                 warningText.text =
-                    $"FUERA DE LA ZONA SEGURA\nDAÑO {damage:0.#}/s";
+                    $"FUERA DE LA ZONA SEGURA\nDAÃ‘O {damage:0.#}/s";
             }
             else
             {

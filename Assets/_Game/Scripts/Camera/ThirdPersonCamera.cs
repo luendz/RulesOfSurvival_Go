@@ -66,9 +66,27 @@ namespace ROS.Game.CameraSystem
         private Vector3 _currentPosition;
         private UnityEngine.Camera _camera;
         private bool _deathView;
+        private float _distanceMultiplier = 1f;
 
         public Transform Target => target;
         public bool IsDeathView => _deathView;
+
+        public void EnterAirplaneView(float distanceMultiplier = 5.2f)
+        {
+            _distanceMultiplier = Mathf.Max(1f, distanceMultiplier);
+
+            if (target != null)
+            {
+                _yaw = target.eulerAngles.y;
+            }
+
+            _pitch = 24f;
+        }
+
+        public void ExitAirplaneView()
+        {
+            _distanceMultiplier = 1f;
+        }
 
         private void Awake()
         {
@@ -230,7 +248,9 @@ namespace ROS.Game.CameraSystem
         {
             bool isAiming = IsAimActive();
 
-            float targetDistance = isAiming ? aimDistance : normalDistance;
+            float targetDistance =
+                (isAiming ? aimDistance : normalDistance) *
+                _distanceMultiplier;
             float targetAimShoulderX = isAiming ? aimShoulderX : normalShoulderX;
 
             _currentDistance = Mathf.Lerp(

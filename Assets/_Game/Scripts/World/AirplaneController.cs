@@ -5,6 +5,9 @@ namespace ROS.Game.World
 {
     public sealed class AirplaneController : MonoBehaviour
     {
+        public static readonly Vector3 ModelEulerAngles =
+            new Vector3(-90f, -90f, 0f);
+
         [SerializeField] private Transform passengerAnchor;
         [SerializeField] private float flightDuration = 45f;
         [SerializeField] private Vector3 passengerOffset =
