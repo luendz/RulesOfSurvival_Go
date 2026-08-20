@@ -54,7 +54,7 @@ MonoBehaviour:
   spawnCount: 10
   minimumSpacing: 1.2
   positionAttempts: 20
-  randomizeRotationY: 1
+  randomizeRotationY: 0
   alignToGround: 1
   groundMask:
     serializedVersion: 2
