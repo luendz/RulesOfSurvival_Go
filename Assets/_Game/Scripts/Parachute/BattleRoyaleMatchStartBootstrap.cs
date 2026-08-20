@@ -147,6 +147,8 @@ namespace ROS.Game.Parachute
             MatchStartHud hud = flowObject.AddComponent<MatchStartHud>();
             hud.Configure(sequence, parachute);
 
+            input.gameObject.AddComponent<DamageNumberSpawner>();
+
             BattleRoyaleStartMenu menu =
                 flowObject.AddComponent<BattleRoyaleStartMenu>();
             menu.Configure(sequence, input, playerCamera);

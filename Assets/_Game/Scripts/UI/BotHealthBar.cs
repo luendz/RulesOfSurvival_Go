@@ -52,12 +52,16 @@ namespace ROS.Game.UI
         {
             if (_root == null) return;
 
+            bool alive = _health != null && _health.IsAlive;
+            if (!alive)
+            {
+                Destroy(_root.gameObject);
+                _root = null;
+                return;
+            }
+
             if (_cam == null) _cam = Camera.main;
             if (_cam != null) _root.rotation = _cam.transform.rotation;
-
-            bool alive = _health != null && _health.IsAlive;
-            if (_root.gameObject.activeSelf != alive)
-                _root.gameObject.SetActive(alive);
         }
 
         private void OnHealthChanged(float current, float max) => Refresh();
@@ -65,7 +69,10 @@ namespace ROS.Game.UI
         private void OnDied(ROS.Game.Combat.DamageInfo _)
         {
             if (_root != null)
-                _root.gameObject.SetActive(false);
+            {
+                Destroy(_root.gameObject);
+                _root = null;
+            }
         }
 
         private void Refresh()
