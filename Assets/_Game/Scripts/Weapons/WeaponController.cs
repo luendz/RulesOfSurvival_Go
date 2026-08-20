@@ -47,6 +47,7 @@ namespace ROS.Game.Weapons
         [SerializeField] private int debugLastShotCharacterImpacts;
 
         public WeaponDefinition Definition => definition;
+        public float DamageScale { get; set; } = 1f;
         public int AmmoInMagazine { get; private set; }
         public int ReserveAmmo => reserveAmmo;
         public bool IsReloading { get; private set; }
@@ -735,7 +736,7 @@ namespace ROS.Game.Weapons
                 {
                     damageable.ApplyDamage(
                         new DamageInfo(
-                            definition.damage,
+                            definition.damage * DamageScale,
                             hit.point,
                             direction,
                             gameObject,
@@ -779,7 +780,7 @@ namespace ROS.Game.Weapons
 
             target.ApplyDamage(
                 new DamageInfo(
-                    definition.damage,
+                    definition.damage * DamageScale,
                     hit.point,
                     direction,
                     gameObject,

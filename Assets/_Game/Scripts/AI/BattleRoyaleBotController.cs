@@ -15,10 +15,12 @@ namespace ROS.Game.AI
     [DisallowMultipleComponent]
     public sealed class BattleRoyaleBotController : MonoBehaviour
     {
-        private const float PerceptionDistance = 70f;
-        private const float ShootingDistance = 48f;
-        private const float PreferredCombatDistance = 18f;
+        private const float PerceptionDistance = 20f;
+        private const float ShootingDistance   = 10f;
+        private const float PreferredCombatDistance = 8f;
         private const float MapRoamRadius = 78f;
+        private const float MinShootInterval = 1.2f;
+        private const float MaxShootInterval = 2.2f;
 
         private PlayerInputReader _input;
         private PlayerMotor _motor;
@@ -33,6 +35,7 @@ namespace ROS.Game.AI
         private Vector3 _roamTarget;
         private float _jumpProgress;
         private float _nextThinkTime;
+        private float _nextShootTime;
         private float _strafePhase;
         private bool _jumped;
         private System.Random _random;
@@ -241,15 +244,22 @@ namespace ROS.Game.AI
                 return;
             }
 
+            if (Time.time < _nextShootTime)
+            {
+                return;
+            }
+
             WeaponController weapon = ResolveWeapon();
             if (weapon != null)
             {
                 Vector3 dispersion = new Vector3(
-                    NextFloat(-0.12f, 0.12f),
-                    NextFloat(-0.08f, 0.12f),
-                    NextFloat(-0.12f, 0.12f)
+                    NextFloat(-0.50f, 0.50f),
+                    NextFloat(-0.35f, 0.40f),
+                    NextFloat(-0.50f, 0.50f)
                 );
                 weapon.TryFireAt(aimPoint + dispersion);
+                _nextShootTime = Time.time +
+                    NextFloat(MinShootInterval, MaxShootInterval);
             }
         }
 

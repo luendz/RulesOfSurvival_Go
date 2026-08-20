@@ -151,6 +151,15 @@ namespace ROS.Game.Combat
             HealthChanged?.Invoke(CurrentHealth, maxHealth);
         }
 
+        public void OverrideMaxHealth(float newMax)
+        {
+            if (newMax <= 0f) return;
+            float ratio = maxHealth > 0f ? CurrentHealth / maxHealth : 1f;
+            maxHealth = newMax;
+            CurrentHealth = maxHealth * ratio;
+            HealthChanged?.Invoke(CurrentHealth, maxHealth);
+        }
+
         public void AddArmor(float amount)
         {
             _currentArmor = Mathf.Clamp(

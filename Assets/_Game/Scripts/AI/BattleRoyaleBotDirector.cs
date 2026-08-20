@@ -6,6 +6,7 @@ using ROS.Game.Interaction;
 using ROS.Game.Parachute;
 using ROS.Game.Teams;
 using ROS.Game.UI;
+using ROS.Game.Weapons;
 using ROS.Game.World;
 using UnityEngine;
 
@@ -100,8 +101,12 @@ namespace ROS.Game.AI
                 Health health = botObject.GetComponent<Health>();
                 if (health != null)
                 {
+                    health.OverrideMaxHealth(200f);
                     _matchManager.RegisterPlayer(health);
                 }
+
+                BotHealthBar.Attach(botObject);
+                ApplyBotDamageScale(botObject, 0.20f);
 
                 _bots.Add(bot);
             }
@@ -241,6 +246,17 @@ namespace ROS.Game.AI
                 {
                     components[i].enabled = false;
                 }
+            }
+        }
+
+        private static void ApplyBotDamageScale(GameObject botObject, float scale)
+        {
+            WeaponController[] weapons =
+                botObject.GetComponentsInChildren<WeaponController>(true);
+            for (int i = 0; i < weapons.Length; i++)
+            {
+                if (weapons[i] != null)
+                    weapons[i].DamageScale = scale;
             }
         }
 
