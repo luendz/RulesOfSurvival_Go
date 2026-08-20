@@ -99,26 +99,43 @@ namespace ROS.Game.BattleRoyale
             _deathHandlers.Clear();
         }
 
+        public void BeginWarmup()
+        {
+            ResetMatchProgress();
+            SetState(MatchState.Warmup);
+            RefreshAliveCount();
+        }
+
+        public void BeginPlanePhase()
+        {
+            SetState(MatchState.Plane);
+            RefreshAliveCount();
+        }
+
+        public void BeginGameplay()
+        {
+            SetState(MatchState.Playing);
+
+            if (safeZone != null)
+            {
+                safeZone.Begin(Vector3.zero, initialZoneRadius);
+            }
+
+            RefreshAliveCount();
+        }
+
         public void BeginMatch()
+        {
+            ResetMatchProgress();
+            BeginGameplay();
+        }
+
+        private void ResetMatchProgress()
         {
             Winner = null;
             LastElimination = default;
             _killCounts.Clear();
             _placements.Clear();
-
-            SetState(
-                MatchState.Playing
-            );
-
-            if (safeZone != null)
-            {
-                safeZone.Begin(
-                    Vector3.zero,
-                    initialZoneRadius
-                );
-            }
-
-            RefreshAliveCount();
         }
 
         public int GetKillCount(Health player)

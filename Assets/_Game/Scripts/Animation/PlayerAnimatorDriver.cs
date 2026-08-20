@@ -2,6 +2,7 @@ using ROS.Game.Character;
 using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Input;
+using ROS.Game.Parachute;
 using ROS.Game.Weapons;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ namespace ROS.Game.Animation
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private WeaponEquipmentController equipment;
         [SerializeField] private Health health;
+        [SerializeField] private ParachuteController parachute;
 
         [Header("Smoothing")]
         [SerializeField] private float dampTime = 0.12f;
@@ -78,6 +80,11 @@ namespace ROS.Game.Animation
             {
                 health = GetComponentInParent<Health>();
             }
+
+            if (parachute == null)
+            {
+                parachute = GetComponentInParent<ParachuteController>();
+            }
         }
 
         private void Reset()
@@ -87,6 +94,7 @@ namespace ROS.Game.Animation
             input = GetComponentInParent<PlayerInputReader>();
             equipment = GetComponentInParent<WeaponEquipmentController>();
             health = GetComponentInParent<Health>();
+            parachute = GetComponentInParent<ParachuteController>();
         }
 
         private void Update()
@@ -239,10 +247,10 @@ namespace ROS.Game.Animation
 
         private void UpdateStates()
         {
-            animator.SetBool(
-                Grounded,
-                motor.IsGrounded
-            );
+            bool airborneDrop = parachute != null &&
+                                parachute.IsAirbornePhase;
+
+            animator.SetBool(Grounded, !airborneDrop && motor.IsGrounded);
 
             animator.SetBool(
                 Crouch,
@@ -272,7 +280,9 @@ namespace ROS.Game.Animation
 
             animator.SetFloat(
                 VerticalVelocity,
-                motor.Velocity.y
+                airborneDrop
+                    ? parachute.VerticalSpeed
+                    : motor.Velocity.y
             );
         }
     }
