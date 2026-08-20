@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780d0a94668b4ae4d9234a000990f76e, type: 3}
+  m_Name: Weapon_AWM
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponDefinition
+  weaponId: weapon_awm
+  displayName: AWM
+  family: 2
+  ammoType: 2
+  fireMode: 0
+  supportsSingle: 1
+  supportsBurst: 0
+  supportsAuto: 0
+  dataConfidence: 4
+  damage: 105
+  shotsPerSecond: 0.75
+  range: 700
+  projectilesPerShot: 1
+  impactScale: 1.5
+  bulletHoleScale: 1.35
+  tracerWidth: 0.02
+  magazineSize: 5
+  startingReserveAmmo: 20
+  reloadTime: 3.2
+  emptyReloadTime: 3.8
+  burstCount: 3
+  verticalRecoil: 2.8
+  horizontalRecoil: 0.55
+  recoilReturnSpeed: 8
+  recoilSnappiness: 14
+  hipSpreadDegrees: 2.2
+  adsSpreadDegrees: 0.05
+  walkSpreadMultiplier: 1.2
+  runSpreadMultiplier: 1.6
+  sprintSpreadMultiplier: 2.35
+  crouchSpreadMultiplier: 0.72
+  airborneSpreadMultiplier: 2.75
+  spreadBloomPerShot: 0.8
+  maxSpreadBloom: 1.5
+  spreadRecoveryPerSecond: 3.5
+  spreadDegrees: 2.2

@@ -36,6 +36,9 @@ namespace ROS.Game.Weapons
 
         private Coroutine _tracerRoutine;
         private Material _runtimeTracerMaterial;
+        private float _impactScale = 1f;
+        private float _bulletHoleScale = 1f;
+        private float _tracerWidth = 0.012f;
 
         private void Awake()
         {
@@ -70,6 +73,25 @@ namespace ROS.Game.Weapons
                 tracer.enabled = false;
         }
 
+        public void ConfigureDefinition(
+            WeaponDefinition definition)
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            _impactScale = Mathf.Max(0.05f, definition.impactScale);
+            _bulletHoleScale = Mathf.Max(0.05f, definition.bulletHoleScale);
+            _tracerWidth = Mathf.Max(0.001f, definition.tracerWidth);
+
+            if (tracer != null)
+            {
+                tracer.startWidth = _tracerWidth;
+                tracer.endWidth = _tracerWidth * 0.2f;
+            }
+        }
+
         private void OnDisable()
         {
             if (_tracerRoutine != null)
@@ -95,10 +117,14 @@ namespace ROS.Game.Weapons
             Vector3 hitPoint,
             Vector3 hitNormal,
             bool hasHit,
-            bool hitCharacter = false)
+            bool hitCharacter = false,
+            bool playWeaponFeedback = true)
         {
-            PlayMuzzleFlash();
-            PlayTracer(hitPoint);
+            if (playWeaponFeedback)
+            {
+                PlayMuzzleFlash();
+                PlayTracer(hitPoint);
+            }
 
             if (!hasHit)
                 return;
@@ -142,8 +168,8 @@ namespace ROS.Game.Weapons
 
             tracer.useWorldSpace = true;
             tracer.positionCount = 2;
-            tracer.startWidth = 0.012f;
-            tracer.endWidth = 0.002f;
+            tracer.startWidth = _tracerWidth;
+            tracer.endWidth = _tracerWidth * 0.2f;
             tracer.numCapVertices = 2;
             tracer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             tracer.receiveShadows = false;
@@ -223,6 +249,7 @@ namespace ROS.Game.Weapons
             Quaternion spawnRotation = Quaternion.LookRotation(normal, Vector3.up);
 
             GameObject impact = Instantiate(prefab, spawnPosition, spawnRotation);
+            impact.transform.localScale *= _impactScale;
             Destroy(impact, impactLifetime);
         }
 
@@ -265,6 +292,8 @@ namespace ROS.Game.Weapons
                 spawnPosition,
                 surfaceRotation
             );
+
+            bulletHole.transform.localScale *= _bulletHoleScale;
 
             Destroy(bulletHole, bulletHoleLifetime);
         }

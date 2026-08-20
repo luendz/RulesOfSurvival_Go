@@ -38,11 +38,13 @@ namespace ROS.Game.Weapons
         [SerializeField] private int debugAmmoInMagazine;
         [SerializeField] private int debugReserveAmmo;
         [SerializeField] private bool debugIsReloading;
-        [SerializeField] private bool debugLastShotHit;
         [SerializeField] private Vector3 debugLastHitPoint;
         [SerializeField] private Vector3 debugLastHitNormal;
         [SerializeField] private float debugCurrentSpread;
         [SerializeField] private float debugSpreadBloom;
+        [SerializeField] private int debugLastShotProjectiles;
+        [SerializeField] private int debugLastShotImpacts;
+        [SerializeField] private int debugLastShotCharacterImpacts;
 
         public WeaponDefinition Definition => definition;
         public int AmmoInMagazine { get; private set; }
@@ -52,6 +54,9 @@ namespace ROS.Game.Weapons
         public WeaponFireMode CurrentFireMode { get; private set; }
         public float ActiveReloadDuration { get; private set; }
         public float CurrentSpread => ResolveCurrentSpread();
+        public int LastShotProjectileCount { get; private set; }
+        public int LastShotImpactCount { get; private set; }
+        public int LastShotCharacterImpactCount { get; private set; }
 
         public event Action AmmoChanged;
         public event Action Fired;
@@ -60,10 +65,17 @@ namespace ROS.Game.Weapons
 
         public void ConfigureDefinition(
             WeaponDefinition newDefinition,
-            int startingReserveAmmo = 0)
+            int startingReserveAmmo = -1)
         {
             definition = newDefinition;
-            reserveAmmo = Mathf.Max(0, startingReserveAmmo);
+            reserveAmmo = Mathf.Max(
+                0,
+                startingReserveAmmo >= 0
+                    ? startingReserveAmmo
+                    : definition != null
+                        ? definition.startingReserveAmmo
+                        : 0
+            );
             AmmoInMagazine =
                 definition != null
                     ? definition.magazineSize
@@ -159,10 +171,24 @@ namespace ROS.Game.Weapons
             }
 
             if (weaponEffects == null)
+            {
                 weaponEffects = GetComponent<WeaponEffects>();
 
+                if (weaponEffects != null)
+                {
+                    weaponEffects.ConfigureDefinition(definition);
+                }
+            }
+
             if (weaponRecoil == null)
+            {
                 weaponRecoil = GetComponent<WeaponRecoil>();
+
+                if (weaponRecoil != null)
+                {
+                    weaponRecoil.ConfigureDefinition(definition);
+                }
+            }
 
             if (weaponEffects != null)
                 weaponEffects.EnsureRuntimeSetup();
@@ -173,6 +199,11 @@ namespace ROS.Game.Weapons
             if (weaponRecoil != null)
             {
                 weaponRecoil.ConfigureDefinition(definition);
+            }
+
+            if (weaponEffects != null)
+            {
+                weaponEffects.ConfigureDefinition(definition);
             }
         }
 
@@ -330,45 +361,65 @@ namespace ROS.Game.Weapons
             Vector3 origin =
                 GetShotOrigin();
 
-            Vector3 direction =
+            Vector3 baseDirection =
                 GetShotDirection(origin);
 
             float currentSpread = ResolveCurrentSpread();
+            int projectileCount =
+                definition.GetProjectileCount();
 
-            direction =
-                ApplySpread(direction, currentSpread);
-
-            ProcessHit(
-                origin,
-                direction,
-                out bool hasHit,
-                out Vector3 hitPoint,
-                out Vector3 hitNormal,
-                out bool hitCharacter
-            );
-
-            debugLastShotHit = hasHit;
-            debugLastHitPoint = hitPoint;
-            debugLastHitNormal = hitNormal;
-
-            if (drawShotDebug)
+            LastShotProjectileCount = projectileCount;
+            LastShotImpactCount = 0;
+            LastShotCharacterImpactCount = 0;
+            for (int projectileIndex = 0;
+                 projectileIndex < projectileCount;
+                 projectileIndex++)
             {
-                DrawShotDebug(
+                Vector3 direction =
+                    ApplySpread(baseDirection, currentSpread);
+
+                ProcessHit(
                     origin,
-                    hitPoint,
-                    hitNormal,
-                    hasHit
+                    direction,
+                    out bool hasHit,
+                    out Vector3 hitPoint,
+                    out Vector3 hitNormal,
+                    out bool hitCharacter
                 );
-            }
 
-            if (weaponEffects != null)
-            {
-                weaponEffects.PlayShot(
-                    hitPoint,
-                    hitNormal,
-                    hasHit,
-                    hitCharacter
-                );
+                if (hasHit)
+                {
+                    LastShotImpactCount++;
+                }
+
+                if (hitCharacter)
+                {
+                    LastShotCharacterImpactCount++;
+                }
+
+                debugLastHitPoint = hitPoint;
+                debugLastHitNormal = hitNormal;
+
+                if (drawShotDebug)
+                {
+                    DrawShotDebug(
+                        origin,
+                        hitPoint,
+                        hitNormal,
+                        hasHit
+                    );
+                }
+
+                if (weaponEffects != null)
+                {
+                    weaponEffects.PlayShot(
+                        hitPoint,
+                        hitNormal,
+                        hasHit,
+                        hitCharacter,
+                        projectileIndex == 0
+                    );
+                }
             }
 
             if (weaponRecoil != null)
@@ -842,6 +893,15 @@ namespace ROS.Game.Weapons
 
             debugSpreadBloom =
                 _spreadBloom;
+
+            debugLastShotProjectiles =
+                LastShotProjectileCount;
+
+            debugLastShotImpacts =
+                LastShotImpactCount;
+
+            debugLastShotCharacterImpacts =
+                LastShotCharacterImpactCount;
         }
     }
 }

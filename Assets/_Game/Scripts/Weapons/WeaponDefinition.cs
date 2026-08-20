@@ -11,6 +11,8 @@ namespace ROS.Game.Weapons
         [Header("Identity")]
         public string weaponId = "rifle_001";
         public string displayName = "Prototype Rifle";
+        public WeaponFamily family = WeaponFamily.AssaultRifle;
+        public AmmoType ammoType = AmmoType.Rifle;
         public WeaponFireMode fireMode = WeaponFireMode.Auto;
 
         [Header("Fire Modes")]
@@ -26,9 +28,16 @@ namespace ROS.Game.Weapons
         [Min(1f)] public float damage = 28f;
         [Min(0.01f)] public float shotsPerSecond = 9f;
         [Min(1f)] public float range = 250f;
+        [Min(1)] public int projectilesPerShot = 1;
+
+        [Header("Impact Feedback")]
+        [Min(0.05f)] public float impactScale = 1f;
+        [Min(0.05f)] public float bulletHoleScale = 1f;
+        [Min(0.001f)] public float tracerWidth = 0.012f;
 
         [Header("Ammo")]
         [Min(1)] public int magazineSize = 30;
+        [Min(0)] public int startingReserveAmmo = 90;
         [Min(0.1f)] public float reloadTime = 2.2f;
         [Min(0.1f)] public float emptyReloadTime = 2.7f;
         [Min(1)] public int burstCount = 3;
@@ -141,6 +150,11 @@ namespace ROS.Game.Weapons
             return emptyMagazine
                 ? Mathf.Max(reloadTime, emptyReloadTime)
                 : reloadTime;
+        }
+
+        public int GetProjectileCount()
+        {
+            return Mathf.Max(1, projectilesPerShot);
         }
     }
 }

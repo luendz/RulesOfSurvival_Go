@@ -49,7 +49,7 @@ MonoBehaviour:
     weight: 1
     minAmount: 1
     maxAmount: 1
-  - item: {fileID: 11400000, guid: a10f0a1fb28a42df96c393d90d25ca3f, type: 2}
+  - item: {fileID: 11400000, guid: bffe27250cbbc9b48b49cdd54773fd08, type: 2}
     weight: 8
     minAmount: 1
     maxAmount: 1
@@ -91,5 +91,21 @@ MonoBehaviour:
     maxAmount: 1
   - item: {fileID: 11400000, guid: aa0f0a1fb28a42df96c393d90d25ca3f, type: 2}
     weight: 0.5
+    minAmount: 1
+    maxAmount: 1
+  - item: {fileID: 11400000, guid: 7a0f446afca04a940b25e7c57b9a5b61, type: 2}
+    weight: 7
+    minAmount: 1
+    maxAmount: 1
+  - item: {fileID: 11400000, guid: 0ca298bedc281c347b8d4b879e985110, type: 2}
+    weight: 2
+    minAmount: 1
+    maxAmount: 1
+  - item: {fileID: 11400000, guid: 30e6054662f816148ba9b68c93057e18, type: 2}
+    weight: 5
+    minAmount: 1
+    maxAmount: 1
+  - item: {fileID: 11400000, guid: f615b4abe0169284ca9ee2b81e36acfe, type: 2}
+    weight: 6
     minAmount: 1
     maxAmount: 1

@@ -53,13 +53,17 @@ MonoBehaviour:
   spawnOnStart: 1
   spawnCount: 10
   guaranteedItems:
-  - {fileID: 11400000, guid: a10f0a1fb28a42df96c393d90d25ca3f, type: 2}
+  - {fileID: 11400000, guid: bffe27250cbbc9b48b49cdd54773fd08, type: 2}
   - {fileID: 11400000, guid: b22ac447a924451d83b0ad06788859ee, type: 2}
   - {fileID: 11400000, guid: c22ac447a924451d83b0ad06788859ee, type: 2}
   - {fileID: 11400000, guid: fafea3b89c69f5e4d9dd2eefefd41fb2, type: 2}
   - {fileID: 11400000, guid: d10f0a1fb28a42df96c393d90d25ca3f, type: 2}
   - {fileID: 11400000, guid: e10f0a1fb28a42df96c393d90d25ca3f, type: 2}
   - {fileID: 11400000, guid: f10f0a1fb28a42df96c393d90d25ca3f, type: 2}
+  - {fileID: 11400000, guid: 7a0f446afca04a940b25e7c57b9a5b61, type: 2}
+  - {fileID: 11400000, guid: 0ca298bedc281c347b8d4b879e985110, type: 2}
+  - {fileID: 11400000, guid: 30e6054662f816148ba9b68c93057e18, type: 2}
+  - {fileID: 11400000, guid: f615b4abe0169284ca9ee2b81e36acfe, type: 2}
   minimumSpacing: 1.2
   positionAttempts: 20
   randomizeRotationY: 0

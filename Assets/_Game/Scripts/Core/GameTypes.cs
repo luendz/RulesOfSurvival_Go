@@ -5,6 +5,8 @@ namespace ROS.Game.Core
     public enum MatchState { WaitingPlayers, Warmup, Plane, Playing, FinalCircle, Finished }
     public enum PlayerLifeState { Alive, Dead }
     public enum WeaponFireMode { Single, Burst, Auto }
+    public enum WeaponFamily { AssaultRifle, SubmachineGun, SniperRifle, Shotgun, Pistol, LightMachineGun, Melee }
+    public enum AmmoType { Rifle, SMG, Sniper, Shotgun, Pistol, None }
     public enum ItemType { Weapon, Ammo, Healing, Armor, Helmet, Backpack, Throwable, Attachment, Misc }
     public enum LootRarity { Common, Uncommon, Rare, Epic }
     public enum LootPickupMode { Manual = 0, EquipOnPickup = 2 }

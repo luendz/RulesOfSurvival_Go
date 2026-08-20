@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780d0a94668b4ae4d9234a000990f76e, type: 3}
+  m_Name: Weapon_M1887
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponDefinition
+  weaponId: weapon_m1887
+  displayName: M1887
+  family: 3
+  ammoType: 3
+  fireMode: 0
+  supportsSingle: 1
+  supportsBurst: 0
+  supportsAuto: 0
+  dataConfidence: 4
+  damage: 16
+  shotsPerSecond: 1.1
+  range: 65
+  projectilesPerShot: 8
+  impactScale: 0.65
+  bulletHoleScale: 0.65
+  tracerWidth: 0.006
+  magazineSize: 2
+  startingReserveAmmo: 24
+  reloadTime: 2.4
+  emptyReloadTime: 2.8
+  burstCount: 3
+  verticalRecoil: 2.2
+  horizontalRecoil: 0.65
+  recoilReturnSpeed: 8
+  recoilSnappiness: 14
+  hipSpreadDegrees: 4.2
+  adsSpreadDegrees: 3
+  walkSpreadMultiplier: 1.2
+  runSpreadMultiplier: 1.6
+  sprintSpreadMultiplier: 2.35
+  crouchSpreadMultiplier: 0.72
+  airborneSpreadMultiplier: 2.75
+  spreadBloomPerShot: 0.75
+  maxSpreadBloom: 2.5
+  spreadRecoveryPerSecond: 3.5
+  spreadDegrees: 4.2

@@ -108,5 +108,30 @@ namespace ROS.Game.Tests.EditMode
                 Object.DestroyImmediate(weapon);
             }
         }
+
+        [TestCase(0, 1)]
+        [TestCase(1, 1)]
+        [TestCase(8, 8)]
+        public void WeaponDefinition_ClampsProjectileCount(
+            int configuredProjectiles,
+            int expectedProjectiles)
+        {
+            WeaponDefinition weapon =
+                ScriptableObject.CreateInstance<WeaponDefinition>();
+
+            try
+            {
+                weapon.projectilesPerShot = configuredProjectiles;
+
+                Assert.That(
+                    weapon.GetProjectileCount(),
+                    Is.EqualTo(expectedProjectiles)
+                );
+            }
+            finally
+            {
+                Object.DestroyImmediate(weapon);
+            }
+        }
     }
 }
