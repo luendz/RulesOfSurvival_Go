@@ -41,9 +41,15 @@ El ciclo de eliminación ya integra estado de muerte, bloqueo de controles, atri
 
 El daño distingue disparos, explosiones, caídas y Safe Zone; aplica multiplicadores de cabeza, torso, brazos y piernas; y admite casco y chaleco de tres niveles con reducción y durabilidad. El feedback provisional incluye hitmarker, headshot, impacto fatal e indicador de dirección. El detalle funcional está en `Docs/Diseno/Sistema_Dano_Completo.md`.
 
+El loot de mundo incluye catálogo por tipo y rareza, generación ponderada por partida, objetos cercanos, recogida manual o automática, recogida parcial según capacidad, equipamiento de armas y protecciones, mochilas con capacidad y descarte al suelo. El detalle funcional está en `Docs/Diseno/Loot_Interaccion_Completo.md`.
+
 ### Prueba rápida del daño
 
 En `07_BattleRoyaleTest` aparece durante Play Mode un objetivo de práctica con zonas corporales y protecciones. Los controles locales son `F5` para equipar casco/chaleco nivel 2, `F6` para daño de torso, `F7` para headshot, `F8` para explosión y `F9` para caída.
+
+### Prueba rápida del loot
+
+En `07_BattleRoyaleTest` aparece un área de loot unos diez metros delante del jugador. `F` recoge el objeto seleccionado, munición y vendajes se recogen automáticamente, `G` tira una unidad del último stack y `Shift + G` tira el stack completo.
 
 ## Control de versiones
 

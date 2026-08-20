@@ -1,4 +1,5 @@
 using ROS.Game.Core;
+using ROS.Game.Weapons;
 using UnityEngine;
 
 namespace ROS.Game.Inventory
@@ -30,6 +31,38 @@ namespace ROS.Game.Inventory
         [Min(0f)]
         public float weight = 1f;
 
+        [Header("World Loot")]
+        public LootRarity rarity =
+            LootRarity.Common;
+
+        public LootPickupMode pickupMode =
+            LootPickupMode.Manual;
+
+        [Tooltip(
+            "Nivel usado por cascos y chalecos."
+        )]
+        public ProtectionLevel protectionLevel =
+            ProtectionLevel.None;
+
+        [Tooltip(
+            "Capacidad total al equipar esta mochila. Cero conserva la capacidad base."
+        )]
+        [Min(0f)]
+        public float backpackCapacity;
+
+        [Tooltip(
+            "Definición jugable si este objeto representa un arma."
+        )]
+        public WeaponDefinition weaponDefinition;
+
+        [Tooltip(
+            "Prefab visual o jugable que se instancia al equipar el arma."
+        )]
+        public GameObject weaponPrefab;
+
+        [Range(0, 3)]
+        public int preferredWeaponSlot;
+
         [Header("UI")]
         public Sprite icon;
 
@@ -49,5 +82,14 @@ namespace ROS.Game.Inventory
 
         public DataConfidence Confidence =>
             dataConfidence;
+
+        public bool IsEquippable =>
+            itemType == ItemType.Weapon ||
+            itemType == ItemType.Armor ||
+            itemType == ItemType.Helmet ||
+            itemType == ItemType.Backpack;
+
+        public bool IsAutomaticPickup =>
+            pickupMode == LootPickupMode.Automatic;
     }
 }

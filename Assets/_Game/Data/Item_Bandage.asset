@@ -17,6 +17,8 @@ MonoBehaviour:
   itemType: 2
   maxStack: 10
   weight: 0.1
+  rarity: 0
+  pickupMode: 1
   icon: {fileID: 0}
   worldModel: {fileID: 919132149155446097, guid: cd0d5819ff0210d47b805dbc04229c4d, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}

@@ -23,6 +23,14 @@ namespace ROS.Game.Loot
 
         private GameObject _runtimeVisual;
 
+        private GameObject _temporarilyBlockedCollector;
+
+        private float _collectableAt;
+
+        public InventoryItemDefinition Item => item;
+        public int Amount => amount;
+        public bool IsConsumed => _consumed;
+
         public string InteractionLabel =>
             item == null
                 ? "Recoger"
@@ -36,7 +44,9 @@ namespace ROS.Game.Loot
 
         public void Configure(
             InventoryItemDefinition definition,
-            int quantity
+            int quantity,
+            GameObject temporarilyBlockedCollector = null,
+            float pickupDelay = 0f
         )
         {
             item = definition;
@@ -48,8 +58,44 @@ namespace ROS.Game.Loot
                 );
 
             _consumed = false;
+            _temporarilyBlockedCollector =
+                temporarilyBlockedCollector;
+            _collectableAt =
+                Time.time + Mathf.Max(0f, pickupDelay);
 
             RefreshVisual();
+        }
+
+        public static LootPickup SpawnRuntime(
+            InventoryItemDefinition definition,
+            int quantity,
+            Vector3 position,
+            GameObject temporarilyBlockedCollector = null,
+            float pickupDelay = 0.75f)
+        {
+            if (definition == null || quantity <= 0)
+            {
+                return null;
+            }
+
+            GameObject pickupObject =
+                GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+            pickupObject.name = $"Loot_{definition.displayName}";
+            pickupObject.transform.position = position;
+            pickupObject.transform.localScale = Vector3.one * 0.35f;
+
+            LootPickup pickup =
+                pickupObject.AddComponent<LootPickup>();
+
+            pickup.Configure(
+                definition,
+                quantity,
+                temporarilyBlockedCollector,
+                pickupDelay
+            );
+
+            return pickup;
         }
 
         public bool CanInteract(
@@ -59,10 +105,20 @@ namespace ROS.Game.Loot
             if (
                 _consumed ||
                 item == null ||
-                interactor == null
+                interactor == null ||
+                IsTemporarilyBlocked(interactor)
             )
             {
                 return false;
+            }
+
+            if (item.IsEquippable)
+            {
+                PlayerLootEquipment equipment =
+                    interactor.GetComponent<PlayerLootEquipment>();
+
+                return equipment != null &&
+                       equipment.CanEquip(item);
             }
 
             InventoryComponent inventory =
@@ -75,10 +131,7 @@ namespace ROS.Game.Loot
                 return false;
             }
 
-            return inventory.CanAdd(
-                item,
-                amount
-            );
+            return inventory.GetMaxAddableAmount(item) > 0;
         }
 
         public bool IsBlockedByInventoryCapacity(
@@ -104,23 +157,58 @@ namespace ROS.Game.Loot
                 return false;
             }
 
-            return !inventory.CanAdd(
-                item,
-                amount
-            );
+            return inventory.GetMaxAddableAmount(item) <= 0;
         }
 
         public void Interact(
             GameObject interactor
         )
         {
-            if (
-                _consumed ||
-                interactor == null ||
-                item == null
-            )
+            TryCollect(interactor);
+        }
+
+        public bool TryAutoCollect(GameObject interactor)
+        {
+            return item != null &&
+                   item.IsAutomaticPickup &&
+                   TryCollect(interactor);
+        }
+
+        public bool TryCollect(GameObject interactor)
+        {
+            if (!CanInteract(interactor))
             {
-                return;
+                return false;
+            }
+
+            if (item.IsEquippable)
+            {
+                PlayerLootEquipment equipment =
+                    interactor.GetComponent<PlayerLootEquipment>();
+
+                if (equipment == null ||
+                    !equipment.TryEquip(item, out InventoryItemDefinition replaced))
+                {
+                    return false;
+                }
+
+                if (replaced != null && replaced != item)
+                {
+                    Vector3 dropPosition =
+                        interactor.transform.position +
+                        interactor.transform.forward * 1.1f +
+                        Vector3.up * 0.25f;
+
+                    SpawnRuntime(
+                        replaced,
+                        1,
+                        dropPosition,
+                        interactor
+                    );
+                }
+
+                Consume();
+                return true;
             }
 
             InventoryComponent inventory =
@@ -128,17 +216,47 @@ namespace ROS.Game.Loot
                     InventoryComponent
                 >();
 
-            if (
-                inventory == null ||
-                !inventory.Add(
-                    item,
-                    amount
-                )
-            )
+            if (inventory == null)
             {
-                return;
+                return false;
             }
 
+            int collectedAmount =
+                Mathf.Min(
+                    amount,
+                    inventory.GetMaxAddableAmount(item)
+                );
+
+            if (collectedAmount <= 0 ||
+                !inventory.Add(item, collectedAmount))
+            {
+                return false;
+            }
+
+            amount -= collectedAmount;
+
+            if (amount <= 0)
+            {
+                Consume();
+            }
+
+            return true;
+        }
+
+        private bool IsTemporarilyBlocked(GameObject interactor)
+        {
+            if (_temporarilyBlockedCollector == null ||
+                Time.time >= _collectableAt)
+            {
+                _temporarilyBlockedCollector = null;
+                return false;
+            }
+
+            return interactor == _temporarilyBlockedCollector;
+        }
+
+        private void Consume()
+        {
             _consumed = true;
 
             Collider[] colliders =

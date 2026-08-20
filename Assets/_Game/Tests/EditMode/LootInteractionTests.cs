@@ -1,0 +1,167 @@
+using NUnit.Framework;
+using ROS.Game.Core;
+using ROS.Game.Inventory;
+using ROS.Game.Loot;
+using UnityEngine;
+
+namespace ROS.Game.Tests.EditMode
+{
+    public sealed class LootInteractionTests
+    {
+        private readonly System.Collections.Generic.List<Object> _created =
+            new System.Collections.Generic.List<Object>();
+
+        [TearDown]
+        public void TearDown()
+        {
+            for (int i = _created.Count - 1; i >= 0; i--)
+            {
+                if (_created[i] != null)
+                {
+                    Object.DestroyImmediate(_created[i]);
+                }
+            }
+
+            _created.Clear();
+        }
+
+        [Test]
+        public void Pickup_CollectsOnlyTheAmountThatFits()
+        {
+            GameObject player = CreatePlayer(5f);
+            InventoryItemDefinition item = CreateItem(
+                "ammo_partial",
+                ItemType.Ammo,
+                2f
+            );
+
+            LootPickup pickup = LootPickup.SpawnRuntime(
+                item,
+                5,
+                Vector3.zero,
+                null,
+                0f
+            );
+            _created.Add(pickup.gameObject);
+
+            Assert.That(pickup.TryCollect(player), Is.True);
+            Assert.That(
+                player.GetComponent<InventoryComponent>().GetAmount(item),
+                Is.EqualTo(2)
+            );
+            Assert.That(pickup.Amount, Is.EqualTo(3));
+            Assert.That(pickup.IsConsumed, Is.False);
+        }
+
+        [Test]
+        public void AutomaticPickup_UsesTheConfiguredMode()
+        {
+            GameObject player = CreatePlayer(20f);
+            InventoryItemDefinition item = CreateItem(
+                "ammo_auto",
+                ItemType.Ammo,
+                1f
+            );
+            item.pickupMode = LootPickupMode.Automatic;
+
+            LootPickup pickup = LootPickup.SpawnRuntime(
+                item,
+                3,
+                Vector3.zero,
+                null,
+                0f
+            );
+            _created.Add(pickup.gameObject);
+
+            Assert.That(pickup.TryAutoCollect(player), Is.True);
+            Assert.That(pickup.IsConsumed, Is.True);
+            Assert.That(
+                player.GetComponent<InventoryComponent>().GetAmount(item),
+                Is.EqualTo(3)
+            );
+        }
+
+        [Test]
+        public void Backpack_UpdatesInventoryCapacityWhenEquipped()
+        {
+            GameObject player = CreatePlayer(100f);
+            PlayerLootEquipment equipment =
+                player.AddComponent<PlayerLootEquipment>();
+
+            InventoryItemDefinition backpack = CreateItem(
+                "backpack_test",
+                ItemType.Backpack,
+                1f
+            );
+            backpack.pickupMode = LootPickupMode.EquipOnPickup;
+            backpack.backpackCapacity = 180f;
+
+            Assert.That(
+                equipment.TryEquip(backpack, out InventoryItemDefinition replaced),
+                Is.True
+            );
+            Assert.That(replaced, Is.Null);
+            Assert.That(
+                player.GetComponent<InventoryComponent>().Capacity,
+                Is.EqualTo(180f)
+            );
+            Assert.That(equipment.BackpackItem, Is.SameAs(backpack));
+        }
+
+        [Test]
+        public void Drop_RemovesRequestedAmountAndCreatesWorldPickup()
+        {
+            GameObject player = CreatePlayer(20f);
+            InventoryComponent inventory =
+                player.GetComponent<InventoryComponent>();
+            LootDropController drop =
+                player.AddComponent<LootDropController>();
+            InventoryItemDefinition item = CreateItem(
+                "heal_drop",
+                ItemType.Healing,
+                1f
+            );
+
+            inventory.Add(item, 3);
+
+            Assert.That(drop.Drop(item, 2), Is.True);
+            Assert.That(inventory.GetAmount(item), Is.EqualTo(1));
+
+            LootPickup[] pickups =
+                Object.FindObjectsByType<LootPickup>(
+                    FindObjectsSortMode.None
+                );
+
+            Assert.That(pickups, Has.Length.EqualTo(1));
+            Assert.That(pickups[0].Item, Is.SameAs(item));
+            Assert.That(pickups[0].Amount, Is.EqualTo(2));
+            _created.Add(pickups[0].gameObject);
+        }
+
+        private GameObject CreatePlayer(float capacity)
+        {
+            GameObject player = new GameObject("Loot_TestPlayer");
+            InventoryComponent inventory =
+                player.AddComponent<InventoryComponent>();
+            inventory.SetCapacity(capacity);
+            _created.Add(player);
+            return player;
+        }
+
+        private InventoryItemDefinition CreateItem(
+            string id,
+            ItemType type,
+            float weight)
+        {
+            InventoryItemDefinition item =
+                ScriptableObject.CreateInstance<InventoryItemDefinition>();
+            item.itemId = id;
+            item.displayName = id;
+            item.itemType = type;
+            item.weight = weight;
+            item.maxStack = 10;
+            _created.Add(item);
+            return item;
+        }
+    }
+}

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using ROS.Game.Loot;
 using ROS.Game.Input;
 using UnityEngine;
 
@@ -19,10 +21,15 @@ namespace ROS.Game.Interaction
 
         private IInteractable _current;
 
+        private readonly List<IInteractable> _nearby =
+            new List<IInteractable>();
+
         public IInteractable Current =>
             IsAlive(_current)
                 ? _current
                 : null;
+
+        public IReadOnlyList<IInteractable> Nearby => _nearby;
 
         private void Awake()
         {
@@ -42,6 +49,8 @@ namespace ROS.Game.Interaction
         {
             _current =
                 FindNearestInteractable();
+
+            TryCollectAutomaticLoot();
 
             IInteractable interactable =
                 Current;
@@ -67,6 +76,8 @@ namespace ROS.Game.Interaction
 
         private IInteractable FindNearestInteractable()
         {
+            _nearby.Clear();
+
             if (origin == null)
             {
                 return null;
@@ -111,6 +122,11 @@ namespace ROS.Game.Interaction
                     continue;
                 }
 
+                if (!_nearby.Contains(interactable))
+                {
+                    _nearby.Add(interactable);
+                }
+
                 Vector3 closestPoint =
                     collider.ClosestPoint(
                         origin.position
@@ -150,7 +166,29 @@ namespace ROS.Game.Interaction
                     interactable;
             }
 
+            if (nearest != null)
+            {
+                _nearby.Remove(nearest);
+                _nearby.Insert(0, nearest);
+            }
+
             return nearest;
+        }
+
+        private void TryCollectAutomaticLoot()
+        {
+            if (input != null && input.UiBlocked)
+            {
+                return;
+            }
+
+            for (int i = _nearby.Count - 1; i >= 0; i--)
+            {
+                if (_nearby[i] is LootPickup pickup)
+                {
+                    pickup.TryAutoCollect(gameObject);
+                }
+            }
         }
 
         private static bool IsAlive(

@@ -17,4 +17,6 @@ MonoBehaviour:
   itemType: 1
   maxStack: 60
   weight: 0.02
+  rarity: 0
+  pickupMode: 1
   icon: {fileID: 0}

@@ -52,6 +52,14 @@ MonoBehaviour:
   radius: 8
   spawnOnStart: 1
   spawnCount: 10
+  guaranteedItems:
+  - {fileID: 11400000, guid: a10f0a1fb28a42df96c393d90d25ca3f, type: 2}
+  - {fileID: 11400000, guid: b22ac447a924451d83b0ad06788859ee, type: 2}
+  - {fileID: 11400000, guid: c22ac447a924451d83b0ad06788859ee, type: 2}
+  - {fileID: 11400000, guid: fafea3b89c69f5e4d9dd2eefefd41fb2, type: 2}
+  - {fileID: 11400000, guid: d10f0a1fb28a42df96c393d90d25ca3f, type: 2}
+  - {fileID: 11400000, guid: e10f0a1fb28a42df96c393d90d25ca3f, type: 2}
+  - {fileID: 11400000, guid: f10f0a1fb28a42df96c393d90d25ca3f, type: 2}
   minimumSpacing: 1.2
   positionAttempts: 20
   randomizeRotationY: 0

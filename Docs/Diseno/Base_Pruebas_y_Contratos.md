@@ -30,6 +30,7 @@ Los niveles de confianza son:
 - Curvas de daño por caída y distancia de explosión.
 - Capacidad, stacks, eliminación, transferencia completa y transferencia parcial de inventario.
 - Selección ponderada y determinista de tablas de loot.
+- Recogida parcial, recogida automática, equipamiento de mochila y descarte de loot al mundo.
 
 ### PlayMode
 

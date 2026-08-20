@@ -10,17 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdacdae2af089a645b074e6fd169d980, type: 3}
-  m_Name: Item_SGAmmo
+  m_Name: Item_FragGrenade
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Inventory.InventoryItemDefinition
-  itemId: ammo_sg
-  displayName: SG Ammo
-  itemType: 1
-  maxStack: 60
-  weight: 0.02
-  rarity: 0
-  pickupMode: 1
+  itemId: throwable_frag
+  displayName: Granada de fragmentacion
+  itemType: 6
+  dataConfidence: 1
+  maxStack: 4
+  weight: 0.6
+  rarity: 1
+  pickupMode: 0
+  protectionLevel: 0
+  backpackCapacity: 0
+  weaponDefinition: {fileID: 0}
+  weaponPrefab: {fileID: 0}
+  preferredWeaponSlot: 0
   icon: {fileID: 0}
-  worldModel: {fileID: 919132149155446097, guid: 20a46e32e5338864485206ca4d17201a, type: 3}
+  worldModel: {fileID: 0}
   worldOffset: {x: 0, y: 0, z: 0}
-  worldEulerAngles: {x: -90, y: 0, z: 0}
-  worldScale: {x: 15, y: 15, z: 15}
+  worldEulerAngles: {x: 0, y: 0, z: 0}
+  worldScale: {x: 1, y: 1, z: 1}

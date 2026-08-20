@@ -10,17 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdacdae2af089a645b074e6fd169d980, type: 3}
-  m_Name: Item_SGAmmo
+  m_Name: Item_Vest3
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Inventory.InventoryItemDefinition
-  itemId: ammo_sg
-  displayName: SG Ammo
-  itemType: 1
-  maxStack: 60
-  weight: 0.02
-  rarity: 0
-  pickupMode: 1
+  itemId: vest_3
+  displayName: Chaleco Nivel 3
+  itemType: 3
+  dataConfidence: 1
+  maxStack: 1
+  weight: 4
+  rarity: 2
+  pickupMode: 2
+  protectionLevel: 3
+  backpackCapacity: 0
+  weaponDefinition: {fileID: 0}
+  weaponPrefab: {fileID: 0}
+  preferredWeaponSlot: 0
   icon: {fileID: 0}
-  worldModel: {fileID: 919132149155446097, guid: 20a46e32e5338864485206ca4d17201a, type: 3}
+  worldModel: {fileID: 919132149155446097, guid: f946e95dbfb3d6f4695305be44e4fd00, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}
-  worldEulerAngles: {x: -90, y: 0, z: 0}
-  worldScale: {x: 15, y: 15, z: 15}
+  worldEulerAngles: {x: 0, y: 0, z: 0}
+  worldScale: {x: 35, y: 35, z: 35}

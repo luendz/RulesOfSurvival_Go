@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ROS.Game.Inventory;
 using UnityEngine;
 
 namespace ROS.Game.Loot
@@ -36,6 +37,12 @@ namespace ROS.Game.Loot
         [SerializeField]
         [Min(1)]
         private int spawnCount = 10;
+
+        [Tooltip(
+            "Objetos que siempre aparecen antes de completar el loot aleatorio."
+        )]
+        [SerializeField]
+        private InventoryItemDefinition[] guaranteedItems;
 
         [SerializeField]
         [Min(0f)]
@@ -90,6 +97,28 @@ namespace ROS.Game.Loot
             RemoveDestroyedReferences();
             _spawnedPositions.Clear();
 
+            if (guaranteedItems != null)
+            {
+                foreach (InventoryItemDefinition guaranteedItem
+                         in guaranteedItems)
+                {
+                    if (guaranteedItem == null)
+                    {
+                        continue;
+                    }
+
+                    SpawnEntry(
+                        new LootEntry
+                        {
+                            item = guaranteedItem,
+                            weight = 1f,
+                            minAmount = 1,
+                            maxAmount = 1
+                        }
+                    );
+                }
+            }
+
             for (int i = 0; i < spawnCount; i++)
             {
                 if (!lootTable.TryPick(out LootEntry entry))
@@ -97,44 +126,43 @@ namespace ROS.Game.Loot
                     break;
                 }
 
-                if (!TryFindSpawnPosition(out Vector3 spawnPosition))
-                {
-                    continue;
-                }
-
-                Quaternion rotation =
-                    randomizeRotationY
-                        ? Quaternion.Euler(
-                            0f,
-                            UnityEngine.Random.Range(0f, 360f),
-                            0f
-                        )
-                        : Quaternion.identity;
-
-                Transform parent =
-                    spawnedRoot != null
-                        ? spawnedRoot
-                        : transform;
-
-                LootPickup pickup =
-                    Instantiate(
-                        pickupPrefab,
-                        spawnPosition,
-                        rotation,
-                        parent
-                    );
-
-                pickup.Configure(
-                    entry.item,
-                    entry.GetRandomAmount()
-                );
-
-                pickup.name =
-                    $"Loot_{entry.item.displayName}";
-
-                _spawnedPickups.Add(pickup);
-                _spawnedPositions.Add(spawnPosition);
+                SpawnEntry(entry);
             }
+        }
+
+        private bool SpawnEntry(LootEntry entry)
+        {
+            if (!entry.IsValid ||
+                !TryFindSpawnPosition(out Vector3 spawnPosition))
+            {
+                return false;
+            }
+
+            Quaternion rotation = randomizeRotationY
+                ? Quaternion.Euler(
+                    0f,
+                    UnityEngine.Random.Range(0f, 360f),
+                    0f
+                )
+                : Quaternion.identity;
+
+            Transform parent = spawnedRoot != null
+                ? spawnedRoot
+                : transform;
+
+            LootPickup pickup = Instantiate(
+                pickupPrefab,
+                spawnPosition,
+                rotation,
+                parent
+            );
+
+            pickup.Configure(entry.item, entry.GetRandomAmount());
+            pickup.name = $"Loot_{entry.item.displayName}";
+
+            _spawnedPickups.Add(pickup);
+            _spawnedPositions.Add(spawnPosition);
+            return true;
         }
 
         public void ClearSpawnedLoot()

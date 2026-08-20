@@ -17,6 +17,9 @@ MonoBehaviour:
   itemType: 5
   maxStack: 1
   weight: 1
+  rarity: 0
+  pickupMode: 2
+  backpackCapacity: 140
   icon: {fileID: 0}
   worldModel: {fileID: 919132149155446097, guid: ae94379443d40a84cac142ebf0b914d4, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}

@@ -54,6 +54,22 @@ namespace ROS.Game.Weapons
         public event Action Fired;
         public event Action<DamageResult> HitConfirmed;
 
+        public void ConfigureDefinition(
+            WeaponDefinition newDefinition,
+            int startingReserveAmmo = 0)
+        {
+            definition = newDefinition;
+            reserveAmmo = Mathf.Max(0, startingReserveAmmo);
+            AmmoInMagazine =
+                definition != null
+                    ? definition.magazineSize
+                    : 0;
+
+            EnsureReferences();
+            UpdateDebugValues();
+            AmmoChanged?.Invoke();
+        }
+
         private float _nextShotTime;
         private bool _singleLatch;
         private Coroutine _reloadRoutine;
