@@ -11,7 +11,7 @@ Esta fase implementa el cuarto punto del orden recomendado del plan maestro. Amp
 - Cascos, chalecos y mochilas se equipan al recogerlos; el objeto reemplazado vuelve al suelo.
 - Cascos, chalecos y mochilas solo permiten progresar a un nivel superior. Un objeto del mismo nivel o inferior deja de ser recogible mientras se mantenga equipado el nivel mayor.
 - Los objetos colocados o soltados muestran su modelo 3D cuando la definición tiene uno asignado. El cubo provisional solo se conserva para objetos cuyo arte todavía no existe.
-- La caja de un jugador eliminado usa un modelo propio al 50% del tamaño inicial, flota a la altura de la cadera sobre una de sus puntas y combina un balanceo vertical corto con rotación continua. Rayos azules sutiles orbitan alrededor del cubo y forman un halo que nace desde la propia caja.
+- La caja de un jugador eliminado usa un modelo propio al 50% del tamaño inicial, sin halo, flota a la altura de la cadera sobre una de sus puntas y combina un balanceo vertical corto con rotación continua.
 - Las mochilas aumentan la capacidad total a 140, 180 o 220 según el nivel.
 - Las armas se asignan a un slot libre y se equipan inmediatamente. Si los slots primarios están ocupados, se reemplaza el slot activo.
 - `G` tira una unidad del último stack del inventario; `Shift + G` tira el stack completo.

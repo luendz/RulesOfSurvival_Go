@@ -270,7 +270,7 @@ namespace ROS.Game.Tests.EditMode
         }
 
         [Test]
-        public void DeathContainer_UsesConfiguredModelAndBlueHalo()
+        public void DeathContainer_UsesConfiguredFloatingModel()
         {
             GameObject sourcePlayer = CreatePlayer(20f);
             InventoryComponent sourceInventory =
@@ -307,14 +307,7 @@ namespace ROS.Game.Tests.EditMode
                 container.transform.Find(
                     "CajaLoot_Visual3D/Halo_Azul_Caja"
                 ),
-                Is.Not.Null
-            );
-            Assert.That(
-                container.transform.Find(
-                    "CajaLoot_Visual3D/Halo_Azul_Caja/" +
-                    "Rayos_Azules/Rayo_Azul_01"
-                ),
-                Is.Not.Null
+                Is.Null
             );
             Assert.That(
                 container.GetComponentsInChildren<Renderer>(true),

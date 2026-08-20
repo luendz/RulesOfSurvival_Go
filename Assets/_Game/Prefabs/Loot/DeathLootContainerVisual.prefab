@@ -45,15 +45,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bec7c63ec88eb76469e63ed174c017d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.DeathLootHalo
-  haloColor: {r: 0.1, g: 0.62, b: 1, a: 1}
-  lightIntensity: 0.75
-  lightRange: 2
-  pulseSpeed: 1.25
   hoverHeight: 0.9
   bobAmplitude: 0.035
   bobSpeed: 1.6
   spinSpeed: 35
-  rayOrbitSpeed: 50
 --- !u!1001 &7580431304684697730
 PrefabInstance:
   m_ObjectHideFlags: 0
