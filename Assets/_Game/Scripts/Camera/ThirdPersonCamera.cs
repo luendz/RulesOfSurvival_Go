@@ -49,6 +49,11 @@ namespace ROS.Game.CameraSystem
         [SerializeField] private float positionSmoothTime = 18f;
 
         [Header("Air Drop Camera")]
+        [Tooltip(
+            "Multiplicador de distancia durante el descenso. " +
+            "Un valor menor acerca la cámara al personaje."
+        )]
+        [Min(1f)]
         [SerializeField] private float airDropDistanceMultiplier =
             DefaultAirDropDistanceMultiplier;
         [SerializeField] private float airDropPitch = 32f;
@@ -97,9 +102,12 @@ namespace ROS.Game.CameraSystem
             _distanceMultiplier = 1f;
         }
 
-        public void EnterAirDropView(
-            float distanceMultiplier = DefaultAirDropDistanceMultiplier
-        )
+        public void EnterAirDropView()
+        {
+            EnterAirDropView(airDropDistanceMultiplier);
+        }
+
+        public void EnterAirDropView(float distanceMultiplier)
         {
             _distanceMultiplier = Mathf.Max(1f, distanceMultiplier);
             _pitch = airDropPitch;

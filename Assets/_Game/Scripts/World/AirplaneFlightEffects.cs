@@ -10,8 +10,14 @@ namespace ROS.Game.World
     {
         private static readonly Vector3[] JetPositions =
         {
-            new Vector3(-4.2f, -0.35f, -5.3f),
-            new Vector3(4.2f, -0.35f, -5.3f)
+            new Vector3(-6.75f, -1f, -1.8f),
+            new Vector3(6.7f, -0.89f, -1.86f)
+        };
+
+        private static readonly Color[] JetColors =
+        {
+            new Color(1f, 0.28f, 0.02f, 1f),
+            new Color(1f, 0.02f, 0.01f, 1f)
         };
 
         private static readonly Vector3[] WindLinePositions =
@@ -26,14 +32,11 @@ namespace ROS.Game.World
             new Vector3(1.7f, -2f, 1.1f)
         };
 
-        [SerializeField] private Color jetColor =
-            new Color(0.12f, 0.72f, 1f, 1f);
-        [SerializeField] private Color jetCoreColor =
-            new Color(0.72f, 0.35f, 1f, 1f);
         [SerializeField] private Color windColor =
             new Color(0.65f, 0.9f, 1f, 0.55f);
         [SerializeField] private float jetLightIntensity = 5.5f;
         [SerializeField] private float navigationLightIntensity = 3.5f;
+        [SerializeField] private float windFadeSpeed = 1.35f;
 
         private readonly List<ParticleSystem> _jetParticles =
             new List<ParticleSystem>();
@@ -91,6 +94,8 @@ namespace ROS.Game.World
                 _rightNavigationLight.intensity =
                     navigationLightIntensity * navigationPulse;
             }
+
+            UpdateWindLineFade();
         }
 
         private void BuildEffects()
@@ -104,10 +109,6 @@ namespace ROS.Game.World
             GameObject root = new GameObject("FlightEffects");
             root.transform.SetParent(transform, false);
 
-            Material jetMaterial = CreateAdditiveMaterial(
-                "JetTrailMaterial",
-                jetColor
-            );
             Material windMaterial = CreateAdditiveMaterial(
                 "WindLineMaterial",
                 windColor
@@ -115,7 +116,18 @@ namespace ROS.Game.World
 
             for (int i = 0; i < JetPositions.Length; i++)
             {
-                CreateJet(root.transform, JetPositions[i], jetMaterial, i);
+                Color jetColor = JetColors[i];
+                Material jetMaterial = CreateAdditiveMaterial(
+                    $"JetTrailMaterial_{i + 1}",
+                    jetColor
+                );
+                CreateJet(
+                    root.transform,
+                    JetPositions[i],
+                    jetColor,
+                    jetMaterial,
+                    i
+                );
             }
 
             CreateNavigationLights(root.transform);
@@ -134,6 +146,7 @@ namespace ROS.Game.World
         private void CreateJet(
             Transform parent,
             Vector3 localPosition,
+            Color jetColor,
             Material material,
             int index
         )
@@ -141,7 +154,8 @@ namespace ROS.Game.World
             GameObject jet = new GameObject($"JetEngine_{index + 1}");
             jet.transform.SetParent(parent, false);
             jet.transform.localPosition = localPosition;
-            jet.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            jet.transform.localRotation = Quaternion.Euler(0f, -180f, 0f);
+            jet.transform.localScale = new Vector3(1f, 1f, 0.1f);
 
             ParticleSystem particles = jet.AddComponent<ParticleSystem>();
             ParticleSystem.MainModule main = particles.main;
@@ -151,10 +165,7 @@ namespace ROS.Game.World
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.48f, 0.72f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(10f, 14f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.38f, 0.82f);
-            main.startColor = new ParticleSystem.MinMaxGradient(
-                jetColor,
-                jetCoreColor
-            );
+            main.startColor = jetColor;
             main.maxParticles = 220;
 
             ParticleSystem.EmissionModule emission = particles.emission;
@@ -174,8 +185,8 @@ namespace ROS.Game.World
                 new[]
                 {
                     new GradientColorKey(Color.white, 0f),
-                    new GradientColorKey(jetColor, 0.25f),
-                    new GradientColorKey(jetCoreColor, 1f)
+                    new GradientColorKey(jetColor, 0.18f),
+                    new GradientColorKey(jetColor, 1f)
                 },
                 new[]
                 {
@@ -269,6 +280,19 @@ namespace ROS.Game.World
             trail.receiveShadows = false;
             trail.emitting = false;
             _windLines.Add(trail);
+        }
+
+        private void UpdateWindLineFade()
+        {
+            for (int i = 0; i < _windLines.Count; i++)
+            {
+                float phase = i * 0.73f;
+                float wave = (Mathf.Sin(
+                    Time.time * windFadeSpeed + phase
+                ) + 1f) * 0.5f;
+                float fade = Mathf.SmoothStep(0f, 1f, wave);
+                _windLines[i].widthMultiplier = fade;
+            }
         }
 
         private Gradient CreateWindGradient(int index)

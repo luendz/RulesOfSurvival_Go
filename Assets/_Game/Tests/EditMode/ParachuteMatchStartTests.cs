@@ -100,6 +100,22 @@ namespace ROS.Game.Tests.EditMode
         }
 
         [Test]
+        public void ParachuteCamera_DistanceCanBeConfiguredInInspector()
+        {
+            var field = typeof(ThirdPersonCamera).GetField(
+                "airDropDistanceMultiplier",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic
+            );
+
+            Assert.That(field, Is.Not.Null);
+            Assert.That(
+                field.IsDefined(typeof(SerializeField), false),
+                Is.True
+            );
+        }
+
+        [Test]
         public void StaticSedan_HasConfiguredBattleRoyalePlacement()
         {
             Assert.That(
