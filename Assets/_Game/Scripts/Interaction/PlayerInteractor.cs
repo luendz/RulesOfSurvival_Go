@@ -15,7 +15,7 @@ namespace ROS.Game.Interaction
         [SerializeField] private LayerMask mask = ~0;
 
         private readonly Collider[] _overlaps =
-            new Collider[32];
+            new Collider[128];
 
         private IInteractable _current;
 
@@ -90,6 +90,9 @@ namespace ROS.Game.Interaction
             float nearestDistance =
                 float.MaxValue;
 
+            int nearestPriority =
+                int.MinValue;
+
             for (int i = 0; i < count; i++)
             {
                 Collider collider =
@@ -119,13 +122,26 @@ namespace ROS.Game.Interaction
                         origin.position
                     ).sqrMagnitude;
 
+                int priority =
+                    interactable is
+                        IPrioritizedInteractable
+                        prioritized
+                        ? prioritized
+                            .InteractionPriority
+                        : 0;
+
                 if (
-                    sqrDistance >=
-                    nearestDistance
+                    priority < nearestPriority ||
+                    (
+                        priority == nearestPriority &&
+                        sqrDistance >= nearestDistance
+                    )
                 )
                 {
                     continue;
                 }
+
+                nearestPriority = priority;
 
                 nearestDistance =
                     sqrDistance;

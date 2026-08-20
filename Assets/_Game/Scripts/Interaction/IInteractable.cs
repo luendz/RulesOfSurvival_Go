@@ -6,4 +6,9 @@ namespace ROS.Game.Interaction
         bool CanInteract(UnityEngine.GameObject interactor);
         void Interact(UnityEngine.GameObject interactor);
     }
+
+    public interface IPrioritizedInteractable
+    {
+        int InteractionPriority { get; }
+    }
 }

@@ -26,6 +26,12 @@ Esta fase completa la caja básica creada por el flujo de muerte y la convierte 
 
 La interfaz actual es funcional y se genera en runtime para no depender de una escena o prefab concreto. La presentación visual definitiva —iconografía, animaciones, navegación con mando y diseño final del inventario— se consolidará durante la fase de inventario/HUD, sin cambiar estos contratos de transferencia.
 
+## Demostración en la escena Battle Royale
+
+Al ejecutar `07_BattleRoyaleTest` en Play Mode se crea en runtime `JugadorMuerto_Demo`, representado por un cuerpo provisional junto a su caja. La caja contiene munición 5.56 mm, vendajes, un casco nivel 2 y una mira 4x para probar la selección y los límites de capacidad.
+
+El jugador de demostración no se registra en `BattleRoyaleManager`, por lo que no altera el contador de vivos, las eliminaciones ni el final de partida. No se guarda ningún objeto adicional dentro de la escena: el cuerpo, la caja y las definiciones de objetos existen únicamente durante Play Mode. Cuando una caja y un objeto suelto están dentro del rango, la caja tiene prioridad de interacción para que `F` permita inspeccionar el inventario del jugador eliminado.
+
 ## Validación
 
 - EditMode cubre la transferencia parcial limitada por peso y capacidad.

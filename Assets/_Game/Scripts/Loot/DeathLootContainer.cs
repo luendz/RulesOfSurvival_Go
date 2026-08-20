@@ -9,7 +9,8 @@ namespace ROS.Game.Loot
     [RequireComponent(typeof(InventoryComponent))]
     public sealed class DeathLootContainer :
         MonoBehaviour,
-        IInteractable
+        IInteractable,
+        IPrioritizedInteractable
     {
         [SerializeField]
         private InventoryComponent inventory;
@@ -57,6 +58,8 @@ namespace ROS.Game.Loot
 
         public string InteractionLabel =>
             $"Abrir {DisplayName} ({ItemCount})";
+
+        public int InteractionPriority => 10;
 
         private void Awake()
         {
