@@ -171,19 +171,35 @@ namespace ROS.Game.Combat
 
             ParticleSystem ps = psObj.AddComponent<ParticleSystem>();
 
+            // Material neutro: evita que el shader por defecto tinte los colores
+            ParticleSystemRenderer psr =
+                psObj.GetComponent<ParticleSystemRenderer>();
+            Shader particleShader =
+                Shader.Find("Universal Render Pipeline/Particles/Unlit") ??
+                Shader.Find("Particles/Standard Unlit") ??
+                Shader.Find("Legacy Shaders/Particles/Alpha Blended");
+            if (particleShader != null)
+            {
+                Material pm = new Material(particleShader);
+                pm.color      = Color.white;
+                psr.material  = pm;
+                Destroy(pm, 3.5f);
+            }
+
             ParticleSystem.MainModule main = ps.main;
             main.loop            = false;
             main.playOnAwake     = true;
             main.duration        = 0.5f;
             main.startLifetime   = new ParticleSystem.MinMaxCurve(0.8f, 2.0f);
             main.startSpeed      = new ParticleSystem.MinMaxCurve(0.3f, 2.2f);
-            main.startSize       = new ParticleSystem.MinMaxCurve(0.04f, 0.18f);
+            main.startSize       = new ParticleSystem.MinMaxCurve(0.05f, 0.20f);
+            // Azul puro: sin componente rojo para evitar lila
             main.startColor      = new ParticleSystem.MinMaxGradient(
-                new Color(0.30f, 0.60f, 1.00f, 0.95f),
-                new Color(0.10f, 0.30f, 0.80f, 0.60f)
+                new Color(0.00f, 0.45f, 1.00f, 1.00f),
+                new Color(0.00f, 0.20f, 0.85f, 0.70f)
             );
             main.gravityModifier =
-                new ParticleSystem.MinMaxCurve(-0.1f, 0.05f);
+                new ParticleSystem.MinMaxCurve(-0.15f, 0.05f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.maxParticles    = 80;
 
@@ -195,9 +211,9 @@ namespace ROS.Game.Combat
             });
 
             ParticleSystem.ShapeModule shape = ps.shape;
-            shape.enabled    = true;
-            shape.shapeType  = ParticleSystemShapeType.Sphere;
-            shape.radius     = 0.45f;
+            shape.enabled   = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius    = 0.45f;
 
             ParticleSystem.ColorOverLifetimeModule col =
                 ps.colorOverLifetime;
@@ -206,10 +222,8 @@ namespace ROS.Game.Combat
             grad.SetKeys(
                 new GradientColorKey[]
                 {
-                    new GradientColorKey(
-                        new Color(0.4f, 0.7f, 1.0f), 0f),
-                    new GradientColorKey(
-                        new Color(0.1f, 0.2f, 0.7f), 1f)
+                    new GradientColorKey(new Color(0.00f, 0.55f, 1.00f), 0f),
+                    new GradientColorKey(new Color(0.00f, 0.15f, 0.75f), 1f)
                 },
                 new GradientAlphaKey[]
                 {
@@ -219,7 +233,7 @@ namespace ROS.Game.Combat
             );
             col.color = new ParticleSystem.MinMaxGradient(grad);
 
-            Destroy(psObj, 3f);
+            Destroy(psObj, 3.5f);
         }
     }
 }
