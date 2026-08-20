@@ -12,6 +12,9 @@ namespace ROS.Game.Loot
         IInteractable,
         IPrioritizedInteractable
     {
+        private const string VisualResourcePath =
+            "DeathLootContainerVisual";
+
         [SerializeField]
         private InventoryComponent inventory;
 
@@ -90,7 +93,7 @@ namespace ROS.Game.Loot
             DeathLootContainer container =
                 containerObject.AddComponent<DeathLootContainer>();
 
-            container.CreatePrototypeVisual();
+            container.CreateVisual();
             container.InitializeFrom(source);
 
             return container;
@@ -239,6 +242,32 @@ namespace ROS.Game.Loot
             {
                 Destroy(visualCollider);
             }
+        }
+
+        private void CreateVisual()
+        {
+            DeathLootVisualDefinition definition =
+                Resources.Load<DeathLootVisualDefinition>(
+                    VisualResourcePath
+                );
+
+            if (
+                definition == null ||
+                definition.visualPrefab == null
+            )
+            {
+                CreatePrototypeVisual();
+                return;
+            }
+
+            GameObject visual = Instantiate(
+                definition.visualPrefab,
+                transform
+            );
+
+            visual.name = "CajaLoot_Visual3D";
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
         }
     }
 }

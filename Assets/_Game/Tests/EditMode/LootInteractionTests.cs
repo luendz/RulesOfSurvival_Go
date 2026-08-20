@@ -169,6 +169,41 @@ namespace ROS.Game.Tests.EditMode
             );
         }
 
+        [Test]
+        public void DeathContainer_UsesConfiguredModelAndBlueHalo()
+        {
+            GameObject sourcePlayer = CreatePlayer(20f);
+            InventoryComponent sourceInventory =
+                sourcePlayer.GetComponent<InventoryComponent>();
+            InventoryItemDefinition item = CreateItem(
+                "death_loot_visual",
+                ItemType.Ammo,
+                0.1f
+            );
+
+            sourceInventory.Add(item, 1);
+
+            DeathLootContainer container =
+                DeathLootContainer.Create(
+                    Vector3.zero,
+                    sourceInventory
+                );
+            _created.Add(container.gameObject);
+
+            Assert.That(
+                container.transform.Find("CajaLoot_Visual3D"),
+                Is.Not.Null
+            );
+            Assert.That(
+                container.GetComponentInChildren<DeathLootHalo>(true),
+                Is.Not.Null
+            );
+            Assert.That(
+                container.GetComponentsInChildren<Renderer>(true),
+                Is.Not.Empty
+            );
+        }
+
         private GameObject CreatePlayer(float capacity)
         {
             GameObject player = new GameObject("Loot_TestPlayer");

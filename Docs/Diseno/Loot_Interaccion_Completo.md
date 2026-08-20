@@ -10,6 +10,7 @@ Esta fase implementa el cuarto punto del orden recomendado del plan maestro. Amp
 - Los objetos que no caben completos se recogen parcialmente y el resto permanece en el mundo.
 - Cascos, chalecos y mochilas se equipan al recogerlos; el objeto reemplazado vuelve al suelo.
 - Los objetos colocados o soltados muestran su modelo 3D cuando la definición tiene uno asignado. El cubo provisional solo se conserva para objetos cuyo arte todavía no existe.
+- La caja de un jugador eliminado usa un modelo propio y un halo azul pulsante inspirado en la lectura visual de `Rules of Survival`, para localizarla rápidamente sin confundirla con el loot normal.
 - Las mochilas aumentan la capacidad total a 140, 180 o 220 según el nivel.
 - Las armas se asignan a un slot libre y se equipan inmediatamente. Si los slots primarios están ocupados, se reemplaza el slot activo.
 - `G` tira una unidad del último stack del inventario; `Shift + G` tira el stack completo.
