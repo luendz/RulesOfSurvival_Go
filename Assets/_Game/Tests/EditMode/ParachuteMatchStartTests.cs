@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using ROS.Game.BattleRoyale;
+using ROS.Game.CameraSystem;
 using ROS.Game.Core;
 using ROS.Game.Parachute;
 using ROS.Game.World;
@@ -86,6 +87,28 @@ namespace ROS.Game.Tests.EditMode
             Assert.That(
                 ParachuteController.ModelEulerAngles,
                 Is.EqualTo(new Vector3(-120f, 0f, 0f))
+            );
+        }
+
+        [Test]
+        public void ParachuteCamera_UsesCloserWideView()
+        {
+            Assert.That(
+                ThirdPersonCamera.DefaultAirDropDistanceMultiplier,
+                Is.EqualTo(5.5f)
+            );
+        }
+
+        [Test]
+        public void StaticSedan_HasConfiguredBattleRoyalePlacement()
+        {
+            Assert.That(
+                BattleRoyaleSetDressingBootstrap.SedanPosition.y,
+                Is.GreaterThanOrEqualTo(0f)
+            );
+            Assert.That(
+                BattleRoyaleSetDressingBootstrap.SedanPosition,
+                Is.Not.EqualTo(Vector3.zero)
             );
         }
     }

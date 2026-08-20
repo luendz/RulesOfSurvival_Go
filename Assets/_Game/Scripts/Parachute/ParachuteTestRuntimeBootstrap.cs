@@ -81,6 +81,11 @@ namespace ROS.Game.Parachute
                 airplane = airplaneObject.AddComponent<AirplaneController>();
             }
 
+            if (airplaneObject.GetComponent<AirplaneFlightEffects>() == null)
+            {
+                airplaneObject.AddComponent<AirplaneFlightEffects>();
+            }
+
             BattleRoyaleManager manager =
                 Object.FindFirstObjectByType<BattleRoyaleManager>();
 

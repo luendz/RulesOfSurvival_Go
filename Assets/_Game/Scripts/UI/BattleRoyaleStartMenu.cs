@@ -11,7 +11,8 @@ namespace ROS.Game.UI
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private ThirdPersonCamera playerCamera;
         [SerializeField] private float airplaneCameraDistance = 5.2f;
-        [SerializeField] private float airDropCameraDistance = 9f;
+        [SerializeField] private float airDropCameraDistance =
+            ThirdPersonCamera.DefaultAirDropDistanceMultiplier;
 
         public bool IsVisible { get; private set; } = true;
         public bool MatchRequested { get; private set; }

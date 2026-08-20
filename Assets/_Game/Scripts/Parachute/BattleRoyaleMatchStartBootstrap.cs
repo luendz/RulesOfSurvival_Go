@@ -109,6 +109,11 @@ namespace ROS.Game.Parachute
                 airplane = airplaneObject.AddComponent<AirplaneController>();
             }
 
+            if (airplaneObject.GetComponent<AirplaneFlightEffects>() == null)
+            {
+                airplaneObject.AddComponent<AirplaneFlightEffects>();
+            }
+
             airplane.PrepareRoute(RouteStart, RouteEnd);
 
             GameObject flowObject = new GameObject(

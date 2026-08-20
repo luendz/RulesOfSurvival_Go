@@ -7,6 +7,8 @@ namespace ROS.Game.CameraSystem
 {
     public sealed class ThirdPersonCamera : MonoBehaviour
     {
+        public const float DefaultAirDropDistanceMultiplier = 5.5f;
+
         [Header("References")]
         [SerializeField] private Transform target;
         [SerializeField] private PlayerInputReader input;
@@ -47,7 +49,8 @@ namespace ROS.Game.CameraSystem
         [SerializeField] private float positionSmoothTime = 18f;
 
         [Header("Air Drop Camera")]
-        [SerializeField] private float airDropDistanceMultiplier = 9f;
+        [SerializeField] private float airDropDistanceMultiplier =
+            DefaultAirDropDistanceMultiplier;
         [SerializeField] private float airDropPitch = 32f;
 
         [Header("Collision")]
@@ -94,7 +97,9 @@ namespace ROS.Game.CameraSystem
             _distanceMultiplier = 1f;
         }
 
-        public void EnterAirDropView(float distanceMultiplier = 9f)
+        public void EnterAirDropView(
+            float distanceMultiplier = DefaultAirDropDistanceMultiplier
+        )
         {
             _distanceMultiplier = Mathf.Max(1f, distanceMultiplier);
             _pitch = airDropPitch;
