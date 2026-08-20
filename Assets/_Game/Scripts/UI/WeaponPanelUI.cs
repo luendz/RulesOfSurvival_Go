@@ -66,7 +66,7 @@ namespace ROS.Game.UI
             {
                 weaponName.text =
                     weapon.Definition != null
-                        ? $"{weapon.Definition.displayName} [{GetFireModeLabel(weapon.CurrentFireMode)}]"
+                        ? weapon.Definition.displayName
                         : weapon.name;
             }
 
@@ -81,7 +81,7 @@ namespace ROS.Game.UI
             if (slotText != null)
             {
                 slotText.text =
-                    $"SLOT {equipment.EquippedSlot} | {GetFireModeLabel(weapon.CurrentFireMode)}";
+                    $"S{equipment.EquippedSlot} | {GetFireModeLabel(weapon.CurrentFireMode)}";
             }
         }
 
