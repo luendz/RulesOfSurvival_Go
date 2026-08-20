@@ -26,7 +26,8 @@ Los niveles de confianza son:
 
 - Validación de identificadores estables.
 - Contrato compartido de definiciones.
-- Daño, absorción de armadura, estado de vida, procedencia del daño y evento de muerte.
+- Daño, zonas corporales, headshots, casco/chaleco, durabilidad, estado de vida, procedencia del daño y eventos de impacto/muerte.
+- Curvas de daño por caída y distancia de explosión.
 - Capacidad, stacks, eliminación, transferencia completa y transferencia parcial de inventario.
 - Selección ponderada y determinista de tablas de loot.
 
@@ -48,3 +49,5 @@ Unity.exe -batchmode -projectPath <ruta> -runTests -testPlatform PlayMode -testR
 ```
 
 Cada corrección futura debe incluir una prueba que falle antes del cambio y pase después cuando el comportamiento pueda validarse automáticamente.
+
+Cuando la escena abierta tenga cambios sin guardar, se prioriza una compilación limpia y pruebas focalizadas que no obliguen a guardar o descartar esa escena.

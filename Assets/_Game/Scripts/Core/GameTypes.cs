@@ -7,4 +7,7 @@ namespace ROS.Game.Core
     public enum WeaponFireMode { Single, Burst, Auto }
     public enum ItemType { Weapon, Ammo, Healing, Armor, Helmet, Backpack, Throwable, Attachment, Misc }
     public enum DataConfidence { Unknown, Prototype, Verified, Community, Estimated, Contradictory }
+    public enum DamageType { Generic, Firearm, Explosion, Fall, SafeZone }
+    public enum HitZone { None, Head, Torso, Arm, Leg }
+    public enum ProtectionLevel { None, Level1, Level2, Level3 }
 }

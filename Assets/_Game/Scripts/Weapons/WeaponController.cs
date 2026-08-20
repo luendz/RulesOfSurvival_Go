@@ -52,6 +52,7 @@ namespace ROS.Game.Weapons
 
         public event Action AmmoChanged;
         public event Action Fired;
+        public event Action<DamageResult> HitConfirmed;
 
         private float _nextShotTime;
         private bool _singleLatch;
@@ -227,7 +228,8 @@ namespace ROS.Game.Weapons
                 direction,
                 out bool hasHit,
                 out Vector3 hitPoint,
-                out Vector3 hitNormal
+                out Vector3 hitNormal,
+                out bool hitCharacter
             );
 
             debugLastShotHit = hasHit;
@@ -249,7 +251,8 @@ namespace ROS.Game.Weapons
                 weaponEffects.PlayShot(
                     hitPoint,
                     hitNormal,
-                    hasHit
+                    hasHit,
+                    hitCharacter
                 );
             }
 
@@ -405,9 +408,11 @@ namespace ROS.Game.Weapons
             Vector3 direction,
             out bool hasHit,
             out Vector3 hitPoint,
-            out Vector3 hitNormal)
+            out Vector3 hitNormal,
+            out bool hitCharacter)
         {
             hasHit = false;
+            hitCharacter = false;
 
             hitPoint =
                 origin +
@@ -421,7 +426,7 @@ namespace ROS.Game.Weapons
                     direction,
                     definition.range,
                     hitMask,
-                    QueryTriggerInteraction.Ignore
+                    QueryTriggerInteraction.Collide
                 );
 
             Array.Sort(
@@ -429,6 +434,10 @@ namespace ROS.Game.Weapons
                 (a, b) =>
                     a.distance.CompareTo(b.distance)
             );
+
+            bool hasCharacterFallback = false;
+            RaycastHit characterFallback = default;
+            Health fallbackHealth = null;
 
             foreach (RaycastHit hit in hits)
             {
@@ -443,6 +452,62 @@ namespace ROS.Game.Weapons
                 )
                 {
                     continue;
+                }
+
+                DamageHitbox hitbox =
+                    hit.collider.GetComponent<DamageHitbox>();
+
+                Health targetHealth = hitbox != null
+                    ? hitbox.Owner
+                    : hit.collider.GetComponentInParent<Health>();
+
+                if (targetHealth != null)
+                {
+                    if (hitbox != null)
+                    {
+                        ApplyFirearmDamage(
+                            targetHealth,
+                            hitbox.HitZone,
+                            hit,
+                            direction
+                        );
+
+                        hasHit = true;
+                        hitCharacter = true;
+                        hitPoint = hit.point;
+                        hitNormal = hit.normal;
+                        return;
+                    }
+
+                    if (!hasCharacterFallback)
+                    {
+                        hasCharacterFallback = true;
+                        characterFallback = hit;
+                        fallbackHealth = targetHealth;
+                    }
+
+                    continue;
+                }
+
+                if (hit.collider.isTrigger)
+                {
+                    continue;
+                }
+
+                if (hasCharacterFallback)
+                {
+                    ApplyFirearmDamage(
+                        fallbackHealth,
+                        HitZone.Torso,
+                        characterFallback,
+                        direction
+                    );
+
+                    hasHit = true;
+                    hitCharacter = true;
+                    hitPoint = characterFallback.point;
+                    hitNormal = characterFallback.normal;
+                    return;
                 }
 
                 hasHit = true;
@@ -460,12 +525,61 @@ namespace ROS.Game.Weapons
                             definition.damage,
                             hit.point,
                             direction,
-                            gameObject
+                            gameObject,
+                            DamageType.Firearm,
+                            HitZone.Torso
                         )
                     );
                 }
 
-                break;
+                return;
+            }
+
+            if (hasCharacterFallback)
+            {
+                ApplyFirearmDamage(
+                    fallbackHealth,
+                    HitZone.Torso,
+                    characterFallback,
+                    direction
+                );
+
+                hasHit = true;
+                hitCharacter = true;
+                hitPoint = characterFallback.point;
+                hitNormal = characterFallback.normal;
+            }
+        }
+
+        private void ApplyFirearmDamage(
+            Health target,
+            HitZone hitZone,
+            RaycastHit hit,
+            Vector3 direction)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            bool wasAlive = target.IsAlive;
+
+            target.ApplyDamage(
+                new DamageInfo(
+                    definition.damage,
+                    hit.point,
+                    direction,
+                    gameObject,
+                    DamageType.Firearm,
+                    hitZone
+                )
+            );
+
+            if (wasAlive)
+            {
+                HitConfirmed?.Invoke(
+                    target.LastDamageResult
+                );
             }
         }
 
