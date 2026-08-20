@@ -79,12 +79,13 @@ namespace ROS.Game.Combat
                 float scaleFactor = Mathf.Lerp(1f, 0.05f, Mathf.Pow(t, 2f));
                 transform.localScale = startScale * scaleFactor;
 
-                // Desvanecer
+                // Desvanecer y añadir brillo azul al desintegrarse
                 float alpha = 1f - t;
                 foreach (Material mat in fadeMaterials)
                 {
                     if (mat == null) continue;
                     ApplyAlpha(mat, alpha);
+                    ApplyBlueEmission(mat, t);
                 }
 
                 yield return null;
@@ -126,6 +127,24 @@ namespace ROS.Game.Combat
             }
         }
 
+        private static void ApplyBlueEmission(Material mat, float t)
+        {
+            // Pico de brillo azul a mitad de la desintegración
+            float intensity = Mathf.Sin(t * Mathf.PI) * 2.2f;
+            Color glow      = new Color(0.2f, 0.5f, 1.0f) * intensity;
+
+            if (mat.HasProperty("_EmissionColor"))
+            {
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", glow);
+            }
+            else if (mat.HasProperty("_BaseColor"))
+            {
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", glow);
+            }
+        }
+
         private static void ApplyAlpha(Material mat, float alpha)
         {
             if (mat.HasProperty("_BaseColor"))
@@ -160,8 +179,8 @@ namespace ROS.Game.Combat
             main.startSpeed      = new ParticleSystem.MinMaxCurve(0.3f, 2.2f);
             main.startSize       = new ParticleSystem.MinMaxCurve(0.04f, 0.18f);
             main.startColor      = new ParticleSystem.MinMaxGradient(
-                new Color(0.75f, 0.65f, 0.55f, 0.9f),
-                new Color(0.40f, 0.35f, 0.30f, 0.5f)
+                new Color(0.30f, 0.60f, 1.00f, 0.95f),
+                new Color(0.10f, 0.30f, 0.80f, 0.60f)
             );
             main.gravityModifier =
                 new ParticleSystem.MinMaxCurve(-0.1f, 0.05f);
@@ -188,9 +207,9 @@ namespace ROS.Game.Combat
                 new GradientColorKey[]
                 {
                     new GradientColorKey(
-                        new Color(0.8f, 0.7f, 0.55f), 0f),
+                        new Color(0.4f, 0.7f, 1.0f), 0f),
                     new GradientColorKey(
-                        new Color(0.3f, 0.25f, 0.2f), 1f)
+                        new Color(0.1f, 0.2f, 0.7f), 1f)
                 },
                 new GradientAlphaKey[]
                 {

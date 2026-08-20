@@ -33,13 +33,19 @@ namespace ROS.Game.UI
         private void OnEnable()
         {
             if (_health != null)
+            {
                 _health.HealthChanged += OnHealthChanged;
+                _health.Died          += OnDied;
+            }
         }
 
         private void OnDisable()
         {
             if (_health != null)
+            {
                 _health.HealthChanged -= OnHealthChanged;
+                _health.Died          -= OnDied;
+            }
         }
 
         private void LateUpdate()
@@ -55,6 +61,12 @@ namespace ROS.Game.UI
         }
 
         private void OnHealthChanged(float current, float max) => Refresh();
+
+        private void OnDied(ROS.Game.Combat.DamageInfo _)
+        {
+            if (_root != null)
+                _root.gameObject.SetActive(false);
+        }
 
         private void Refresh()
         {
