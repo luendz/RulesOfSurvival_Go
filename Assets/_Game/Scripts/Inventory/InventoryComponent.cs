@@ -39,15 +39,23 @@ namespace ROS.Game.Inventory
         public bool Add(InventoryItemDefinition item, int amount)
         {
             if (!CanAdd(item, amount)) return false;
-            var stack = stacks.Find(x => x.item == item && x.amount < item.maxStack);
+
+            int stackLimit =
+                Mathf.Max(1, item.maxStack);
+
+            var stack = stacks.Find(
+                x =>
+                    x.item == item &&
+                    x.amount < stackLimit
+            );
             while (amount > 0)
             {
-                if (stack == null || stack.amount >= item.maxStack)
+                if (stack == null || stack.amount >= stackLimit)
                 {
                     stack = new InventoryStack { item = item, amount = 0 };
                     stacks.Add(stack);
                 }
-                int room = item.maxStack - stack.amount;
+                int room = stackLimit - stack.amount;
                 int add = Mathf.Min(room, amount);
                 stack.amount += add;
                 amount -= add;
@@ -55,6 +63,62 @@ namespace ROS.Game.Inventory
             }
             Changed?.Invoke();
             return true;
+        }
+
+        public int GetAmount(
+            InventoryItemDefinition item
+        )
+        {
+            if (item == null)
+            {
+                return 0;
+            }
+
+            int total = 0;
+
+            foreach (InventoryStack stack in stacks)
+            {
+                if (stack.item == item)
+                {
+                    total += Mathf.Max(0, stack.amount);
+                }
+            }
+
+            return total;
+        }
+
+        public int GetMaxAddableAmount(
+            InventoryItemDefinition item
+        )
+        {
+            if (item == null)
+            {
+                return 0;
+            }
+
+            if (item.weight <= 0.0001f)
+            {
+                return int.MaxValue;
+            }
+
+            float availableCapacity =
+                Mathf.Max(0f, capacity - UsedCapacity);
+
+            float amountByWeight =
+                availableCapacity /
+                item.weight;
+
+            if (amountByWeight >= int.MaxValue)
+            {
+                return int.MaxValue;
+            }
+
+            return Mathf.Max(
+                0,
+                Mathf.FloorToInt(
+                    amountByWeight + 0.001f
+                )
+            );
         }
 
         public bool Remove(InventoryItemDefinition item, int amount)
@@ -139,6 +203,98 @@ namespace ROS.Game.Inventory
             Changed?.Invoke();
 
             return true;
+        }
+
+        public int TransferTo(
+            InventoryComponent destination,
+            InventoryItemDefinition item,
+            int requestedAmount
+        )
+        {
+            if (
+                destination == null ||
+                destination == this ||
+                item == null ||
+                requestedAmount <= 0
+            )
+            {
+                return 0;
+            }
+
+            int amount =
+                Mathf.Min(
+                    requestedAmount,
+                    GetAmount(item),
+                    destination.GetMaxAddableAmount(item)
+                );
+
+            if (amount <= 0)
+            {
+                return 0;
+            }
+
+            if (!destination.Add(item, amount))
+            {
+                return 0;
+            }
+
+            if (!Remove(item, amount))
+            {
+                destination.Remove(item, amount);
+                return 0;
+            }
+
+            return amount;
+        }
+
+        public int TransferAllPossibleTo(
+            InventoryComponent destination
+        )
+        {
+            if (
+                destination == null ||
+                destination == this
+            )
+            {
+                return 0;
+            }
+
+            InventoryStack[] snapshot =
+                new InventoryStack[stacks.Count];
+
+            for (int i = 0; i < stacks.Count; i++)
+            {
+                InventoryStack stack = stacks[i];
+
+                snapshot[i] =
+                    new InventoryStack
+                    {
+                        item = stack.item,
+                        amount = stack.amount
+                    };
+            }
+
+            int transferred = 0;
+
+            foreach (InventoryStack stack in snapshot)
+            {
+                if (
+                    stack.item == null ||
+                    stack.amount <= 0
+                )
+                {
+                    continue;
+                }
+
+                transferred +=
+                    TransferTo(
+                        destination,
+                        stack.item,
+                        stack.amount
+                    );
+            }
+
+            return transferred;
         }
 
         public void SetCapacity(float newCapacity)

@@ -1,6 +1,7 @@
 using ROS.Game.Combat;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
+using ROS.Game.UI;
 using UnityEngine;
 
 namespace ROS.Game.Loot
@@ -13,8 +14,23 @@ namespace ROS.Game.Loot
         [SerializeField]
         private InventoryComponent inventory;
 
+        [SerializeField]
+        private string sourcePlayerName;
+
         public InventoryComponent StoredInventory =>
             inventory;
+
+        public string SourcePlayerName =>
+            sourcePlayerName;
+
+        public string DisplayName =>
+            string.IsNullOrWhiteSpace(
+                sourcePlayerName
+            )
+                ? "Caja de jugador eliminado"
+                : $"Caja de {sourcePlayerName}";
+
+        public bool IsEmpty => ItemCount <= 0;
 
         public int ItemCount
         {
@@ -40,7 +56,7 @@ namespace ROS.Game.Loot
         }
 
         public string InteractionLabel =>
-            $"Saquear caja ({ItemCount})";
+            $"Abrir {DisplayName} ({ItemCount})";
 
         private void Awake()
         {
@@ -53,7 +69,11 @@ namespace ROS.Game.Loot
         )
         {
             GameObject containerObject =
-                new GameObject("Caja_Loot_Jugador");
+                new GameObject(
+                    source == null
+                        ? "Caja_Loot_Jugador"
+                        : $"Caja_Loot_{source.gameObject.name}"
+                );
 
             containerObject.transform.position =
                 position + Vector3.up * 0.3f;
@@ -80,6 +100,11 @@ namespace ROS.Game.Loot
             EnsureInventory();
             inventory.SetCapacity(float.MaxValue);
 
+            sourcePlayerName =
+                source != null
+                    ? source.gameObject.name
+                    : string.Empty;
+
             return
                 source == null ||
                 source.Stacks.Count == 0 ||
@@ -101,12 +126,10 @@ namespace ROS.Game.Loot
                 return false;
             }
 
-            InventoryComponent target =
-                interactor.GetComponent<InventoryComponent>();
-
             return
-                target != null &&
-                target.CanReceiveAll(inventory);
+                interactor.GetComponent<
+                    InventoryComponent
+                >() != null;
         }
 
         public void Interact(GameObject interactor)
@@ -116,12 +139,64 @@ namespace ROS.Game.Loot
                 return;
             }
 
-            InventoryComponent target =
-                interactor.GetComponent<InventoryComponent>();
+            DeathLootPanelPresenter.OpenOrCreate(
+                this,
+                interactor
+            );
+        }
 
-            if (!inventory.TransferAllTo(target))
+        public int TryLoot(
+            InventoryItemDefinition item,
+            int requestedAmount,
+            InventoryComponent destination
+        )
+        {
+            EnsureInventory();
+
+            int transferred =
+                inventory.TransferTo(
+                    destination,
+                    item,
+                    requestedAmount
+                );
+
+            DestroyIfEmpty();
+
+            return transferred;
+        }
+
+        public int LootAllPossible(
+            InventoryComponent destination
+        )
+        {
+            EnsureInventory();
+
+            int transferred =
+                inventory.TransferAllPossibleTo(
+                    destination
+                );
+
+            DestroyIfEmpty();
+
+            return transferred;
+        }
+
+        private void DestroyIfEmpty()
+        {
+            if (!IsEmpty)
             {
                 return;
+            }
+
+            foreach (
+                Collider collider
+                in GetComponentsInChildren<Collider>(true)
+            )
+            {
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                }
             }
 
             Destroy(gameObject);

@@ -99,5 +99,51 @@ namespace ROS.Game.Tests.EditMode
                 Object.DestroyImmediate(destinationOwner);
             }
         }
+
+        [Test]
+        public void TransferTo_MovesOnlyWhatFitsInDestination()
+        {
+            GameObject destinationOwner =
+                new GameObject(
+                    "Inventory_PartialDestination"
+                );
+
+            InventoryComponent destination =
+                destinationOwner.AddComponent<
+                    InventoryComponent
+                >();
+
+            destination.SetCapacity(5f);
+            _inventory.SetCapacity(20f);
+            _inventory.Add(_item, 5);
+
+            try
+            {
+                int transferred =
+                    _inventory.TransferTo(
+                        destination,
+                        _item,
+                        5
+                    );
+
+                Assert.That(transferred, Is.EqualTo(2));
+                Assert.That(
+                    _inventory.GetAmount(_item),
+                    Is.EqualTo(3)
+                );
+                Assert.That(
+                    destination.GetAmount(_item),
+                    Is.EqualTo(2)
+                );
+                Assert.That(
+                    destination.GetMaxAddableAmount(_item),
+                    Is.Zero
+                );
+            }
+            finally
+            {
+                Object.DestroyImmediate(destinationOwner);
+            }
+        }
     }
 }

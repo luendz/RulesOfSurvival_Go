@@ -7,6 +7,7 @@ using ROS.Game.Input;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
+using ROS.Game.UI;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -172,6 +173,110 @@ namespace ROS.Game.Tests.PlayMode
 
             Object.Destroy(zoneObject);
             Object.Destroy(playerObject);
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator DeathLootContainer_AllowsPartialAndSelectedLoot()
+        {
+            GameObject sourceObject =
+                new GameObject("LootBox_SourcePlayer");
+
+            GameObject looterObject =
+                new GameObject("LootBox_LooterPlayer");
+
+            InventoryComponent source =
+                sourceObject.AddComponent<
+                    InventoryComponent
+                >();
+
+            InventoryComponent destination =
+                looterObject.AddComponent<
+                    InventoryComponent
+                >();
+
+            looterObject.AddComponent<Health>();
+
+            PlayerInputReader input =
+                looterObject.AddComponent<
+                    PlayerInputReader
+                >();
+
+            InventoryItemDefinition item =
+                ScriptableObject.CreateInstance<
+                    InventoryItemDefinition
+                >();
+
+            item.itemId = "loot_box_ammo";
+            item.displayName = "Munición de prueba";
+            item.maxStack = 30;
+            item.weight = 1f;
+
+            source.SetCapacity(20f);
+            destination.SetCapacity(3f);
+            source.Add(item, 5);
+
+            DeathLootContainer container =
+                DeathLootContainer.Create(
+                    Vector3.zero,
+                    source
+                );
+
+            Assert.That(source.Stacks, Is.Empty);
+            Assert.That(container.ItemCount, Is.EqualTo(5));
+            Assert.That(
+                container.SourcePlayerName,
+                Is.EqualTo(sourceObject.name)
+            );
+            Assert.That(
+                container.CanInteract(looterObject),
+                Is.True
+            );
+
+            container.Interact(looterObject);
+
+            DeathLootPanelPresenter presenter =
+                Object.FindFirstObjectByType<
+                    DeathLootPanelPresenter
+                >();
+
+            Assert.That(presenter, Is.Not.Null);
+            Assert.That(presenter.IsOpen, Is.True);
+            Assert.That(input.UiBlocked, Is.True);
+
+            int firstTransfer =
+                container.TryLoot(
+                    item,
+                    5,
+                    destination
+                );
+
+            Assert.That(firstTransfer, Is.EqualTo(3));
+            Assert.That(destination.GetAmount(item), Is.EqualTo(3));
+            Assert.That(container.ItemCount, Is.EqualTo(2));
+
+            destination.SetCapacity(10f);
+
+            Assert.That(
+                container.LootAllPossible(destination),
+                Is.EqualTo(2)
+            );
+
+            presenter.Close();
+
+            Assert.That(presenter.IsOpen, Is.False);
+            Assert.That(input.UiBlocked, Is.False);
+            Assert.That(destination.GetAmount(item), Is.EqualTo(5));
+
+            yield return null;
+
+            Assert.That(container == null, Is.True);
+
+            Object.Destroy(sourceObject);
+            Object.Destroy(looterObject);
+            Object.Destroy(presenter.gameObject);
+            Object.Destroy(item);
 
             yield return null;
         }

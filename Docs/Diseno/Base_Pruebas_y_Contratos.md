@@ -27,12 +27,13 @@ Los niveles de confianza son:
 - Validación de identificadores estables.
 - Contrato compartido de definiciones.
 - Daño, absorción de armadura, estado de vida, procedencia del daño y evento de muerte.
-- Capacidad, stacks, eliminación y transferencia completa de inventario.
+- Capacidad, stacks, eliminación, transferencia completa y transferencia parcial de inventario.
 - Selección ponderada y determinista de tablas de loot.
 
 ### PlayMode
 
-- Eliminación, atribución de baja, posición final, ganador y caja de loot del jugador muerto.
+- Eliminación, atribución de baja, posición final y ganador.
+- Caja de muerte, panel de saqueo, bloqueo modal y transferencia limitada por capacidad.
 - Daño de Safe Zone a jugadores fuera del radio.
 
 ## Ejecución
