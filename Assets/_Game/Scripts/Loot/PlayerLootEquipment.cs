@@ -51,11 +51,58 @@ namespace ROS.Game.Loot
                 ItemType.Weapon =>
                     weapons != null &&
                     item.weaponDefinition != null,
-                ItemType.Helmet => protection != null,
-                ItemType.Armor => protection != null,
-                ItemType.Backpack => inventory != null,
+                ItemType.Helmet =>
+                    protection != null &&
+                    IsEquipmentUpgrade(item),
+                ItemType.Armor =>
+                    protection != null &&
+                    IsEquipmentUpgrade(item),
+                ItemType.Backpack =>
+                    inventory != null &&
+                    IsEquipmentUpgrade(item),
                 _ => false
             };
+        }
+
+        public bool IsEquipmentUpgrade(
+            InventoryItemDefinition item
+        )
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            return item.itemType switch
+            {
+                ItemType.Helmet =>
+                    IsProtectionUpgrade(item, helmetItem),
+                ItemType.Armor =>
+                    IsProtectionUpgrade(item, vestItem),
+                ItemType.Backpack => IsBackpackUpgrade(item),
+                _ => true
+            };
+        }
+
+        private static bool IsProtectionUpgrade(
+            InventoryItemDefinition candidate,
+            InventoryItemDefinition equipped
+        )
+        {
+            return
+                equipped == null ||
+                (int)candidate.protectionLevel >
+                (int)equipped.protectionLevel;
+        }
+
+        private bool IsBackpackUpgrade(
+            InventoryItemDefinition candidate
+        )
+        {
+            return
+                backpackItem == null ||
+                candidate.backpackCapacity >
+                backpackItem.backpackCapacity;
         }
 
         public bool TryEquip(

@@ -133,6 +133,16 @@ namespace ROS.Game.UI
                 return "INVENTARIO LLENO";
             }
 
+            if (
+                current is LootPickup levelLoot &&
+                levelLoot.IsBlockedByEquipmentLevel(
+                    interactor.gameObject
+                )
+            )
+            {
+                return "NIVEL IGUAL O INFERIOR";
+            }
+
             return "NO DISPONIBLE";
         }
 

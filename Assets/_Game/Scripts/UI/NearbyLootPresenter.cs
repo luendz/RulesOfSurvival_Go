@@ -56,13 +56,26 @@ namespace ROS.Game.UI
                 }
 
                 bool current = ReferenceEquals(candidate, interactor.Current);
-                string prefix = current ? "[F] " : "    ";
+                bool canInteract =
+                    candidate.CanInteract(interactor.gameObject);
+                string prefix =
+                    current && canInteract
+                        ? "[F] "
+                        : "    ";
                 string label = candidate.InteractionLabel;
 
                 if (candidate is LootPickup pickup &&
                     pickup.IsBlockedByInventoryCapacity(gameObject))
                 {
                     label += " (sin espacio)";
+                }
+
+                if (candidate is LootPickup levelPickup &&
+                    levelPickup.IsBlockedByEquipmentLevel(
+                        interactor.gameObject
+                    ))
+                {
+                    label += " (nivel igual o inferior)";
                 }
 
                 GUI.Label(

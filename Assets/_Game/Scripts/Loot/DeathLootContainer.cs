@@ -268,6 +268,72 @@ namespace ROS.Game.Loot
             visual.name = "CajaLoot_Visual3D";
             visual.transform.localPosition = Vector3.zero;
             visual.transform.localRotation = Quaternion.identity;
+
+            FitModelToContainer(visual);
+        }
+
+        private static void FitModelToContainer(
+            GameObject visual
+        )
+        {
+            Transform modelRoot =
+                visual.transform.Find("Modelo_Caja_Muerte");
+
+            if (modelRoot == null)
+            {
+                return;
+            }
+
+            Renderer[] modelRenderers =
+                modelRoot.GetComponentsInChildren<Renderer>(true);
+
+            if (modelRenderers.Length == 0)
+            {
+                return;
+            }
+
+            Bounds bounds = modelRenderers[0].bounds;
+
+            for (int i = 1; i < modelRenderers.Length; i++)
+            {
+                bounds.Encapsulate(modelRenderers[i].bounds);
+            }
+
+            if (
+                bounds.size.x <= 0.001f ||
+                bounds.size.y <= 0.001f ||
+                bounds.size.z <= 0.001f
+            )
+            {
+                return;
+            }
+
+            Vector3 targetSize =
+                new Vector3(0.85f, 0.55f, 1f);
+
+            float scaleFactor = Mathf.Min(
+                targetSize.x / bounds.size.x,
+                targetSize.y / bounds.size.y,
+                targetSize.z / bounds.size.z
+            );
+
+            modelRoot.localScale *= scaleFactor;
+
+            bounds = modelRenderers[0].bounds;
+
+            for (int i = 1; i < modelRenderers.Length; i++)
+            {
+                bounds.Encapsulate(modelRenderers[i].bounds);
+            }
+
+            Vector3 targetCenter = visual.transform.position;
+            float targetBottom = visual.transform.position.y - 0.3f;
+
+            modelRoot.position += new Vector3(
+                targetCenter.x - bounds.center.x,
+                targetBottom - bounds.min.y,
+                targetCenter.z - bounds.center.z
+            );
         }
     }
 }

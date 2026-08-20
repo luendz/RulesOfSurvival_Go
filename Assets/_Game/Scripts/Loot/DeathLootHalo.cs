@@ -13,14 +13,14 @@ namespace ROS.Game.Loot
 
         [Header("Luz")]
         [SerializeField]
-        private float lightIntensity = 2.4f;
+        private float lightIntensity = 0.75f;
 
         [SerializeField]
-        private float lightRange = 4.5f;
+        private float lightRange = 2f;
 
         [Header("Animación")]
         [SerializeField]
-        private float pulseSpeed = 1.8f;
+        private float pulseSpeed = 1.25f;
 
         private readonly List<Transform> _auraLayers =
             new List<Transform>();
@@ -59,7 +59,7 @@ namespace ROS.Game.Loot
 
                 _auraLayers[i].localScale =
                     _baseScales[i] *
-                    Mathf.Lerp(0.97f, 1.06f, pulse);
+                    Mathf.Lerp(0.99f, 1.02f, pulse);
             }
         }
 
@@ -79,24 +79,17 @@ namespace ROS.Game.Loot
             CreateLight();
 
             CreateAuraLayer(
-                "Aura_Azul_Interior",
-                new Vector3(0f, 0.65f, 0f),
-                new Vector3(1.15f, 0.75f, 1.15f),
-                0.12f
-            );
-
-            CreateAuraLayer(
-                "Aura_Azul_Exterior",
-                new Vector3(0f, 0.95f, 0f),
-                new Vector3(1.7f, 1.25f, 1.7f),
-                0.045f
+                "Aura_Azul_Caja",
+                new Vector3(0f, 0.02f, 0f),
+                new Vector3(0.72f, 0.3f, 0.72f),
+                0.035f
             );
 
             CreateAuraLayer(
                 "Halo_Azul_Suelo",
-                new Vector3(0f, -0.27f, 0f),
-                new Vector3(1.55f, 0.025f, 1.55f),
-                0.16f
+                new Vector3(0f, -0.285f, 0f),
+                new Vector3(0.95f, 0.015f, 0.95f),
+                0.08f
             );
         }
 
@@ -107,7 +100,7 @@ namespace ROS.Game.Loot
 
             lightObject.transform.SetParent(transform, false);
             lightObject.transform.localPosition =
-                Vector3.up * 0.55f;
+                Vector3.up * 0.25f;
 
             _haloLight = lightObject.AddComponent<Light>();
             _haloLight.type = LightType.Point;

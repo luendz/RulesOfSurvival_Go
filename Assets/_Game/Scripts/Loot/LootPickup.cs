@@ -1,4 +1,5 @@
 using ROS.Game.Interaction;
+using ROS.Game.Core;
 using ROS.Game.Inventory;
 using UnityEngine;
 
@@ -168,6 +169,32 @@ namespace ROS.Game.Loot
             }
 
             return inventory.GetMaxAddableAmount(item) <= 0;
+        }
+
+        public bool IsBlockedByEquipmentLevel(
+            GameObject interactor
+        )
+        {
+            if (
+                _consumed ||
+                item == null ||
+                interactor == null ||
+                (
+                    item.itemType != ItemType.Helmet &&
+                    item.itemType != ItemType.Armor &&
+                    item.itemType != ItemType.Backpack
+                )
+            )
+            {
+                return false;
+            }
+
+            PlayerLootEquipment equipment =
+                interactor.GetComponent<PlayerLootEquipment>();
+
+            return
+                equipment != null &&
+                !equipment.IsEquipmentUpgrade(item);
         }
 
         public void Interact(

@@ -81,6 +81,106 @@ namespace ROS.Game.Tests.EditMode
         }
 
         [Test]
+        public void Equipment_RejectsSameOrLowerLevels()
+        {
+            GameObject player = CreatePlayer(100f);
+            PlayerLootEquipment equipment =
+                player.AddComponent<PlayerLootEquipment>();
+
+            InventoryItemDefinition backpack1 = CreateItem(
+                "backpack_level_1",
+                ItemType.Backpack,
+                1f
+            );
+            backpack1.backpackCapacity = 140f;
+
+            InventoryItemDefinition backpack2 = CreateItem(
+                "backpack_level_2",
+                ItemType.Backpack,
+                1f
+            );
+            backpack2.backpackCapacity = 180f;
+
+            Assert.That(
+                equipment.TryEquip(backpack2, out _),
+                Is.True
+            );
+            Assert.That(equipment.CanEquip(backpack1), Is.False);
+            Assert.That(
+                equipment.TryEquip(backpack1, out _),
+                Is.False
+            );
+            Assert.That(
+                equipment.BackpackItem,
+                Is.SameAs(backpack2)
+            );
+
+            LootPickup lowerBackpackPickup =
+                LootPickup.SpawnRuntime(
+                    backpack1,
+                    1,
+                    Vector3.zero,
+                    null,
+                    0f
+                );
+            _created.Add(lowerBackpackPickup.gameObject);
+
+            Assert.That(
+                lowerBackpackPickup.CanInteract(player),
+                Is.False
+            );
+            Assert.That(
+                lowerBackpackPickup.IsBlockedByEquipmentLevel(
+                    player
+                ),
+                Is.True
+            );
+
+            InventoryItemDefinition helmet1 = CreateItem(
+                "helmet_level_1",
+                ItemType.Helmet,
+                1f
+            );
+            helmet1.protectionLevel = ProtectionLevel.Level1;
+
+            InventoryItemDefinition helmet2 = CreateItem(
+                "helmet_level_2",
+                ItemType.Helmet,
+                1f
+            );
+            helmet2.protectionLevel = ProtectionLevel.Level2;
+
+            Assert.That(
+                equipment.TryEquip(helmet2, out _),
+                Is.True
+            );
+            Assert.That(equipment.CanEquip(helmet1), Is.False);
+
+            InventoryItemDefinition vest2 = CreateItem(
+                "vest_level_2",
+                ItemType.Armor,
+                1f
+            );
+            vest2.protectionLevel = ProtectionLevel.Level2;
+
+            InventoryItemDefinition vest2Duplicate = CreateItem(
+                "vest_level_2_duplicate",
+                ItemType.Armor,
+                1f
+            );
+            vest2Duplicate.protectionLevel = ProtectionLevel.Level2;
+
+            Assert.That(
+                equipment.TryEquip(vest2, out _),
+                Is.True
+            );
+            Assert.That(
+                equipment.CanEquip(vest2Duplicate),
+                Is.False
+            );
+        }
+
+        [Test]
         public void Drop_RemovesRequestedAmountAndCreatesWorldPickup()
         {
             GameObject player = CreatePlayer(20f);
