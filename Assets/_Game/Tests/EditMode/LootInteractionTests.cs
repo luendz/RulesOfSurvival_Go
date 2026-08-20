@@ -304,6 +304,12 @@ namespace ROS.Game.Tests.EditMode
                 Is.True
             );
             Assert.That(
+                container.transform.Find(
+                    "CajaLoot_Visual3D/Halo_Azul_Caja"
+                ),
+                Is.Not.Null
+            );
+            Assert.That(
                 container.GetComponentsInChildren<Renderer>(true),
                 Is.Not.Empty
             );

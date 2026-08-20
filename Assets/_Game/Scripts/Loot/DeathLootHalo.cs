@@ -24,7 +24,7 @@ namespace ROS.Game.Loot
 
         [Header("Flotación del modelo")]
         [SerializeField]
-        private float hoverHeight = 0.12f;
+        private float hoverHeight = 0.9f;
 
         [SerializeField]
         private float bobAmplitude = 0.035f;
@@ -43,9 +43,13 @@ namespace ROS.Game.Loot
 
         private Light _haloLight;
 
+        private Transform _effectRoot;
+
         private Transform _floatingModel;
 
         private Vector3 _floatingBasePosition;
+
+        private Vector3 _effectBasePosition;
 
         public bool HasFloatingModel =>
             _floatingModel != null;
@@ -89,6 +93,13 @@ namespace ROS.Game.Loot
                 _floatingModel.localPosition =
                     _floatingBasePosition +
                     Vector3.up * bobOffset;
+
+                if (_effectRoot != null)
+                {
+                    _effectRoot.localPosition =
+                        _effectBasePosition +
+                        Vector3.up * bobOffset;
+                }
             }
         }
 
@@ -102,6 +113,26 @@ namespace ROS.Game.Loot
             {
                 _floatingBasePosition =
                     _floatingModel.localPosition;
+
+                Renderer[] renderers =
+                    _floatingModel.GetComponentsInChildren<Renderer>(
+                        true
+                    );
+
+                if (renderers.Length > 0)
+                {
+                    Bounds bounds = renderers[0].bounds;
+
+                    for (int i = 1; i < renderers.Length; i++)
+                    {
+                        bounds.Encapsulate(renderers[i].bounds);
+                    }
+
+                    _effectBasePosition =
+                        transform.InverseTransformPoint(
+                            bounds.center
+                        );
+                }
             }
         }
 
@@ -118,20 +149,26 @@ namespace ROS.Game.Loot
 
         private void BuildHalo()
         {
+            GameObject effectObject =
+                new GameObject("Halo_Azul_Caja");
+
+            effectObject.transform.SetParent(transform, false);
+            _effectRoot = effectObject.transform;
+
             CreateLight();
 
             CreateAuraLayer(
-                "Aura_Azul_Caja",
-                new Vector3(0f, 0.02f, 0f),
-                new Vector3(0.72f, 0.3f, 0.72f),
-                0.035f
+                "Aura_Azul_Exterior",
+                Vector3.zero,
+                new Vector3(0.36f, 0.18f, 0.42f),
+                0.03f
             );
 
             CreateAuraLayer(
-                "Halo_Azul_Suelo",
-                new Vector3(0f, -0.285f, 0f),
-                new Vector3(0.95f, 0.015f, 0.95f),
-                0.08f
+                "Halo_Azul_Base_Caja",
+                new Vector3(0f, -0.16f, 0f),
+                new Vector3(0.48f, 0.015f, 0.54f),
+                0.065f
             );
         }
 
@@ -140,9 +177,9 @@ namespace ROS.Game.Loot
             GameObject lightObject =
                 new GameObject("Luz_Azul_Loot");
 
-            lightObject.transform.SetParent(transform, false);
+            lightObject.transform.SetParent(_effectRoot, false);
             lightObject.transform.localPosition =
-                Vector3.up * 0.25f;
+                Vector3.up * 0.12f;
 
             _haloLight = lightObject.AddComponent<Light>();
             _haloLight.type = LightType.Point;
@@ -163,7 +200,7 @@ namespace ROS.Game.Loot
                 GameObject.CreatePrimitive(PrimitiveType.Cylinder);
 
             layer.name = layerName;
-            layer.transform.SetParent(transform, false);
+            layer.transform.SetParent(_effectRoot, false);
             layer.transform.localPosition = localPosition;
             layer.transform.localScale = localScale;
 
