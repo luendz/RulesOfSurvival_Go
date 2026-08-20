@@ -40,6 +40,8 @@ namespace ROS.Game.Input
         /// </summary>
         public int WeaponScrollDirection { get; private set; }
 
+        public bool UiBlocked { get; private set; }
+
         private InputAction _move;
         private InputAction _look;
         private InputAction _jump;
@@ -204,10 +206,7 @@ namespace ROS.Game.Input
                 action.Enable();
             }
 
-            Cursor.lockState =
-                CursorLockMode.Locked;
-
-            Cursor.visible = false;
+            ApplyCursorState();
         }
 
         private void OnDisable()
@@ -220,6 +219,12 @@ namespace ROS.Game.Input
 
         private void Update()
         {
+            if (UiBlocked)
+            {
+                ClearGameplayState();
+                return;
+            }
+
             Move =
                 _move.ReadValue<Vector2>();
 
@@ -294,6 +299,52 @@ namespace ROS.Game.Input
                 _holsterWeapon.WasPressedThisFrame();
 
             UpdateWeaponScroll();
+        }
+
+        public void SetUiBlocked(bool blocked)
+        {
+            UiBlocked = blocked;
+
+            if (blocked)
+            {
+                ClearGameplayState();
+            }
+
+            ApplyCursorState();
+        }
+
+        private void ApplyCursorState()
+        {
+            Cursor.lockState =
+                UiBlocked
+                    ? CursorLockMode.None
+                    : CursorLockMode.Locked;
+
+            Cursor.visible = UiBlocked;
+        }
+
+        private void ClearGameplayState()
+        {
+            Move = Vector2.zero;
+            Look = Vector2.zero;
+            LookFromMouse = false;
+            SprintHeld = false;
+            AimHeld = false;
+            FireHeld = false;
+            FreeLookHeld = false;
+            JumpPressed = false;
+            CrouchPressed = false;
+            PronePressed = false;
+            ReloadPressed = false;
+            InteractPressed = false;
+            LeanLeftHeld = false;
+            LeanRightHeld = false;
+            ShoulderSwitchPressed = false;
+            WeaponSlot1Pressed = false;
+            WeaponSlot2Pressed = false;
+            WeaponSlot3Pressed = false;
+            HolsterWeaponPressed = false;
+            WeaponScrollDirection = 0;
         }
 
         private void UpdateWeaponScroll()
