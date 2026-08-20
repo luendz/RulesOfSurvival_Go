@@ -18,3 +18,7 @@ MonoBehaviour:
   maxStack: 1
   weight: 1
   icon: {fileID: 0}
+  worldModel: {fileID: 919132149155446097, guid: 343f7a8a09abd444bb77bd896cbc1f58, type: 3}
+  worldOffset: {x: 0, y: 0, z: 0}
+  worldEulerAngles: {x: 0, y: 0, z: 180}
+  worldScale: {x: 35, y: 35, z: 35}
