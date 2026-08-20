@@ -15,10 +15,19 @@ MonoBehaviour:
   weaponId: prototype_rifle
   displayName: Prototype Rifle
   fireMode: 2
+  supportsSingle: 1
+  supportsBurst: 1
+  supportsAuto: 1
   damage: 28
   shotsPerSecond: 9
   magazineSize: 30
   reloadTime: 2.2
+  emptyReloadTime: 2.7
+  burstCount: 3
+  verticalRecoil: 1.2
+  horizontalRecoil: 0.35
+  recoilReturnSpeed: 8
+  recoilSnappiness: 14
   range: 250
   hipSpreadDegrees: 1.35
   adsSpreadDegrees: 0.28
@@ -31,4 +40,3 @@ MonoBehaviour:
   maxSpreadBloom: 1.2
   spreadRecoveryPerSecond: 3.5
   spreadDegrees: 0.7
-  burstCount: 3

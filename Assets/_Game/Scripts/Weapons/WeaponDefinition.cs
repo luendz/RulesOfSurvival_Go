@@ -13,6 +13,11 @@ namespace ROS.Game.Weapons
         public string displayName = "Prototype Rifle";
         public WeaponFireMode fireMode = WeaponFireMode.Auto;
 
+        [Header("Fire Modes")]
+        public bool supportsSingle = true;
+        public bool supportsBurst;
+        public bool supportsAuto = true;
+
         [Header("Data Provenance")]
         public DataConfidence dataConfidence =
             DataConfidence.Prototype;
@@ -25,7 +30,14 @@ namespace ROS.Game.Weapons
         [Header("Ammo")]
         [Min(1)] public int magazineSize = 30;
         [Min(0.1f)] public float reloadTime = 2.2f;
+        [Min(0.1f)] public float emptyReloadTime = 2.7f;
         [Min(1)] public int burstCount = 3;
+
+        [Header("Recoil")]
+        [Min(0f)] public float verticalRecoil = 1.2f;
+        [Min(0f)] public float horizontalRecoil = 0.35f;
+        [Min(0f)] public float recoilReturnSpeed = 8f;
+        [Min(0f)] public float recoilSnappiness = 14f;
 
         [Header("Accuracy - Base")]
         [Tooltip("Spread when firing without aiming.")]
@@ -56,5 +68,79 @@ namespace ROS.Game.Weapons
 
         public DataConfidence Confidence =>
             dataConfidence;
+
+        public bool SupportsFireMode(
+            WeaponFireMode mode
+        )
+        {
+            return mode switch
+            {
+                WeaponFireMode.Single => supportsSingle,
+                WeaponFireMode.Burst => supportsBurst,
+                WeaponFireMode.Auto => supportsAuto,
+                _ => false
+            };
+        }
+
+        public WeaponFireMode GetInitialFireMode()
+        {
+            if (SupportsFireMode(fireMode))
+            {
+                return fireMode;
+            }
+
+            if (supportsSingle)
+            {
+                return WeaponFireMode.Single;
+            }
+
+            if (supportsBurst)
+            {
+                return WeaponFireMode.Burst;
+            }
+
+            return WeaponFireMode.Auto;
+        }
+
+        public WeaponFireMode GetNextFireMode(
+            WeaponFireMode current
+        )
+        {
+            WeaponFireMode[] orderedModes =
+            {
+                WeaponFireMode.Single,
+                WeaponFireMode.Burst,
+                WeaponFireMode.Auto
+            };
+
+            int currentIndex =
+                System.Array.IndexOf(
+                    orderedModes,
+                    current
+                );
+
+            for (int offset = 1; offset <= orderedModes.Length; offset++)
+            {
+                int index =
+                    (currentIndex + offset + orderedModes.Length) %
+                    orderedModes.Length;
+
+                if (SupportsFireMode(orderedModes[index]))
+                {
+                    return orderedModes[index];
+                }
+            }
+
+            return GetInitialFireMode();
+        }
+
+        public float GetReloadDuration(
+            bool emptyMagazine
+        )
+        {
+            return emptyMagazine
+                ? Mathf.Max(reloadTime, emptyReloadTime)
+                : reloadTime;
+        }
     }
 }

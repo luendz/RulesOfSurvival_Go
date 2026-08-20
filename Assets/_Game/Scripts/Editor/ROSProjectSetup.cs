@@ -119,6 +119,10 @@ namespace ROS.Game.Editor
             asset.shotsPerSecond = 9f;
             asset.magazineSize = 30;
             asset.reloadTime = 2.2f;
+            asset.emptyReloadTime = 2.7f;
+            asset.supportsSingle = true;
+            asset.supportsBurst = true;
+            asset.supportsAuto = true;
             asset.range = 250f;
             asset.hipSpreadDegrees = 1.35f;
             asset.adsSpreadDegrees = 0.28f;

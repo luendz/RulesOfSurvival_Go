@@ -54,5 +54,59 @@ namespace ROS.Game.Tests.EditMode
                 Object.DestroyImmediate(weapon);
             }
         }
+
+        [Test]
+        public void WeaponDefinition_CyclesOnlySupportedFireModes()
+        {
+            WeaponDefinition weapon =
+                ScriptableObject.CreateInstance<WeaponDefinition>();
+
+            try
+            {
+                weapon.fireMode = WeaponFireMode.Auto;
+                weapon.supportsSingle = true;
+                weapon.supportsBurst = false;
+                weapon.supportsAuto = true;
+
+                Assert.That(
+                    weapon.GetNextFireMode(WeaponFireMode.Auto),
+                    Is.EqualTo(WeaponFireMode.Single)
+                );
+                Assert.That(
+                    weapon.GetNextFireMode(WeaponFireMode.Single),
+                    Is.EqualTo(WeaponFireMode.Auto)
+                );
+            }
+            finally
+            {
+                Object.DestroyImmediate(weapon);
+            }
+        }
+
+        [Test]
+        public void WeaponDefinition_UsesLongerEmptyReload()
+        {
+            WeaponDefinition weapon =
+                ScriptableObject.CreateInstance<WeaponDefinition>();
+
+            try
+            {
+                weapon.reloadTime = 2.1f;
+                weapon.emptyReloadTime = 2.8f;
+
+                Assert.That(
+                    weapon.GetReloadDuration(false),
+                    Is.EqualTo(2.1f)
+                );
+                Assert.That(
+                    weapon.GetReloadDuration(true),
+                    Is.EqualTo(2.8f)
+                );
+            }
+            finally
+            {
+                Object.DestroyImmediate(weapon);
+            }
+        }
     }
 }

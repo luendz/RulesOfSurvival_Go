@@ -17,6 +17,21 @@ namespace ROS.Game.Weapons
 
         public Vector2 CurrentRecoil => _currentRecoil;
 
+        public void ConfigureDefinition(
+            WeaponDefinition definition
+        )
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            verticalRecoil = definition.verticalRecoil;
+            horizontalRecoil = definition.horizontalRecoil;
+            returnSpeed = definition.recoilReturnSpeed;
+            snappiness = definition.recoilSnappiness;
+        }
+
         public void AddRecoil()
         {
             float horizontal =

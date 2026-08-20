@@ -20,6 +20,7 @@ namespace ROS.Game.Input
         public bool CrouchPressed { get; private set; }
         public bool PronePressed { get; private set; }
         public bool ReloadPressed { get; private set; }
+        public bool FireModePressed { get; private set; }
         public bool InteractPressed { get; private set; }
 
         public bool LeanLeftHeld { get; private set; }
@@ -51,6 +52,7 @@ namespace ROS.Game.Input
         private InputAction _aim;
         private InputAction _fire;
         private InputAction _reload;
+        private InputAction _fireMode;
         private InputAction _interact;
         private InputAction _freeLook;
         private InputAction _leanLeft;
@@ -131,6 +133,12 @@ namespace ROS.Game.Input
                 "Reload",
                 "<Keyboard>/r",
                 "<Gamepad>/buttonWest"
+            );
+
+            _fireMode = Button(
+                "FireMode",
+                "<Keyboard>/b",
+                "<Gamepad>/dpad/down"
             );
 
             _interact = Button(
@@ -280,6 +288,9 @@ namespace ROS.Game.Input
             ReloadPressed =
                 _reload.WasPressedThisFrame();
 
+            FireModePressed =
+                _fireMode.WasPressedThisFrame();
+
             InteractPressed =
                 _interact.WasPressedThisFrame();
 
@@ -336,6 +347,7 @@ namespace ROS.Game.Input
             CrouchPressed = false;
             PronePressed = false;
             ReloadPressed = false;
+            FireModePressed = false;
             InteractPressed = false;
             LeanLeftHeld = false;
             LeanRightHeld = false;
@@ -387,6 +399,7 @@ namespace ROS.Game.Input
                 _aim,
                 _fire,
                 _reload,
+                _fireMode,
                 _interact,
                 _freeLook,
                 _shoulderSwitch,

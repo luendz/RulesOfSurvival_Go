@@ -66,7 +66,7 @@ namespace ROS.Game.UI
             {
                 weaponName.text =
                     weapon.Definition != null
-                        ? weapon.Definition.displayName
+                        ? $"{weapon.Definition.displayName} [{GetFireModeLabel(weapon.CurrentFireMode)}]"
                         : weapon.name;
             }
 
@@ -80,7 +80,8 @@ namespace ROS.Game.UI
 
             if (slotText != null)
             {
-                slotText.text = $"SLOT {equipment.EquippedSlot}";
+                slotText.text =
+                    $"SLOT {equipment.EquippedSlot} | {GetFireModeLabel(weapon.CurrentFireMode)}";
             }
         }
 
@@ -100,6 +101,18 @@ namespace ROS.Game.UI
 
             if (slotText != null)
                 slotText.text = string.Empty;
+        }
+
+        private static string GetFireModeLabel(
+            ROS.Game.Core.WeaponFireMode mode
+        )
+        {
+            return mode switch
+            {
+                ROS.Game.Core.WeaponFireMode.Single => "SEMI",
+                ROS.Game.Core.WeaponFireMode.Burst => "RAFAGA",
+                _ => "AUTO"
+            };
         }
     }
 }

@@ -48,10 +48,14 @@ namespace ROS.Game.Weapons
         public int AmmoInMagazine { get; private set; }
         public int ReserveAmmo => reserveAmmo;
         public bool IsReloading { get; private set; }
+        public bool IsBurstFiring => _burstShotsRemaining > 0;
+        public WeaponFireMode CurrentFireMode { get; private set; }
+        public float ActiveReloadDuration { get; private set; }
         public float CurrentSpread => ResolveCurrentSpread();
 
         public event Action AmmoChanged;
         public event Action Fired;
+        public event Action<WeaponFireMode> FireModeChanged;
         public event Action<DamageResult> HitConfirmed;
 
         public void ConfigureDefinition(
@@ -65,13 +69,21 @@ namespace ROS.Game.Weapons
                     ? definition.magazineSize
                     : 0;
 
+            CurrentFireMode =
+                definition != null
+                    ? definition.GetInitialFireMode()
+                    : WeaponFireMode.Single;
+
             EnsureReferences();
+            ApplyDefinitionToComponents();
             UpdateDebugValues();
             AmmoChanged?.Invoke();
+            FireModeChanged?.Invoke(CurrentFireMode);
         }
 
         private float _nextShotTime;
-        private bool _singleLatch;
+        private bool _triggerLatch;
+        private int _burstShotsRemaining;
         private Coroutine _reloadRoutine;
         private float _spreadBloom;
         private float _lastShotTime = -999f;
@@ -85,7 +97,9 @@ namespace ROS.Game.Weapons
             }
 
             IsReloading = false;
-            _singleLatch = false;
+            ActiveReloadDuration = 0f;
+            _triggerLatch = false;
+            _burstShotsRemaining = 0;
             enabled = false;
 
             UpdateDebugValues();
@@ -100,6 +114,12 @@ namespace ROS.Game.Weapons
                     ? definition.magazineSize
                     : 0;
 
+            CurrentFireMode =
+                definition != null
+                    ? definition.GetInitialFireMode()
+                    : WeaponFireMode.Single;
+
+            ApplyDefinitionToComponents();
             UpdateDebugValues();
         }
 
@@ -148,6 +168,14 @@ namespace ROS.Game.Weapons
                 weaponEffects.EnsureRuntimeSetup();
         }
 
+        private void ApplyDefinitionToComponents()
+        {
+            if (weaponRecoil != null)
+            {
+                weaponRecoil.ConfigureDefinition(definition);
+            }
+        }
+
         private void Update()
         {
             EnsureReferences();
@@ -163,10 +191,16 @@ namespace ROS.Game.Weapons
             // protects against an incorrectly-enabled holstered WeaponController.
             if (equipment != null && equipment.EquippedWeapon != this)
             {
-                _singleLatch = false;
+                _triggerLatch = false;
+                _burstShotsRemaining = 0;
                 RecoverSpreadBloom();
                 UpdateDebugValues();
                 return;
+            }
+
+            if (input.FireModePressed)
+            {
+                CycleFireMode();
             }
 
             if (input.ReloadPressed)
@@ -188,16 +222,19 @@ namespace ROS.Game.Weapons
 
             bool wantsFire = input.FireHeld;
 
-            if (!wantsFire)
+            if (CurrentFireMode == WeaponFireMode.Burst)
             {
-                _singleLatch = false;
+                HandleBurstFire(wantsFire);
                 return;
             }
 
-            if (
-                definition.fireMode == WeaponFireMode.Single &&
-                _singleLatch
-            )
+            if (!wantsFire)
+            {
+                _triggerLatch = false;
+                return;
+            }
+
+            if (CurrentFireMode == WeaponFireMode.Single && _triggerLatch)
             {
                 return;
             }
@@ -215,9 +252,71 @@ namespace ROS.Game.Weapons
 
             FireOneShot();
 
-            _singleLatch =
-                definition.fireMode ==
-                WeaponFireMode.Single;
+            _triggerLatch =
+                CurrentFireMode == WeaponFireMode.Single;
+        }
+
+        private void HandleBurstFire(
+            bool wantsFire
+        )
+        {
+            if (!wantsFire)
+            {
+                _triggerLatch = false;
+            }
+            else if (!_triggerLatch && _burstShotsRemaining <= 0)
+            {
+                _triggerLatch = true;
+                _burstShotsRemaining =
+                    Mathf.Min(
+                        Mathf.Max(1, definition.burstCount),
+                        AmmoInMagazine
+                    );
+            }
+
+            if (_burstShotsRemaining <= 0 || Time.time < _nextShotTime)
+            {
+                if (AmmoInMagazine <= 0 && wantsFire)
+                {
+                    TryReload();
+                }
+
+                return;
+            }
+
+            FireOneShot();
+            _burstShotsRemaining--;
+        }
+
+        public void CycleFireMode()
+        {
+            if (definition == null || IsReloading)
+            {
+                return;
+            }
+
+            SetFireMode(
+                definition.GetNextFireMode(CurrentFireMode)
+            );
+        }
+
+        public bool SetFireMode(
+            WeaponFireMode mode
+        )
+        {
+            if (
+                definition == null ||
+                !definition.SupportsFireMode(mode)
+            )
+            {
+                return false;
+            }
+
+            CurrentFireMode = mode;
+            _triggerLatch = false;
+            _burstShotsRemaining = 0;
+            FireModeChanged?.Invoke(CurrentFireMode);
+            return true;
         }
 
         private void FireOneShot()
@@ -683,6 +782,8 @@ namespace ROS.Game.Weapons
                 StopCoroutine(_reloadRoutine);
             }
 
+            _burstShotsRemaining = 0;
+
             _reloadRoutine =
                 StartCoroutine(
                     ReloadRoutine()
@@ -692,11 +793,15 @@ namespace ROS.Game.Weapons
         private IEnumerator ReloadRoutine()
         {
             IsReloading = true;
+            ActiveReloadDuration =
+                definition.GetReloadDuration(
+                    AmmoInMagazine <= 0
+                );
 
             UpdateDebugValues();
 
             yield return new WaitForSeconds(
-                definition.reloadTime
+                ActiveReloadDuration
             );
 
             int needed =
@@ -713,6 +818,7 @@ namespace ROS.Game.Weapons
             reserveAmmo -= amount;
 
             IsReloading = false;
+            ActiveReloadDuration = 0f;
             _reloadRoutine = null;
 
             UpdateDebugValues();
