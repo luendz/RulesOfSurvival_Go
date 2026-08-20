@@ -35,3 +35,16 @@ sysinfo.txt
 crashlytics-build.properties
 
 # Never ignore Unity .meta files
+
+# OpenClaw agent workspace files (agente ros-unity; no forman parte del juego)
+AGENTS.md
+SOUL.md
+TOOLS.md
+IDENTITY.md
+USER.md
+HEARTBEAT.md
+MEMORY.md
+BOOTSTRAP.md
+openclaw-workspace-state.json
+/memory/
+/.openclaw/
