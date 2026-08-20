@@ -1,6 +1,7 @@
 using System.Reflection;
 using NUnit.Framework;
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using UnityEngine;
 
 namespace ROS.Game.Tests.EditMode
@@ -66,8 +67,16 @@ namespace ROS.Game.Tests.EditMode
             _health.ApplyDamage(lethalDamage);
 
             Assert.That(_health.IsAlive, Is.False);
+            Assert.That(
+                _health.LifeState,
+                Is.EqualTo(PlayerLifeState.Dead)
+            );
             Assert.That(_health.CurrentHealth, Is.Zero);
             Assert.That(deathCount, Is.EqualTo(1));
+            Assert.That(
+                _health.LastDamage.Amount,
+                Is.EqualTo(500f)
+            );
         }
     }
 }

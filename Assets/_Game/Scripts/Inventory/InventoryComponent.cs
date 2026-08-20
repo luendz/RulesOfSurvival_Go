@@ -77,6 +77,70 @@ namespace ROS.Game.Inventory
             return true;
         }
 
+        public bool CanReceiveAll(
+            InventoryComponent source
+        )
+        {
+            if (source == null || source == this)
+            {
+                return false;
+            }
+
+            return UsedCapacity +
+                   source.UsedCapacity <=
+                   capacity + 0.001f;
+        }
+
+        public bool TransferAllTo(
+            InventoryComponent destination
+        )
+        {
+            if (
+                destination == null ||
+                destination == this ||
+                !destination.CanReceiveAll(this)
+            )
+            {
+                return false;
+            }
+
+            InventoryStack[] snapshot =
+                new InventoryStack[stacks.Count];
+
+            for (int i = 0; i < stacks.Count; i++)
+            {
+                InventoryStack stack = stacks[i];
+
+                snapshot[i] =
+                    new InventoryStack
+                    {
+                        item = stack.item,
+                        amount = stack.amount
+                    };
+            }
+
+            foreach (InventoryStack stack in snapshot)
+            {
+                if (
+                    stack.item == null ||
+                    stack.amount <= 0
+                )
+                {
+                    continue;
+                }
+
+                if (!destination.Add(stack.item, stack.amount))
+                {
+                    return false;
+                }
+            }
+
+            stacks.Clear();
+            Changed?.Invoke();
+
+            return true;
+        }
+
         public void SetCapacity(float newCapacity)
         {
             capacity = Mathf.Max(0f, newCapacity);

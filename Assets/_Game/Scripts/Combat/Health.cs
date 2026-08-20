@@ -1,4 +1,5 @@
 using System;
+using ROS.Game.Core;
 using UnityEngine;
 
 namespace ROS.Game.Combat
@@ -13,7 +14,9 @@ namespace ROS.Game.Combat
         public float CurrentArmor { get; private set; }
         public float MaxHealth => maxHealth;
         public float MaxArmor => maxArmor;
-        public bool IsAlive => CurrentHealth > 0f;
+        public PlayerLifeState LifeState { get; private set; }
+        public bool IsAlive => LifeState == PlayerLifeState.Alive;
+        public DamageInfo LastDamage { get; private set; }
 
         public event Action<float, float> HealthChanged;
         public event Action<float, float> ArmorChanged;
@@ -23,11 +26,16 @@ namespace ROS.Game.Combat
         {
             CurrentHealth = maxHealth;
             CurrentArmor = 0f;
+            LifeState = PlayerLifeState.Alive;
+            LastDamage = default;
         }
 
         public void ApplyDamage(DamageInfo damage)
         {
             if (!IsAlive || damage.Amount <= 0f) return;
+
+            LastDamage = damage;
+
             float incoming = damage.Amount;
             if (CurrentArmor > 0f)
             {
@@ -39,7 +47,11 @@ namespace ROS.Game.Combat
 
             CurrentHealth = Mathf.Max(0f, CurrentHealth - incoming);
             HealthChanged?.Invoke(CurrentHealth, maxHealth);
-            if (!IsAlive) Died?.Invoke(damage);
+            if (CurrentHealth <= 0f)
+            {
+                LifeState = PlayerLifeState.Dead;
+                Died?.Invoke(damage);
+            }
         }
 
         public void Heal(float amount)

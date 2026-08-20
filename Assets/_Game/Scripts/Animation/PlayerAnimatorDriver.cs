@@ -1,4 +1,5 @@
 using ROS.Game.Character;
+using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Weapons;
@@ -13,6 +14,7 @@ namespace ROS.Game.Animation
         [SerializeField] private PlayerMotor motor;
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private WeaponEquipmentController equipment;
+        [SerializeField] private Health health;
 
         [Header("Smoothing")]
         [SerializeField] private float dampTime = 0.12f;
@@ -47,6 +49,9 @@ namespace ROS.Game.Animation
         private static readonly int Reloading =
             Animator.StringToHash("Reloading");
 
+        private static readonly int Dead =
+            Animator.StringToHash("Dead");
+
         private void Awake()
         {
             if (animator == null)
@@ -68,6 +73,11 @@ namespace ROS.Game.Animation
             {
                 equipment = GetComponentInParent<WeaponEquipmentController>();
             }
+
+            if (health == null)
+            {
+                health = GetComponentInParent<Health>();
+            }
         }
 
         private void Reset()
@@ -76,6 +86,7 @@ namespace ROS.Game.Animation
             motor = GetComponentInParent<PlayerMotor>();
             input = GetComponentInParent<PlayerInputReader>();
             equipment = GetComponentInParent<WeaponEquipmentController>();
+            health = GetComponentInParent<Health>();
         }
 
         private void Update()
@@ -85,8 +96,52 @@ namespace ROS.Game.Animation
                 return;
             }
 
+            if (health != null && !health.IsAlive)
+            {
+                UpdateDeathState();
+                return;
+            }
+
+            SetBoolIfPresent(Dead, false);
+
             UpdateMovement();
             UpdateStates();
+        }
+
+        private void UpdateDeathState()
+        {
+            animator.SetFloat(MoveX, 0f);
+            animator.SetFloat(MoveY, 0f);
+            animator.SetFloat(Speed, 0f);
+            animator.SetBool(Aim, false);
+            animator.SetBool(Reloading, false);
+            SetBoolIfPresent(Dead, true);
+        }
+
+        private void SetBoolIfPresent(
+            int parameterHash,
+            bool value
+        )
+        {
+            foreach (
+                AnimatorControllerParameter parameter
+                in animator.parameters
+            )
+            {
+                if (
+                    parameter.nameHash == parameterHash &&
+                    parameter.type ==
+                    AnimatorControllerParameterType.Bool
+                )
+                {
+                    animator.SetBool(
+                        parameterHash,
+                        value
+                    );
+
+                    return;
+                }
+            }
         }
 
         private void UpdateMovement()

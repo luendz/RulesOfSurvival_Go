@@ -59,6 +59,21 @@ namespace ROS.Game.Weapons
         private float _spreadBloom;
         private float _lastShotTime = -999f;
 
+        public void DisableForElimination()
+        {
+            if (_reloadRoutine != null)
+            {
+                StopCoroutine(_reloadRoutine);
+                _reloadRoutine = null;
+            }
+
+            IsReloading = false;
+            _singleLatch = false;
+            enabled = false;
+
+            UpdateDebugValues();
+        }
+
         private void Awake()
         {
             EnsureReferences();
