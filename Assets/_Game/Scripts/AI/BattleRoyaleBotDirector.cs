@@ -16,7 +16,7 @@ namespace ROS.Game.AI
     [DisallowMultipleComponent]
     public sealed class BattleRoyaleBotDirector : MonoBehaviour
     {
-        public const int DefaultBotCount = 20;
+        public const int DefaultBotCount = 10;
 
         private readonly List<BattleRoyaleBotController> _bots =
             new List<BattleRoyaleBotController>();

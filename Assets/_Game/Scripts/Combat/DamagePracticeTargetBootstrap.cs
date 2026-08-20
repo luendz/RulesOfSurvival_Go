@@ -15,11 +15,16 @@ namespace ROS.Game.Combat
             RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
+            // Desactivado: objetivo de práctica eliminado de la escena
+            return;
+
+#pragma warning disable CS0162
             if (SceneManager.GetActiveScene().name != SceneName ||
                 GameObject.Find(TargetName) != null)
             {
                 return;
             }
+#pragma warning restore CS0162
 
             GameObject runner = new GameObject(
                 "DamagePracticeTargetBootstrap"
