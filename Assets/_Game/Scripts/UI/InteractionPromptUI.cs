@@ -49,6 +49,11 @@ namespace ROS.Game.UI
             RefreshUI();
         }
 
+        private void OnDisable()
+        {
+            SetVisible(false);
+        }
+
         private void EnsureReferences()
         {
             if (interactor == null)

@@ -54,34 +54,6 @@ namespace ROS.Game.Tests.EditMode
         }
 
         [Test]
-        public void AutomaticPickup_UsesTheConfiguredMode()
-        {
-            GameObject player = CreatePlayer(20f);
-            InventoryItemDefinition item = CreateItem(
-                "ammo_auto",
-                ItemType.Ammo,
-                1f
-            );
-            item.pickupMode = LootPickupMode.Automatic;
-
-            LootPickup pickup = LootPickup.SpawnRuntime(
-                item,
-                3,
-                Vector3.zero,
-                null,
-                0f
-            );
-            _created.Add(pickup.gameObject);
-
-            Assert.That(pickup.TryAutoCollect(player), Is.True);
-            Assert.That(pickup.IsConsumed, Is.True);
-            Assert.That(
-                player.GetComponent<InventoryComponent>().GetAmount(item),
-                Is.EqualTo(3)
-            );
-        }
-
-        [Test]
         public void Backpack_UpdatesInventoryCapacityWhenEquipped()
         {
             GameObject player = CreatePlayer(100f);

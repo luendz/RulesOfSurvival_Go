@@ -41,6 +41,17 @@ namespace ROS.Game.Loot
                     player.AddComponent<NearbyLootPresenter>();
                 }
             }
+
+            InteractionPromptUI[] legacyPrompts =
+                Object.FindObjectsByType<InteractionPromptUI>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None
+                );
+
+            foreach (InteractionPromptUI prompt in legacyPrompts)
+            {
+                prompt.enabled = false;
+            }
         }
     }
 }

@@ -167,13 +167,6 @@ namespace ROS.Game.Loot
             TryCollect(interactor);
         }
 
-        public bool TryAutoCollect(GameObject interactor)
-        {
-            return item != null &&
-                   item.IsAutomaticPickup &&
-                   TryCollect(interactor);
-        }
-
         public bool TryCollect(GameObject interactor)
         {
             if (!CanInteract(interactor))

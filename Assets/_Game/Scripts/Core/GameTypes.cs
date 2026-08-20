@@ -7,7 +7,7 @@ namespace ROS.Game.Core
     public enum WeaponFireMode { Single, Burst, Auto }
     public enum ItemType { Weapon, Ammo, Healing, Armor, Helmet, Backpack, Throwable, Attachment, Misc }
     public enum LootRarity { Common, Uncommon, Rare, Epic }
-    public enum LootPickupMode { Manual, Automatic, EquipOnPickup }
+    public enum LootPickupMode { Manual = 0, EquipOnPickup = 2 }
     public enum DataConfidence { Unknown, Prototype, Verified, Community, Estimated, Contradictory }
     public enum DamageType { Generic, Firearm, Explosion, Fall, SafeZone }
     public enum HitZone { None, Head, Torso, Arm, Leg }

@@ -89,7 +89,5 @@ namespace ROS.Game.Inventory
             itemType == ItemType.Helmet ||
             itemType == ItemType.Backpack;
 
-        public bool IsAutomaticPickup =>
-            pickupMode == LootPickupMode.Automatic;
     }
 }

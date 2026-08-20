@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using ROS.Game.Loot;
 using ROS.Game.Input;
 using UnityEngine;
 
@@ -49,8 +48,6 @@ namespace ROS.Game.Interaction
         {
             _current =
                 FindNearestInteractable();
-
-            TryCollectAutomaticLoot();
 
             IInteractable interactable =
                 Current;
@@ -173,22 +170,6 @@ namespace ROS.Game.Interaction
             }
 
             return nearest;
-        }
-
-        private void TryCollectAutomaticLoot()
-        {
-            if (input != null && input.UiBlocked)
-            {
-                return;
-            }
-
-            for (int i = _nearby.Count - 1; i >= 0; i--)
-            {
-                if (_nearby[i] is LootPickup pickup)
-                {
-                    pickup.TryAutoCollect(gameObject);
-                }
-            }
         }
 
         private static bool IsAlive(

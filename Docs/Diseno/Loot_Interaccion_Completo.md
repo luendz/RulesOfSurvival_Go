@@ -6,7 +6,7 @@ Esta fase implementa el cuarto punto del orden recomendado del plan maestro. Amp
 
 - `PlayerInteractor` detecta los objetos cercanos, prioriza el más importante y expone la lista al HUD.
 - `F` recoge el objeto seleccionado o abre una caja de un jugador eliminado.
-- La munición y los vendajes usan recogida automática al entrar en rango.
+- Todo objeto requiere una pulsación explícita de `F`, incluida la munición y los vendajes.
 - Los objetos que no caben completos se recogen parcialmente y el resto permanece en el mundo.
 - Cascos, chalecos y mochilas se equipan al recogerlos; el objeto reemplazado vuelve al suelo.
 - Las mochilas aumentan la capacidad total a 140, 180 o 220 según el nivel.
@@ -29,7 +29,7 @@ El prefab de demostración garantiza una muestra de arma, protección, mochila, 
 2. Caminar unos diez metros hacia delante hasta el área de loot.
 3. Confirmar que aparece la lista `OBJETOS CERCANOS`.
 4. Usar `F` sobre rifle, casco, chaleco, mochila, botiquín, granada o accesorio.
-5. Pasar junto a munición o vendajes y verificar la recogida automática.
+5. Pasar junto a munición o vendajes, verificar que permanecen en el suelo y recogerlos con `F`.
 6. Usar `G` y confirmar que una unidad vuelve al suelo sin recogerse de inmediato.
 
 ## Límites de esta fase
