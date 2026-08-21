@@ -902,7 +902,7 @@ namespace ROS.Game.Weapons
                 IsReloading ||
                 definition == null ||
                 AmmoInMagazine >= definition.magazineSize ||
-                reserveAmmo <= 0
+                ReserveAmmo <= 0
             )
             {
                 return;
