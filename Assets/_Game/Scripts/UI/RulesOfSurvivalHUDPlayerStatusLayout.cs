@@ -5,8 +5,8 @@ using UnityEngine.UI;
 namespace ROS.Game.UI
 {
     /// <summary>
-    /// Ajuste final de anclajes y proporciones del HUD de referencia.
-    /// Mantiene la funcionalidad existente y corrige únicamente presentación.
+    /// Ajuste visual final del HUD reconstruido tomando como referencia
+    /// la interfaz original de Rules of Survival. No modifica lógica jugable.
     /// </summary>
     [DefaultExecutionOrder(1700)]
     [DisallowMultipleComponent]
@@ -14,7 +14,7 @@ namespace ROS.Game.UI
     {
         private const string SceneName = "07_BattleRoyaleTest";
         private const float SourceHealthWidth = 276f;
-        private const float TargetHealthWidth = 360f;
+        private const float TargetHealthWidth = 390f;
 
         private static Sprite _circleSprite;
         private float _nextApplyTime;
@@ -56,7 +56,8 @@ namespace ROS.Game.UI
             }
 
             ApplyTopRight(hud.transform);
-            ApplyCompassTrack(hud.transform);
+            RemoveCompassDarkBar(hud.transform);
+            ApplyMinimap(hud.transform);
 
             Transform status = hud.transform.Find("Canvas/PlayerStatusFidelity");
             if (status == null)
@@ -82,19 +83,26 @@ namespace ROS.Game.UI
             stats.anchorMin = Vector2.one;
             stats.anchorMax = Vector2.one;
             stats.pivot = Vector2.one;
-            stats.anchoredPosition = new Vector2(-18f, -8f);
-            stats.sizeDelta = new Vector2(220f, 44f);
+            stats.anchoredPosition = new Vector2(-24f, -10f);
+            stats.sizeDelta = new Vector2(214f, 44f);
+
+            Image statsBackground = stats.GetComponent<Image>();
+            if (statsBackground != null)
+            {
+                statsBackground.color =
+                    new Color(0.025f, 0.035f, 0.045f, 0.93f);
+            }
 
             SetTopRightChild(
                 hud.Find("Canvas/TopRightStats/KillText") as RectTransform,
-                new Vector2(78f, 44f),
-                new Vector2(-181f, -22f)
+                new Vector2(74f, 44f),
+                new Vector2(-177f, -22f)
             );
 
             SetTopRightChild(
                 hud.Find("Canvas/TopRightStats/LeftText") as RectTransform,
-                new Vector2(76f, 44f),
-                new Vector2(-104f, -22f)
+                new Vector2(74f, 44f),
+                new Vector2(-103f, -22f)
             );
 
             RectTransform distancePanel =
@@ -106,6 +114,16 @@ namespace ROS.Game.UI
                 new Vector2(-33f, -22f)
             );
 
+            if (distancePanel != null)
+            {
+                Image distanceBackground = distancePanel.GetComponent<Image>();
+                if (distanceBackground != null)
+                {
+                    distanceBackground.color =
+                        new Color(0.95f, 0.95f, 0.95f, 0.98f);
+                }
+            }
+
             Text kill = hud.Find("Canvas/TopRightStats/KillText")
                 ?.GetComponent<Text>();
             Text left = hud.Find("Canvas/TopRightStats/LeftText")
@@ -114,73 +132,126 @@ namespace ROS.Game.UI
                 "Canvas/TopRightStats/DistancePanel/DistanceText"
             )?.GetComponent<Text>();
 
-            if (kill != null)
-            {
-                kill.fontSize = 18;
-                kill.fontStyle = FontStyle.Bold;
-                kill.alignment = TextAnchor.MiddleCenter;
-            }
-
-            if (left != null)
-            {
-                left.fontSize = 18;
-                left.fontStyle = FontStyle.Bold;
-                left.alignment = TextAnchor.MiddleCenter;
-            }
+            ConfigureTopStat(kill, 18, Color.white);
+            ConfigureTopStat(left, 18, Color.white);
 
             if (distance != null)
             {
-                distance.fontSize = 13;
+                distance.fontSize = 14;
                 distance.fontStyle = FontStyle.Bold;
                 distance.alignment = TextAnchor.MiddleCenter;
-                distance.lineSpacing = 0.85f;
+                distance.color = Color.black;
+                distance.lineSpacing = 0.78f;
             }
         }
 
-        private static void ApplyCompassTrack(Transform hud)
+        private static void ConfigureTopStat(
+            Text text,
+            int fontSize,
+            Color color
+        )
         {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.fontSize = fontSize;
+            text.fontStyle = FontStyle.Bold;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = color;
+        }
+
+        private static void RemoveCompassDarkBar(Transform hud)
+        {
+            RectTransform strip =
+                hud.Find("Canvas/CompassStrip") as RectTransform;
+
+            if (strip != null)
+            {
+                strip.sizeDelta = new Vector2(650f, 52f);
+
+                Image stripImage = strip.GetComponent<Image>();
+                if (stripImage != null)
+                {
+                    stripImage.color = Color.clear;
+                }
+            }
+
             Transform fidelity =
                 hud.Find("Canvas/CompassStrip/CompassFidelity");
 
-            if (fidelity == null)
+            if (fidelity != null)
+            {
+                RectTransform fidelityRect = fidelity as RectTransform;
+                if (fidelityRect != null)
+                {
+                    fidelityRect.sizeDelta = new Vector2(650f, 52f);
+                }
+
+                // La referencia no tiene una banda oscura continua detrás de
+                // grados/cardinales; solamente LEFT REAR y RIGHT REAR usan caja.
+                Transform track = fidelity.Find("CompassTrackBackground");
+                if (track != null && track.gameObject.activeSelf)
+                {
+                    track.gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private static void ApplyMinimap(Transform hud)
+        {
+            RectTransform frame =
+                hud.Find("Canvas/MinimapFrame") as RectTransform;
+
+            if (frame == null)
             {
                 return;
             }
 
-            Transform existing = fidelity.Find("CompassTrackBackground");
-            RectTransform track;
-            Image image;
+            frame.sizeDelta = new Vector2(205f, 205f);
+            frame.anchoredPosition = new Vector2(110.5f, 112.5f);
 
-            if (existing == null)
+            // Quitar el cuadrado negro exterior. En ROS domina el mapa circular.
+            Image frameBackground = frame.GetComponent<Image>();
+            if (frameBackground != null)
             {
-                GameObject trackObject =
-                    new GameObject("CompassTrackBackground");
-                trackObject.transform.SetParent(fidelity, false);
-
-                track = trackObject.AddComponent<RectTransform>();
-                image = trackObject.AddComponent<Image>();
-                image.raycastTarget = false;
-                trackObject.transform.SetAsFirstSibling();
-            }
-            else
-            {
-                track = existing as RectTransform;
-                image = existing.GetComponent<Image>();
+                frameBackground.color = Color.clear;
             }
 
-            if (track == null || image == null)
+            RectTransform circleMask =
+                frame.Find("CircleMask") as RectTransform;
+            if (circleMask != null)
             {
-                return;
+                circleMask.sizeDelta = new Vector2(196f, 196f);
+                circleMask.anchoredPosition = Vector2.zero;
             }
 
-            // Los tags laterales tienen su borde interior aproximadamente en
-            // +/-217 px. La banda queda a pocos píxeles de ellos como en ROS.
-            track.anchorMin = new Vector2(0.5f, 0.5f);
-            track.anchorMax = new Vector2(0.5f, 0.5f);
-            track.pivot = new Vector2(0.5f, 0.5f);
-            track.anchoredPosition = new Vector2(0f, -5f);
-            track.sizeDelta = new Vector2(428f, 24f);
-            image.color = new Color(0.11f, 0.13f, 0.15f, 0.38f);
+            RectTransform arrow =
+                frame.Find("PlayerArrow") as RectTransform;
+            if (arrow != null)
+            {
+                arrow.sizeDelta = new Vector2(23f, 23f);
+            }
+
+            RectTransform badge =
+                frame.Find("MapBadge") as RectTransform;
+            if (badge != null)
+            {
+                badge.sizeDelta = new Vector2(26f, 26f);
+                badge.anchoredPosition = new Vector2(12f, -58f);
+            }
+
+            RectTransform latency =
+                hud.Find("Canvas/Latency") as RectTransform;
+            if (latency != null)
+            {
+                latency.anchorMin = Vector2.zero;
+                latency.anchorMax = Vector2.zero;
+                latency.pivot = new Vector2(0f, 0f);
+                latency.sizeDelta = new Vector2(70f, 22f);
+                latency.anchoredPosition = new Vector2(153f, 16f);
+            }
         }
 
         private static void ApplyVitals(Transform status)
@@ -193,29 +264,29 @@ namespace ROS.Game.UI
                 vitals.anchorMin = new Vector2(0.5f, 0f);
                 vitals.anchorMax = new Vector2(0.5f, 0f);
                 vitals.pivot = new Vector2(0.5f, 0f);
-                vitals.anchoredPosition = new Vector2(0f, 20f);
-                vitals.sizeDelta = new Vector2(430f, 52f);
+                vitals.anchoredPosition = new Vector2(0f, 18f);
+                vitals.sizeDelta = new Vector2(456f, 48f);
 
                 Image background = vitals.GetComponent<Image>();
                 if (background != null)
                 {
                     background.color =
-                        new Color(0f, 0f, 0f, 0.14f);
+                        new Color(0f, 0f, 0f, 0.08f);
                 }
             }
 
             SetCentered(
                 status.Find("PlayerVitals/PlayerName") as RectTransform,
-                new Vector2(175f, 18f),
-                new Vector2(-68f, 15f)
+                new Vector2(190f, 18f),
+                new Vector2(-73f, 14f)
             );
 
             RectTransform healthBack =
                 status.Find("PlayerVitals/HealthBack") as RectTransform;
             SetCentered(
                 healthBack,
-                new Vector2(TargetHealthWidth, 13f),
-                new Vector2(0f, -3f)
+                new Vector2(TargetHealthWidth, 12f),
+                new Vector2(0f, -4f)
             );
 
             RectTransform armorBack =
@@ -226,8 +297,6 @@ namespace ROS.Game.UI
                 new Vector2(0f, -13f)
             );
 
-            // El presenter funcional sigue calculando sobre 276 px. Mantener una
-            // escala X fija convierte ese valor a los 360 px visuales deseados.
             RectTransform healthFill =
                 status.Find("PlayerVitals/HealthBack/HealthFill")
                     as RectTransform;
@@ -254,8 +323,8 @@ namespace ROS.Game.UI
 
             SetCentered(
                 status.Find("PlayerVitals/HealthValue") as RectTransform,
-                new Vector2(45f, 18f),
-                new Vector2(199f, -3f)
+                new Vector2(44f, 18f),
+                new Vector2(215f, -4f)
             );
 
             Transform oldHealthIcon =
@@ -276,14 +345,14 @@ namespace ROS.Game.UI
                 weapons.anchorMin = new Vector2(1f, 0f);
                 weapons.anchorMax = new Vector2(1f, 0f);
                 weapons.pivot = new Vector2(1f, 0f);
-                weapons.anchoredPosition = new Vector2(-18f, 18f);
-                weapons.sizeDelta = new Vector2(302f, 118f);
+                weapons.anchoredPosition = new Vector2(-18f, 16f);
+                weapons.sizeDelta = new Vector2(330f, 122f);
             }
 
-            ApplyPrimarySlot(status, 1, new Vector2(0f, 59f));
-            ApplySmallSlot(status, 4, new Vector2(224f, 59f));
+            ApplyPrimarySlot(status, 1, new Vector2(0f, 61f));
+            ApplySmallSlot(status, 4, new Vector2(248f, 61f));
             ApplyPrimarySlot(status, 2, new Vector2(0f, 0f));
-            ApplySmallSlot(status, 3, new Vector2(224f, 0f));
+            ApplySmallSlot(status, 3, new Vector2(248f, 0f));
         }
 
         private static void ApplyPrimarySlot(
@@ -304,30 +373,36 @@ namespace ROS.Game.UI
             root.anchorMax = Vector2.zero;
             root.pivot = Vector2.zero;
             root.anchoredPosition = position;
-            root.sizeDelta = new Vector2(220f, 56f);
+            root.sizeDelta = new Vector2(244f, 58f);
+
+            RectTransform selection = root.Find("Selection") as RectTransform;
+            if (selection != null)
+            {
+                selection.sizeDelta = new Vector2(4f, 0f);
+            }
 
             SetCentered(
                 root.Find("Number") as RectTransform,
                 new Vector2(18f, 18f),
-                new Vector2(-100f, 18f)
+                new Vector2(-112f, 19f)
             );
 
             SetCentered(
                 root.Find("Icon") as RectTransform,
-                new Vector2(132f, 40f),
-                new Vector2(-16f, 2f)
+                new Vector2(150f, 44f),
+                new Vector2(-22f, 1f)
             );
 
             SetCentered(
                 root.Find("Name") as RectTransform,
-                new Vector2(82f, 18f),
-                new Vector2(65f, 15f)
+                new Vector2(88f, 18f),
+                new Vector2(75f, 16f)
             );
 
             SetCentered(
                 root.Find("Ammo") as RectTransform,
-                new Vector2(82f, 20f),
-                new Vector2(68f, -17f)
+                new Vector2(88f, 20f),
+                new Vector2(78f, -18f)
             );
 
             Text name = root.Find("Name")?.GetComponent<Text>();
@@ -370,30 +445,36 @@ namespace ROS.Game.UI
             root.anchorMax = Vector2.zero;
             root.pivot = Vector2.zero;
             root.anchoredPosition = position;
-            root.sizeDelta = new Vector2(78f, 56f);
+            root.sizeDelta = new Vector2(80f, 58f);
+
+            RectTransform selection = root.Find("Selection") as RectTransform;
+            if (selection != null)
+            {
+                selection.sizeDelta = new Vector2(4f, 0f);
+            }
 
             SetCentered(
                 root.Find("Number") as RectTransform,
                 new Vector2(16f, 16f),
-                new Vector2(-29f, 18f)
+                new Vector2(-30f, 19f)
             );
 
             SetCentered(
                 root.Find("Icon") as RectTransform,
-                new Vector2(52f, 36f),
-                new Vector2(0f, 3f)
+                new Vector2(54f, 38f),
+                new Vector2(0f, 2f)
             );
 
             SetCentered(
                 root.Find("Name") as RectTransform,
-                new Vector2(68f, 16f),
-                new Vector2(0f, 15f)
+                new Vector2(70f, 16f),
+                new Vector2(0f, 16f)
             );
 
             SetCentered(
                 root.Find("Ammo") as RectTransform,
-                new Vector2(55f, 18f),
-                new Vector2(8f, -17f)
+                new Vector2(58f, 18f),
+                new Vector2(8f, -18f)
             );
 
             Text name = root.Find("Name")?.GetComponent<Text>();
@@ -415,7 +496,7 @@ namespace ROS.Game.UI
             EnsureCirclePlaceholder(
                 status,
                 "ConsumablePlaceholder",
-                new Vector2(-255f, 48f),
+                new Vector2(-275f, 47f),
                 "C",
                 "CONSUM."
             );
@@ -423,7 +504,7 @@ namespace ROS.Game.UI
             EnsureCirclePlaceholder(
                 status,
                 "GrenadePlaceholder",
-                new Vector2(255f, 48f),
+                new Vector2(275f, 47f),
                 "G",
                 "GRAN."
             );
@@ -449,7 +530,7 @@ namespace ROS.Game.UI
                 Image background = rootObject.AddComponent<Image>();
                 background.sprite = GetCircleSprite();
                 background.color =
-                    new Color(0.025f, 0.03f, 0.035f, 0.78f);
+                    new Color(0.025f, 0.03f, 0.035f, 0.82f);
                 background.raycastTarget = false;
 
                 Font font =
@@ -467,7 +548,7 @@ namespace ROS.Game.UI
                 Text symbolText = symbolObject.AddComponent<Text>();
                 symbolText.font = font;
                 symbolText.text = symbol;
-                symbolText.fontSize = 22;
+                symbolText.fontSize = 23;
                 symbolText.fontStyle = FontStyle.Bold;
                 symbolText.alignment = TextAnchor.MiddleCenter;
                 symbolText.color = Color.white;
@@ -507,7 +588,7 @@ namespace ROS.Game.UI
             root.anchorMax = new Vector2(0.5f, 0f);
             root.pivot = new Vector2(0.5f, 0.5f);
             root.anchoredPosition = position;
-            root.sizeDelta = new Vector2(64f, 64f);
+            root.sizeDelta = new Vector2(70f, 70f);
         }
 
         private static Sprite GetCircleSprite()
