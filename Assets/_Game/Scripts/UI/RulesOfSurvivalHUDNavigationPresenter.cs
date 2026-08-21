@@ -108,6 +108,15 @@ namespace ROS.Game.UI
                 return;
             }
 
+            // El texto amarillo de distancia (por ejemplo "1068m") era un
+            // waypoint provisional fijo creado por el primer prototipo del HUD.
+            // No está conectado a ningún sistema de marcadores, por eso se oculta.
+            Transform waypoint = hud.transform.Find("Canvas/Waypoint");
+            if (waypoint != null && waypoint.gameObject.activeSelf)
+            {
+                waypoint.gameObject.SetActive(false);
+            }
+
             if (_compassText == null)
             {
                 Transform compass =
