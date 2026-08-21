@@ -84,6 +84,7 @@ namespace ROS.Game.CameraSystem
 
         public Transform Target => target;
         public bool IsDeathView => _deathView;
+        public float CameraYaw => _yaw;
 
         public void EnterAirplaneView(float distanceMultiplier = 5.2f)
         {

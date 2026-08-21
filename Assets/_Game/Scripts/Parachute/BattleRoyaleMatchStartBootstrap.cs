@@ -187,6 +187,10 @@ namespace ROS.Game.Parachute
                 flowObject.GetComponent<BattleRoyaleBotDirector>()
             );
 
+            // Brujula (usa el yaw de la camara para reflejar free-look)
+            CompassUI compass = flowObject.AddComponent<CompassUI>();
+            compass.Bind(input.transform, playerCamera);
+
             DeathLootPanelPresenter deathLootPanel =
                 new GameObject("DeathLootPanelPresenter")
                     .AddComponent<DeathLootPanelPresenter>();
