@@ -119,8 +119,19 @@ namespace ROS.Game.Weapons
             InventoryComponent       inventory,
             InventoryItemDefinition  ammoDef)
         {
+            // En la primera conexión real, pasar el reserveAmmo del campo al inventario
+            // para que el jugador no pierda la munición que ya tenía en el arma.
+            bool firstRealConnection = _ammoItemDef == null && ammoDef != null;
+
             _ammoInventory = inventory;
             _ammoItemDef   = ammoDef;
+
+            if (firstRealConnection && reserveAmmo > 0 && inventory != null)
+            {
+                inventory.Add(ammoDef, reserveAmmo);
+                reserveAmmo = 0;
+            }
+
             AmmoChanged?.Invoke();
         }
 

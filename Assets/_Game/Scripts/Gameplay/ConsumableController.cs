@@ -24,6 +24,7 @@ namespace ROS.Game.Gameplay
         private Coroutine             _useRoutine;
         private ConsumableDefinition  _activeDef;
         private InventoryItemDefinition _activeItem;
+        private ConsumableDefinition  _defaultHealDef;
 
         // UI
         private GameObject _barRoot;
@@ -52,6 +53,7 @@ namespace ROS.Game.Gameplay
         private void OnDestroy()
         {
             if (_barRoot != null) Destroy(_barRoot);
+            if (_defaultHealDef != null) Destroy(_defaultHealDef);
         }
 
         private void Update()
@@ -73,28 +75,39 @@ namespace ROS.Game.Gameplay
         private void TryUseFirstHealing()
         {
             if (_inventory == null) return;
+            if (_health.CurrentHealth >= _health.MaxHealth) return;
 
             foreach (InventoryStack stack in _inventory.Stacks)
             {
                 if (stack.item == null || stack.amount <= 0) continue;
                 if (stack.item.itemType != ItemType.Healing) continue;
 
-                ConsumableDefinition def = stack.item.consumableDefinition;
-                if (def == null) continue;
-                if (def.healAmount <= 0f && def.energyAmount <= 0f) continue;
+                // Si el ítem no tiene ConsumableDefinition asignado, usar valores por defecto
+                ConsumableDefinition def = stack.item.consumableDefinition
+                    ?? GetDefaultHealDef();
 
-                if (def.healAmount > 0f && _health.MaxHealth > 0f)
+                if (def.healAmount <= 0f) continue;
+
+                if (def.respectMaxFraction && _health.MaxHealth > 0f)
                 {
-                    float limit = def.respectMaxFraction
-                        ? def.maxHealthFraction
-                        : 1f;
-                    if (_health.CurrentHealth / _health.MaxHealth >= limit)
-                        continue; // ya está al límite, buscar otro ítem
+                    if (_health.CurrentHealth / _health.MaxHealth >= def.maxHealthFraction)
+                        continue;
                 }
 
                 BeginUse(stack.item, def);
                 return;
             }
+        }
+
+        private ConsumableDefinition GetDefaultHealDef()
+        {
+            if (_defaultHealDef != null) return _defaultHealDef;
+            _defaultHealDef = ScriptableObject.CreateInstance<ConsumableDefinition>();
+            _defaultHealDef.healAmount   = 75f;
+            _defaultHealDef.useDuration  = 3f;
+            _defaultHealDef.cancelOnDamage = true;
+            _defaultHealDef.cancelOnMove = false;
+            return _defaultHealDef;
         }
 
         private void BeginUse(InventoryItemDefinition item, ConsumableDefinition def)
