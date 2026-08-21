@@ -28,6 +28,8 @@ namespace ROS.Game.UI
             return tex;
         }
 
+        internal static Color GetIconColor(ItemType type) => ColorForType(type);
+
         private static Color ColorForType(ItemType type) => type switch
         {
             ItemType.Weapon     => new Color(0.90f, 0.28f, 0.20f),

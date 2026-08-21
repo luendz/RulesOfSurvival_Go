@@ -26,6 +26,10 @@ namespace ROS.Game.Loot
         public InventoryItemDefinition HelmetItem => helmetItem;
         public InventoryItemDefinition VestItem => vestItem;
         public InventoryItemDefinition BackpackItem => backpackItem;
+        public InventoryItemDefinition GetWeaponItem(int slot) =>
+            weaponItems != null && slot >= 1 && slot <= weaponItems.Length
+                ? weaponItems[slot - 1]
+                : null;
 
         public event Action EquipmentChanged;
 

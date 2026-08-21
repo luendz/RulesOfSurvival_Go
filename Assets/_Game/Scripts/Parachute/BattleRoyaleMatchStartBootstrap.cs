@@ -5,6 +5,7 @@ using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Gameplay;
 using ROS.Game.Input;
+using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using ROS.Game.UI;
 using ROS.Game.Weapons;
@@ -190,6 +191,22 @@ namespace ROS.Game.Parachute
             // Brujula (usa el yaw de la camara para reflejar free-look)
             CompassUI compass = flowObject.AddComponent<CompassUI>();
             compass.Bind(input.transform, playerCamera);
+
+            // Slots de armas y acceso rapido a consumibles
+            WeaponEquipmentController weaponEquip =
+                input.GetComponent<WeaponEquipmentController>();
+            ConsumableController consumable =
+                input.GetComponent<ConsumableController>();
+            InventoryComponent inventory =
+                input.GetComponent<InventoryComponent>();
+
+            WeaponSlotsPresenter weaponSlots =
+                flowObject.AddComponent<WeaponSlotsPresenter>();
+            weaponSlots.Bind(weaponEquip, lootEquipment);
+
+            QuickConsumePresenter quickConsume =
+                flowObject.AddComponent<QuickConsumePresenter>();
+            quickConsume.Bind(inventory, consumable);
 
             DeathLootPanelPresenter deathLootPanel =
                 new GameObject("DeathLootPanelPresenter")
