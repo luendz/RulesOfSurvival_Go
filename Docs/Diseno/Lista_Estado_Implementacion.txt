@@ -2,7 +2,7 @@ LISTA DE ESTADO DE IMPLEMENTACION - RULES OF SURVIVAL
 ====================================================
 
 Actualizado: 21 de agosto de 2026
-Base revisada: commit ca8c9bd (municion integrada al inventario)
+Base revisada: commit 201c79e (crosshair portado a Canvas)
 
 Leyenda:
 [OK]        Implementado en el proyecto actual.
@@ -142,18 +142,20 @@ codex/armas-por-tipo-loot y codex/integracion-desarrollo
 
 8. HUD INTEGRADO [PARCIAL]
 
-[PARCIAL] Existen paneles Canvas para vida, armadura, arma, modo de disparo,
-          municion, jugadores vivos y Safe Zone.
+[OK] Paneles Canvas para vida, armadura, arma, modo de disparo,
+     municion, jugadores vivos y Safe Zone.
 [OK] Panel de loot cercano con iconos por tipo de item.
 [OK] Panel de caja de muerte con auto-apertura, navegacion y iconos
      (ver punto 5 para detalles completos).
 [OK] Pantalla de muerte, victoria y resultados.
 [OK] Hitmarker provisional.
-[PENDIENTE] Direccion visual del dano.
-[PENDIENTE] Kill feed completo.
-[PENDIENTE] Slots y consumible rapido.
-[PENDIENTE] Estado visible de casco, chaleco y mochila en el HUD principal.
-[PARCIAL] El crosshair y algunos datos siguen usando HudPresenter con OnGUI.
+[OK] Direccion visual del dano: 4 flechas Canvas con pulso por direccion
+     del impacto (DamageDirectionIndicator).
+[OK] Kill feed: ultimas 5 eliminaciones con fade, amarillo para kills
+     propios y rojo para muerte del jugador (KillFeedPresenter).
+[OK] Estado visible de casco, chaleco y mochila (EquipmentStatusPresenter).
+[OK] Crosshair dinamico portado a Canvas; HudPresenter ya no usa OnGUI.
+[PENDIENTE] Slots de armas y acceso rapido a consumibles en el HUD.
 
 
 9. CICLO DE PARTIDA, SAFE ZONE, MAPA Y MINIMAPA [PARCIAL]
@@ -306,6 +308,5 @@ RESUMEN GENERAL
 
 Prioridades inmediatas sugeridas segun las dependencias pendientes:
 1. Implementar consumibles y su cancelacion (punto 7).
-2. Sustituir por completo el HUD OnGUI provisional (punto 8).
-3. Crear minimapa, mapa y brujula (punto 9).
-4. Crear el primer POI jugable antes de avanzar al multijugador (punto 11).
+2. Crear minimapa, mapa y brujula (punto 9).
+3. Crear el primer POI jugable antes de avanzar al multijugador (punto 11).
