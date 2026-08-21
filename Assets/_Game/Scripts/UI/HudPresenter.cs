@@ -1,72 +1,54 @@
 using ROS.Game.AI;
-using ROS.Game.BattleRoyale;
-using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Parachute;
 using ROS.Game.Weapons;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ROS.Game.UI
 {
     /// <summary>
-    /// HUD de combate provisional del prototipo.
-    /// Usa OnGUI para no depender todavía de un Canvas.
-    ///
-    /// El crosshair utiliza el spread real del arma equipada.
+    /// Crosshair dinámico basado en Canvas. El radio se ajusta en tiempo real
+    /// al spread real del arma equipada.
+    /// El estado de vida, arma y partida lo muestran VitalsPanelUI,
+    /// WeaponPanelUI y BattleRoyalePanelUI.
     /// </summary>
     public sealed class HudPresenter : MonoBehaviour
     {
         [Header("References")]
-        [SerializeField] private Health health;
         [SerializeField] private WeaponEquipmentController equipment;
         [SerializeField] private PlayerInputReader input;
-        [SerializeField] private PlayerAimController aim;
-        [SerializeField] private BattleRoyaleManager battleRoyale;
         [SerializeField] private ParachuteController parachute;
 
         [Header("Crosshair")]
         [SerializeField] private bool showCrosshair = true;
-
-        [Tooltip("Longitud de cada línea del crosshair.")]
         [SerializeField] private float crosshairArmLength = 8f;
-
-        [Tooltip("Grosor de las líneas.")]
         [SerializeField] private float crosshairThickness = 2f;
-
-        [Tooltip("Separación mínima del centro.")]
         [SerializeField] private float minCrosshairGap = 3f;
-
-        [Tooltip("Separación máxima del centro.")]
         [SerializeField] private float maxCrosshairGap = 45f;
-
-        [Tooltip("Conversión aproximada de grados de spread a píxeles.")]
         [SerializeField] private float pixelsPerSpreadDegree = 10f;
-
-        [Tooltip("Velocidad con la que se abre/cierra el crosshair.")]
         [SerializeField] private float crosshairSmoothSpeed = 14f;
-
-        [Header("Debug HUD")]
-        [SerializeField] private bool showStatus = true;
-        [SerializeField] private bool showControls = true;
 
         [Header("Runtime Debug")]
         [SerializeField] private float debugCurrentSpread;
         [SerializeField] private float debugTargetGap;
         [SerializeField] private float debugCurrentGap;
 
-        private GUIStyle _style;
-        private GUIStyle _smallStyle;
-        private Texture2D _whiteTexture;
-
         private float _currentCrosshairGap;
+
+        // Canvas crosshair elements
+        private GameObject _crosshairRoot;
+        private RectTransform _left;
+        private RectTransform _right;
+        private RectTransform _up;
+        private RectTransform _down;
 
         private void Awake()
         {
             EnsureReferences();
-
-            _whiteTexture = Texture2D.whiteTexture;
             _currentCrosshairGap = minCrosshairGap;
+            BuildCrosshairCanvas();
         }
 
         private void Update()
@@ -75,399 +57,124 @@ namespace ROS.Game.UI
             UpdateCrosshair();
         }
 
+        private void OnDestroy()
+        {
+            if (_crosshairRoot != null)
+                Destroy(_crosshairRoot);
+        }
+
         private void EnsureReferences()
         {
             if (input == null)
-            {
                 input = GetComponent<PlayerInputReader>();
-            }
 
             if (input == null)
-            {
                 input = BattleRoyaleBotController.FindLocalPlayerInput();
-            }
-
-            if (health == null)
-            {
-                health = GetComponent<Health>();
-            }
-
-            if (health == null && input != null)
-            {
-                health = input.GetComponent<Health>();
-            }
-
-            if (health == null)
-            {
-                health = BattleRoyaleBotController.FindLocalPlayerHealth();
-            }
 
             if (equipment == null)
-            {
                 equipment = GetComponent<WeaponEquipmentController>();
-            }
+
+            if (equipment == null && input != null)
+                equipment = input.GetComponent<WeaponEquipmentController>();
 
             if (equipment == null)
-            {
-                equipment = input != null
-                    ? input.GetComponent<WeaponEquipmentController>()
-                    : null;
-            }
-
-            if (equipment == null)
-            {
                 equipment = FindFirstObjectByType<WeaponEquipmentController>();
-            }
 
-            if (aim == null)
-            {
-                aim = GetComponent<PlayerAimController>();
-            }
-
-            if (aim == null)
-            {
-                aim = FindFirstObjectByType<PlayerAimController>();
-            }
-
-            if (battleRoyale == null)
-            {
-                battleRoyale =
-                    FindFirstObjectByType<BattleRoyaleManager>();
-            }
-
-            if (parachute == null)
-            {
-                parachute = input != null
-                    ? input.GetComponent<ParachuteController>()
-                    : null;
-            }
+            if (parachute == null && input != null)
+                parachute = input.GetComponent<ParachuteController>();
         }
 
         private void UpdateCrosshair()
         {
-            WeaponController weapon =
-                equipment != null
-                    ? equipment.EquippedWeapon
-                    : null;
-
-            if (weapon == null)
-            {
-                debugCurrentSpread = 0f;
-                debugTargetGap = minCrosshairGap;
-
-                _currentCrosshairGap =
-                    Mathf.Lerp(
-                        _currentCrosshairGap,
-                        minCrosshairGap,
-                        crosshairSmoothSpeed *
-                        Time.deltaTime
-                    );
-
-                debugCurrentGap =
-                    _currentCrosshairGap;
-
-                return;
-            }
-
-            float spread =
-                weapon.CurrentSpread;
-
-            debugCurrentSpread =
-                spread;
-
-            float targetGap =
-                minCrosshairGap +
-                spread *
-                pixelsPerSpreadDegree;
-
-            targetGap =
-                Mathf.Clamp(
-                    targetGap,
-                    minCrosshairGap,
-                    maxCrosshairGap
-                );
-
-            debugTargetGap =
-                targetGap;
-
-            _currentCrosshairGap =
-                Mathf.Lerp(
-                    _currentCrosshairGap,
-                    targetGap,
-                    crosshairSmoothSpeed *
-                    Time.deltaTime
-                );
-
-            debugCurrentGap =
-                _currentCrosshairGap;
-        }
-
-        private void OnGUI()
-        {
-            EnsureReferences();
-
-            if (
+            bool visible =
                 showCrosshair &&
                 IsCrosshairAllowed() &&
                 equipment != null &&
-                equipment.HasEquippedWeapon
-            )
-            {
-                DrawCrosshair();
-            }
+                equipment.HasEquippedWeapon;
 
-            if (!showStatus &&
-                !showControls)
-            {
-                return;
-            }
+            if (_crosshairRoot != null)
+                _crosshairRoot.SetActive(visible);
 
-            if (_style == null)
-            {
-                _style =
-                    new GUIStyle(
-                        GUI.skin.label
-                    )
-                    {
-                        fontSize = 20,
-                        fontStyle =
-                            FontStyle.Bold
-                    };
-            }
+            if (!visible) return;
 
-            if (_smallStyle == null)
-            {
-                _smallStyle =
-                    new GUIStyle(
-                        GUI.skin.label
-                    )
-                    {
-                        fontSize = 14
-                    };
-            }
+            WeaponController weapon = equipment.EquippedWeapon;
+            float spread = weapon != null ? weapon.CurrentSpread : 0f;
+            debugCurrentSpread = spread;
 
-            if (showStatus)
-            {
-                DrawStatus();
-            }
+            float targetGap = Mathf.Clamp(
+                minCrosshairGap + spread * pixelsPerSpreadDegree,
+                minCrosshairGap,
+                maxCrosshairGap
+            );
+            debugTargetGap = targetGap;
 
-            if (showControls)
-            {
-                GUI.Label(
-                    new Rect(
-                        16,
-                        Screen.height - 125,
-                        1100,
-                        105
-                    ),
-                    "WASD mover | Shift sprint | Espacio saltar | C agachar | RMB apuntar | LMB disparar | R recargar | 1/2/3 armas | Rueda cambiar arma | X guardar | Alt free-look | V hombro",
-                    _smallStyle
-                );
-            }
+            _currentCrosshairGap = Mathf.Lerp(
+                _currentCrosshairGap,
+                targetGap,
+                crosshairSmoothSpeed * Time.deltaTime
+            );
+            debugCurrentGap = _currentCrosshairGap;
+
+            float gap = _currentCrosshairGap;
+            float arm = crosshairArmLength;
+            float half = arm * 0.5f;
+
+            // Posición: el brazo empieza en gap y su centro está en gap + half
+            if (_left  != null) _left.anchoredPosition  = new Vector2(-(gap + half), 0f);
+            if (_right != null) _right.anchoredPosition = new Vector2(  gap + half,  0f);
+            if (_up    != null) _up.anchoredPosition    = new Vector2(0f,   gap + half);
+            if (_down  != null) _down.anchoredPosition  = new Vector2(0f, -(gap + half));
         }
 
         private bool IsCrosshairAllowed()
         {
-            if (parachute == null)
-            {
-                return true;
-            }
-
+            if (parachute == null) return true;
             return parachute.State != AirDropState.InPlane &&
                    parachute.State != AirDropState.FreeFall &&
                    parachute.State != AirDropState.Parachuting;
         }
 
-        private void DrawStatus()
+        private void BuildCrosshairCanvas()
         {
-            float y = 16f;
+            _crosshairRoot = new GameObject("CrosshairCanvas");
 
-            if (health != null)
-            {
-                GUI.Label(
-                    new Rect(
-                        16,
-                        y,
-                        520,
-                        30
-                    ),
-                    $"VIDA {health.CurrentHealth:0}/{health.MaxHealth:0}   ARMOR {health.CurrentArmor:0}/{health.MaxArmor:0}",
-                    _style
-                );
+            Canvas canvas = _crosshairRoot.AddComponent<Canvas>();
+            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 20;
 
-                y += 30f;
-            }
+            CanvasScaler scaler = _crosshairRoot.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
 
-            WeaponController weapon =
-                equipment != null
-                    ? equipment.EquippedWeapon
-                    : null;
+            // Centro de pantalla
+            GameObject center = new GameObject("Center");
+            center.transform.SetParent(_crosshairRoot.transform, false);
+            RectTransform cr = center.AddComponent<RectTransform>();
+            cr.anchorMin        = new Vector2(0.5f, 0.5f);
+            cr.anchorMax        = new Vector2(0.5f, 0.5f);
+            cr.sizeDelta        = Vector2.zero;
+            cr.anchoredPosition = Vector2.zero;
 
-            if (weapon != null)
-            {
-                string weaponName =
-                    weapon.Definition != null
-                        ? weapon.Definition.displayName
-                        : weapon.name;
+            _left  = MakeArm(center.transform, crosshairArmLength, crosshairThickness, false);
+            _right = MakeArm(center.transform, crosshairArmLength, crosshairThickness, false);
+            _up    = MakeArm(center.transform, crosshairThickness, crosshairArmLength, true);
+            _down  = MakeArm(center.transform, crosshairThickness, crosshairArmLength, true);
 
-                string reloadText =
-                    weapon.IsReloading
-                        ? "   RECARGANDO"
-                        : string.Empty;
-
-                GUI.Label(
-                    new Rect(
-                        16,
-                        y,
-                        700,
-                        30
-                    ),
-                    $"{weaponName}   MUNICION {weapon.AmmoInMagazine} / {weapon.ReserveAmmo}{reloadText}",
-                    _style
-                );
-
-                y += 30f;
-
-                GUI.Label(
-                    new Rect(
-                        16,
-                        y,
-                        700,
-                        25
-                    ),
-                    $"SLOT {equipment.EquippedSlot}   SPREAD {weapon.CurrentSpread:0.00}°",
-                    _smallStyle
-                );
-
-                y += 25f;
-            }
-            else
-            {
-                GUI.Label(
-                    new Rect(
-                        16,
-                        y,
-                        420,
-                        30
-                    ),
-                    "SIN ARMA EQUIPADA",
-                    _style
-                );
-
-                y += 30f;
-            }
-
-            if (battleRoyale != null)
-            {
-                GUI.Label(
-                    new Rect(
-                        16,
-                        y,
-                        420,
-                        30
-                    ),
-                    $"VIVOS {battleRoyale.AliveCount}   ESTADO {battleRoyale.State}",
-                    _style
-                );
-            }
+            _crosshairRoot.SetActive(false);
         }
 
-        private void DrawCrosshair()
+        private static RectTransform MakeArm(
+            Transform parent, float w, float h, bool vertical)
         {
-            if (_whiteTexture == null)
-            {
-                _whiteTexture =
-                    Texture2D.whiteTexture;
-            }
+            GameObject go = new GameObject(vertical ? "Arm_V" : "Arm_H");
+            go.transform.SetParent(parent, false);
 
-            float centerX =
-                Screen.width *
-                0.5f;
+            Image img = go.AddComponent<Image>();
+            img.color = new Color(1f, 1f, 1f, 0.9f);
 
-            float centerY =
-                Screen.height *
-                0.5f;
-
-            float gap =
-                _currentCrosshairGap;
-
-            float armLength =
-                crosshairArmLength;
-
-            float thickness =
-                crosshairThickness;
-
-            Color previous =
-                GUI.color;
-
-            GUI.color =
-                new Color(
-                    1f,
-                    1f,
-                    1f,
-                    0.9f
-                );
-
-            // Izquierda
-            GUI.DrawTexture(
-                new Rect(
-                    centerX -
-                    gap -
-                    armLength,
-                    centerY -
-                    thickness *
-                    0.5f,
-                    armLength,
-                    thickness
-                ),
-                _whiteTexture
-            );
-
-            // Derecha
-            GUI.DrawTexture(
-                new Rect(
-                    centerX +
-                    gap,
-                    centerY -
-                    thickness *
-                    0.5f,
-                    armLength,
-                    thickness
-                ),
-                _whiteTexture
-            );
-
-            // Arriba
-            GUI.DrawTexture(
-                new Rect(
-                    centerX -
-                    thickness *
-                    0.5f,
-                    centerY -
-                    gap -
-                    armLength,
-                    thickness,
-                    armLength
-                ),
-                _whiteTexture
-            );
-
-            // Abajo
-            GUI.DrawTexture(
-                new Rect(
-                    centerX -
-                    thickness *
-                    0.5f,
-                    centerY +
-                    gap,
-                    thickness,
-                    armLength
-                ),
-                _whiteTexture
-            );
-
-            GUI.color =
-                previous;
+            RectTransform rt = go.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(w, h);
+            return rt;
         }
     }
 }
