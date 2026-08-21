@@ -159,7 +159,10 @@ codex/armas-por-tipo-loot y codex/integracion-desarrollo
      propios y rojo para muerte del jugador (KillFeedPresenter).
 [OK] Estado visible de casco, chaleco y mochila (EquipmentStatusPresenter).
 [OK] Crosshair dinamico portado a Canvas; HudPresenter ya no usa OnGUI.
-[PENDIENTE] Slots de armas y acceso rapido a consumibles en el HUD.
+[OK] Slots de armas (WeaponSlotsPresenter): 3 slots con icono, nombre,
+     municion actual/reserva; slot activo resaltado en dorado.
+[OK] Acceso rapido a consumibles (QuickConsumePresenter): hasta 3 tipos
+     de item de curacion con icono, nombre truncado, cantidad y atajo H.
 
 
 9. CICLO DE PARTIDA, SAFE ZONE, MAPA Y MINIMAPA [PARCIAL]
@@ -314,5 +317,6 @@ RESUMEN GENERAL
 
 Prioridades inmediatas sugeridas segun las dependencias pendientes:
 1. Crear el primer POI jugable antes de avanzar al multijugador (punto 11).
-2. Slots de armas y acceso rapido a consumibles en el HUD (punto 8).
-3. Energia para bebidas cuando exista sistema de stamina (punto 7).
+2. M14EBR funcional y granada completa (punto 13).
+3. Mapa completo con tecla M y ruta del avion (punto 9).
+4. Energia para bebidas cuando exista sistema de stamina (punto 7).
