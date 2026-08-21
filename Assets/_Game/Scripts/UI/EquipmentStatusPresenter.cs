@@ -1,4 +1,5 @@
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using ROS.Game.Inventory;
 using UnityEngine;
 using UnityEngine.UI;
@@ -75,7 +76,7 @@ namespace ROS.Game.UI
             if (_inventory == null) return 0f;
             foreach (InventoryStack s in _inventory.Stacks)
             {
-                if (s.item != null && s.item.itemType == Core.ItemType.Backpack)
+                if (s.item != null && s.item.itemType == ItemType.Backpack)
                     return s.item.backpackCapacity;
             }
             return 0f;
