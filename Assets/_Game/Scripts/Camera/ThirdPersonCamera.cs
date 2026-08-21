@@ -38,11 +38,9 @@ namespace ROS.Game.CameraSystem
         [SerializeField] private float shoulderSwitchSpeed = 8f;
 
         [Header("Lean Camera")]
+        [Tooltip("Desplazamiento horizontal máximo de la cámara durante el lean. Editable en Play Mode.")]
         [Min(0f)]
-        [SerializeField] private float leanLateralOffset = 0.32f;
-        [SerializeField] private float leanVerticalOffset = -0.04f;
-        [Range(0f, 10f)]
-        [SerializeField] private float leanRollDegrees = 3.5f;
+        [SerializeField] private float leanLateralOffset = 0.28f;
 
         [Header("Look")]
         [SerializeField] private float sensitivity = 0.12f;
@@ -350,15 +348,8 @@ namespace ROS.Game.CameraSystem
                 ? leanController.CurrentLean
                 : 0f;
 
-            Quaternion positionRotation =
-                Quaternion.Euler(finalPitch, finalYaw, 0f);
-
             Quaternion targetRotation =
-                Quaternion.Euler(
-                    finalPitch,
-                    finalYaw,
-                    -currentLean * leanRollDegrees
-                );
+                Quaternion.Euler(finalPitch, finalYaw, 0f);
 
             Vector3 pivot = target.position + pivotOffset;
 
@@ -370,14 +361,14 @@ namespace ROS.Game.CameraSystem
 
             Vector3 currentShoulderOffset = new Vector3(
                 effectiveShoulderX + currentLean * leanLateralOffset,
-                shoulderOffset.y + Mathf.Abs(currentLean) * leanVerticalOffset,
+                shoulderOffset.y,
                 shoulderOffset.z
             );
 
             Vector3 desired =
                 pivot
-                + positionRotation * currentShoulderOffset
-                - positionRotation * Vector3.forward * _currentDistance;
+                + targetRotation * currentShoulderOffset
+                - targetRotation * Vector3.forward * _currentDistance;
 
             desired = ResolveCollision(pivot, desired);
 
