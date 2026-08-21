@@ -186,7 +186,7 @@ namespace ROS.Game.Interaction
             }
 
             if (
-                interactable is Object unityObject
+                interactable is UnityEngine.Object unityObject
             )
             {
                 return unityObject != null;
