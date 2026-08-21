@@ -1,3 +1,4 @@
+using ROS.Game.Character;
 using ROS.Game.Input;
 using ROS.Game.Parachute;
 using ROS.Game.Weapons;
@@ -14,6 +15,7 @@ namespace ROS.Game.CameraSystem
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private WeaponRecoil weaponRecoil;
         [SerializeField] private WeaponEquipmentController equipment;
+        [SerializeField] private PlayerLeanController leanController;
 
         [Header("Position")]
         [SerializeField] private Vector3 pivotOffset = new Vector3(0f, 1.55f, 0f);
@@ -34,6 +36,13 @@ namespace ROS.Game.CameraSystem
         [SerializeField] private float rightShoulderX = 0.55f;
         [SerializeField] private float leftShoulderX = -0.55f;
         [SerializeField] private float shoulderSwitchSpeed = 8f;
+
+        [Header("Lean Camera")]
+        [Min(0f)]
+        [SerializeField] private float leanLateralOffset = 0.32f;
+        [SerializeField] private float leanVerticalOffset = -0.04f;
+        [Range(0f, 10f)]
+        [SerializeField] private float leanRollDegrees = 3.5f;
 
         [Header("Look")]
         [SerializeField] private float sensitivity = 0.12f;
@@ -145,6 +154,7 @@ namespace ROS.Game.CameraSystem
             FindEquipment();
             FindWeaponRecoil();
             FindParachute();
+            FindLeanController();
 
             if (_camera != null)
                 _camera.fieldOfView = normalFov;
@@ -163,10 +173,12 @@ namespace ROS.Game.CameraSystem
             _currentShoulderX = rightShoulderX;
             _currentDistance = normalDistance;
             _currentAimShoulderX = normalShoulderX;
+            leanController = null;
 
             FindEquipment();
             FindWeaponRecoil();
             FindParachute();
+            FindLeanController();
 
             if (_camera != null)
                 _camera.fieldOfView = normalFov;
@@ -182,6 +194,7 @@ namespace ROS.Game.CameraSystem
             _deathView = true;
             equipment = null;
             weaponRecoil = null;
+            leanController = null;
         }
 
         private void LateUpdate()
@@ -199,6 +212,7 @@ namespace ROS.Game.CameraSystem
                 return;
 
             FindParachute();
+            FindLeanController();
             HandleShoulderSwitch();
             HandleAim();
             HandleLook();
@@ -332,8 +346,20 @@ namespace ROS.Game.CameraSystem
 
             float finalYaw = _yaw + recoilYaw;
             float finalPitch = Mathf.Clamp(_pitch + recoilPitch, minPitch, maxPitch);
+            float currentLean = leanController != null
+                ? leanController.CurrentLean
+                : 0f;
 
-            Quaternion targetRotation = Quaternion.Euler(finalPitch, finalYaw, 0f);
+            Quaternion positionRotation =
+                Quaternion.Euler(finalPitch, finalYaw, 0f);
+
+            Quaternion targetRotation =
+                Quaternion.Euler(
+                    finalPitch,
+                    finalYaw,
+                    -currentLean * leanRollDegrees
+                );
+
             Vector3 pivot = target.position + pivotOffset;
 
             float shoulderSign = _leftShoulder ? -1f : 1f;
@@ -343,15 +369,15 @@ namespace ROS.Game.CameraSystem
                 effectiveShoulderX = shoulderSign * _currentAimShoulderX;
 
             Vector3 currentShoulderOffset = new Vector3(
-                effectiveShoulderX,
-                shoulderOffset.y,
+                effectiveShoulderX + currentLean * leanLateralOffset,
+                shoulderOffset.y + Mathf.Abs(currentLean) * leanVerticalOffset,
                 shoulderOffset.z
             );
 
             Vector3 desired =
                 pivot
-                + targetRotation * currentShoulderOffset
-                - targetRotation * Vector3.forward * _currentDistance;
+                + positionRotation * currentShoulderOffset
+                - positionRotation * Vector3.forward * _currentDistance;
 
             desired = ResolveCollision(pivot, desired);
 
@@ -391,6 +417,19 @@ namespace ROS.Game.CameraSystem
             if (_parachute == null && target != null)
             {
                 _parachute = target.GetComponent<ParachuteController>();
+            }
+        }
+
+        private void FindLeanController()
+        {
+            if (leanController != null || target == null)
+                return;
+
+            leanController = target.GetComponent<PlayerLeanController>();
+
+            if (leanController == null)
+            {
+                leanController = target.gameObject.AddComponent<PlayerLeanController>();
             }
         }
 
