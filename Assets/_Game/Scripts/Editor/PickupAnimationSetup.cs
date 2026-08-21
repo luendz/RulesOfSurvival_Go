@@ -88,10 +88,19 @@ namespace ROS.Game.Editor
             string layerName
         )
         {
-            foreach (AnimatorControllerLayer layer in ctrl.layers)
+            AnimatorControllerLayer[] layers = ctrl.layers;
+            for (int i = 0; i < layers.Length; i++)
             {
-                if (layer.name == layerName)
-                    return layer.stateMachine;
+                if (layers[i].name != layerName) continue;
+
+                // Asegurar peso 1 para que la capa sea visible
+                if (layers[i].defaultWeight < 1f)
+                {
+                    layers[i].defaultWeight = 1f;
+                    ctrl.layers = layers;
+                }
+
+                return layers[i].stateMachine;
             }
             return null;
         }
