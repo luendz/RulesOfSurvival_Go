@@ -41,9 +41,13 @@ namespace ROS.Game.Weapons
                 if (weapon == null || weapon.Definition == null) continue;
 
                 AmmoType needed = weapon.Definition.ammoType;
-                if (needed == AmmoType.None) continue;
 
-                InventoryItemDefinition ammoDef = FindAmmoDef(needed);
+                // Si el arma tiene tipo de munición configurado, busca exacto;
+                // si no, usa el primer ítem de tipo Ammo que haya en inventario.
+                InventoryItemDefinition ammoDef = needed != AmmoType.None
+                    ? FindAmmoDef(needed)
+                    : FindAnyAmmoDef();
+
                 weapon.SetAmmoSource(_inventory, ammoDef);
             }
         }
@@ -59,7 +63,17 @@ namespace ROS.Game.Weapons
                     return stack.item;
                 }
             }
-            return null; // no hay ese tipo en inventario → reserva interna
+            return null;
+        }
+
+        private InventoryItemDefinition FindAnyAmmoDef()
+        {
+            foreach (InventoryStack stack in _inventory.Stacks)
+            {
+                if (stack.item != null && stack.item.itemType == ItemType.Ammo)
+                    return stack.item;
+            }
+            return null;
         }
     }
 }

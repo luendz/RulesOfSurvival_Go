@@ -59,7 +59,7 @@ namespace ROS.Game.Gameplay
             if (_health == null || !_health.IsAlive) return;
             if (Keyboard.current == null) return;
 
-            if (Keyboard.current.fKey.wasPressedThisFrame)
+            if (Keyboard.current.hKey.wasPressedThisFrame)
             {
                 if (_isUsing)
                     CancelUse();

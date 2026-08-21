@@ -1,6 +1,7 @@
 using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Inventory;
+using ROS.Game.Loot;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,8 +14,8 @@ namespace ROS.Game.UI
     [DisallowMultipleComponent]
     public sealed class EquipmentStatusPresenter : MonoBehaviour
     {
-        private InventoryComponent  _inventory;
-        private ProtectiveEquipment _protection;
+        private ProtectiveEquipment  _protection;
+        private PlayerLootEquipment  _loot;
 
         private GameObject _root;
         private Text _helmetLabel;
@@ -23,13 +24,13 @@ namespace ROS.Game.UI
 
         // ---------------------------------------------------------------
 
-        public void Bind(InventoryComponent inventory, ProtectiveEquipment protection)
+        public void Bind(PlayerLootEquipment loot, ProtectiveEquipment protection)
         {
-            _inventory  = inventory;
+            _loot       = loot;
             _protection = protection;
 
-            if (_inventory  != null) _inventory.Changed         += Refresh;
-            if (_protection != null) _protection.Changed        += Refresh;
+            if (_protection != null) _protection.Changed     += Refresh;
+            if (_loot       != null) _loot.EquipmentChanged  += Refresh;
 
             BuildUI();
             Refresh();
@@ -37,8 +38,8 @@ namespace ROS.Game.UI
 
         private void OnDestroy()
         {
-            if (_inventory  != null) _inventory.Changed  -= Refresh;
-            if (_protection != null) _protection.Changed -= Refresh;
+            if (_protection != null) _protection.Changed    -= Refresh;
+            if (_loot       != null) _loot.EquipmentChanged -= Refresh;
 
             if (_root != null) Destroy(_root);
         }
@@ -49,15 +50,15 @@ namespace ROS.Game.UI
         {
             if (_protection != null)
             {
-                _helmetLabel.text  = LevelText("CASCO", _protection.HelmetLevel);
-                _vestLabel.text    = LevelText("CHALECO", _protection.VestLevel);
+                _helmetLabel.text = LevelText("CASCO",   _protection.HelmetLevel);
+                _vestLabel.text   = LevelText("CHALECO", _protection.VestLevel);
             }
 
-            if (_inventory != null)
+            if (_loot != null)
             {
-                float cap = GetBackpackCapacity();
-                _backpackLabel.text = cap > 0f
-                    ? $"MOCHILA L{BackpackLevel(cap)}"
+                InventoryItemDefinition bp = _loot.BackpackItem;
+                _backpackLabel.text = bp != null && bp.backpackCapacity > 0f
+                    ? $"MOCHILA L{BackpackLevel(bp.backpackCapacity)}"
                     : "MOCHILA —";
             }
         }
@@ -69,17 +70,6 @@ namespace ROS.Game.UI
                    : level == ProtectionLevel.Level2 ? 2
                    : 3;
             return $"{name} L{lv}";
-        }
-
-        private float GetBackpackCapacity()
-        {
-            if (_inventory == null) return 0f;
-            foreach (InventoryStack s in _inventory.Stacks)
-            {
-                if (s.item != null && s.item.itemType == ItemType.Backpack)
-                    return s.item.backpackCapacity;
-            }
-            return 0f;
         }
 
         private static int BackpackLevel(float cap)
@@ -113,9 +103,9 @@ namespace ROS.Game.UI
             cr.anchoredPosition = new Vector2(-18f, 18f);
             cr.sizeDelta        = new Vector2(160f, 56f);
 
-            _helmetLabel    = MakeLabel(container.transform, 0, "CASCO —");
-            _vestLabel      = MakeLabel(container.transform, 1, "CHALECO —");
-            _backpackLabel  = MakeLabel(container.transform, 2, "MOCHILA —");
+            _helmetLabel   = MakeLabel(container.transform, 0, "CASCO —");
+            _vestLabel     = MakeLabel(container.transform, 1, "CHALECO —");
+            _backpackLabel = MakeLabel(container.transform, 2, "MOCHILA —");
         }
 
         private static Text MakeLabel(Transform parent, int row, string defaultText)

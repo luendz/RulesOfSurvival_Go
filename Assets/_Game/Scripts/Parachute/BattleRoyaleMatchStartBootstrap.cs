@@ -5,7 +5,7 @@ using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Gameplay;
 using ROS.Game.Input;
-using ROS.Game.Inventory;
+using ROS.Game.Loot;
 using ROS.Game.UI;
 using ROS.Game.Weapons;
 using ROS.Game.World;
@@ -161,8 +161,8 @@ namespace ROS.Game.Parachute
 
             // HUD: kill feed, indicador de dirección de daño, estado del equipo
             Health localHealth = input.GetComponent<Health>();
-            InventoryComponent inventory = input.GetComponent<InventoryComponent>();
             ProtectiveEquipment protection = input.GetComponent<ProtectiveEquipment>();
+            PlayerLootEquipment lootEquipment = input.GetComponent<PlayerLootEquipment>();
 
             KillFeedPresenter killFeed = flowObject.AddComponent<KillFeedPresenter>();
             killFeed.Bind(manager, localHealth);
@@ -173,7 +173,7 @@ namespace ROS.Game.Parachute
 
             EquipmentStatusPresenter equipStatus =
                 flowObject.AddComponent<EquipmentStatusPresenter>();
-            equipStatus.Bind(inventory, protection);
+            equipStatus.Bind(lootEquipment, protection);
 
             // Minimapa
             MinimapSystem minimap = flowObject.AddComponent<MinimapSystem>();
