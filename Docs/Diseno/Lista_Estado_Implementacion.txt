@@ -1,8 +1,8 @@
 LISTA DE ESTADO DE IMPLEMENTACION - RULES OF SURVIVAL
 ====================================================
 
-Actualizado: 20 de agosto de 2026
-Base revisada: commit caa9d55 (20 bots autonomos)
+Actualizado: 21 de agosto de 2026
+Base revisada: commit fd2cc89 (modo libre en menu, demo loot reubicado)
 
 Leyenda:
 [OK]        Implementado en el proyecto actual.
@@ -90,8 +90,8 @@ codex/armas-por-tipo-loot
 
 
 5. LOOT DEL MUNDO Y CAJA DE MUERTE [OK]
-Ramas realizadas: codex/caja-loot-jugador-eliminado y
-codex/loot-interaccion-completo
+Ramas realizadas: codex/caja-loot-jugador-eliminado,
+codex/loot-interaccion-completo y codex/integracion-desarrollo
 
 [OK] Contenedor de objetos reutilizable.
 [OK] Transferencia del inventario al morir.
@@ -102,6 +102,15 @@ codex/loot-interaccion-completo
 [OK] Soporte de semilla determinista en el spawner de loot.
 [OK] Caja de muerte 3D flotante, animada y sin halo.
 [OK] Transferencias protegidas contra duplicaciones y perdidas.
+[OK] Panel de caja de muerte se abre automaticamente por proximidad; se
+     minimiza con Tab, se cierra con ESC o boton; el cierre manual suprime
+     la reapertura automatica hasta que el jugador se aleja.
+[OK] Navegacion del panel de muerte con rueda del raton; recoger item
+     seleccionado con F; highlight amarillo en el item activo.
+[OK] Iconos por tipo de item (color solido fallback) en panel de caja de
+     muerte y en el panel de loot cercano; LootIconHelper cachea texturas.
+[OK] Animacion de recogida (Taking Item) reproducida a 3x velocidad al
+     interactuar con cualquier LootPickup del mundo.
 
 
 6. PRIMERA ARMA VERTICAL COMPLETA: M4A1 [PARCIAL]
@@ -135,8 +144,9 @@ codex/armas-por-tipo-loot
 
 [PARCIAL] Existen paneles Canvas para vida, armadura, arma, modo de disparo,
           municion, jugadores vivos y Safe Zone.
-[OK] Panel de loot cercano e interaccion.
-[OK] Panel de caja de muerte.
+[OK] Panel de loot cercano con iconos por tipo de item.
+[OK] Panel de caja de muerte con auto-apertura, navegacion y iconos
+     (ver punto 5 para detalles completos).
 [OK] Pantalla de muerte, victoria y resultados.
 [OK] Hitmarker provisional.
 [PENDIENTE] Direccion visual del dano.
@@ -225,6 +235,7 @@ Rama realizada: codex/bots-battle-royale
 [OK] Exploracion, deteccion y persecucion basicas.
 [OK] Apuntado, disparo y recarga autonomos.
 [OK] Los bots permiten completar una partida local sin mas jugadores humanos.
+[OK] Los bots dropean su inventario a una DeathLootContainer al morir.
 [PENDIENTE] Movimiento especifico hacia la Safe Zone.
 [PENDIENTE] Busqueda y uso de coberturas.
 [PENDIENTE] Precision y tiempo de reaccion expuestos como configuracion.
@@ -261,7 +272,9 @@ Rama realizada: codex/bots-battle-royale
 
 17. LOBBY Y MATCHMAKING [PENDIENTE]
 
-[PARCIAL] Existe un menu local previo para iniciar la partida Battle Royale.
+[PARCIAL] Existe un menu local previo para iniciar la partida Battle Royale,
+          con opcion de Modo Libre (sin BR) para explorar el mapa solo sin
+          avion, bots ni zona azul.
 [PENDIENTE] Crear y unirse a sesiones.
 [PENDIENTE] Modo Solo conectado a sesiones.
 [PENDIENTE] Duo y Squad.
