@@ -41,29 +41,10 @@ namespace ROS.Game.Loot
                 return;
             }
 
-            Vector3 forward =
-                Vector3.ProjectOnPlane(
-                    localPlayer.transform.forward,
-                    Vector3.up
-                ).normalized;
+            Vector3 forward = Vector3.forward;
 
-            if (forward.sqrMagnitude < 0.01f)
-            {
-                forward = Vector3.forward;
-            }
-
-            Vector3 right =
-                Vector3.Cross(Vector3.up, forward);
-
-            Vector3 corpsePosition =
-                localPlayer.transform.position +
-                forward * 2f +
-                right * 0.9f;
-
-            Vector3 cratePosition =
-                localPlayer.transform.position +
-                forward * 1.1f +
-                right * 0.15f;
+            Vector3 corpsePosition = new Vector3(-10f, 0f,  0.5f);
+            Vector3 cratePosition  = new Vector3(-10f, 0f, -0.5f);
 
             GameObject corpse =
                 new GameObject(DemoPlayerName);

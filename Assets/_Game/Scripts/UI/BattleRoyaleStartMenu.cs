@@ -11,6 +11,7 @@ namespace ROS.Game.UI
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private ThirdPersonCamera playerCamera;
         [SerializeField] private float airplaneCameraDistance = 5.2f;
+        [SerializeField] private Vector3 freeroamSpawnPoint = new Vector3(0f, 1f, 0f);
 
         public bool IsVisible { get; private set; } = true;
         public bool MatchRequested { get; private set; }
@@ -74,6 +75,20 @@ namespace ROS.Game.UI
             return true;
         }
 
+        public void StartFreeroam()
+        {
+            if (MatchRequested) return;
+
+            MatchRequested = true;
+            IsVisible = false;
+
+            if (input != null)
+                input.SetUiBlocked(false);
+
+            if (input != null)
+                input.transform.position = freeroamSpawnPoint;
+        }
+
         private void OnGUI()
         {
             if (!IsVisible)
@@ -91,7 +106,7 @@ namespace ROS.Game.UI
             GUI.color = Color.white;
 
             float panelWidth = Mathf.Min(620f, Screen.width - 40f);
-            float panelHeight = 310f;
+            float panelHeight = 380f;
             Rect panel = new Rect(
                 (Screen.width - panelWidth) * 0.5f,
                 (Screen.height - panelHeight) * 0.5f,
@@ -105,28 +120,42 @@ namespace ROS.Game.UI
                 _titleStyle
             );
             GUI.Label(
-                new Rect(panel.x + 30f, panel.y + 92f, panel.width - 60f, 58f),
+                new Rect(panel.x + 30f, panel.y + 92f, panel.width - 60f, 48f),
                 "Battle Royale · Sobrevive, consigue loot y sé el último en pie",
                 _subtitleStyle
             );
 
-            Rect button = new Rect(
-                panel.x + (panel.width - 280f) * 0.5f,
-                panel.y + 188f,
-                280f,
-                64f
-            );
+            float btnW = 280f;
+            float btnX = panel.x + (panel.width - btnW) * 0.5f;
 
-            if (GUI.Button(button, "INICIAR PARTIDA", _buttonStyle))
+            if (GUI.Button(
+                    new Rect(btnX, panel.y + 158f, btnW, 60f),
+                    "INICIAR PARTIDA BR",
+                    _buttonStyle))
             {
                 StartMatch();
             }
 
             GUI.Label(
-                new Rect(panel.x, panel.y + 268f, panel.width, 28f),
-                "Prepárate para saltar y elegir tu zona de aterrizaje",
+                new Rect(panel.x, panel.y + 224f, panel.width, 22f),
+                "Avión → paracaídas → loot → último en pie",
                 _subtitleStyle
             );
+
+            if (GUI.Button(
+                    new Rect(btnX, panel.y + 256f, btnW, 52f),
+                    "MODO LIBRE (sin BR)",
+                    _buttonStyle))
+            {
+                StartFreeroam();
+            }
+
+            GUI.Label(
+                new Rect(panel.x, panel.y + 316f, panel.width, 22f),
+                "Explora el mapa sin bots ni zona azul",
+                _subtitleStyle
+            );
+
             GUI.color = previousColor;
         }
 
