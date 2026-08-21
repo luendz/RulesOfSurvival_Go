@@ -33,6 +33,7 @@ namespace ROS.Game.UI
         // Auto-proximidad
         private GameObject _bindInteractor;
         private float _nextScanTime;
+        private DeathLootContainer _suppressedContainer;
 
         public bool IsOpen =>
             _container != null &&
@@ -136,6 +137,12 @@ namespace ROS.Game.UI
             _minimized = false;
         }
 
+        private void ManualClose()
+        {
+            _suppressedContainer = _container;
+            Close();
+        }
+
         private void OnDisable()
         {
             Close();
@@ -177,7 +184,7 @@ namespace ROS.Game.UI
             // ESC cierra completamente
             if (Keyboard.current.escapeKey.wasPressedThisFrame)
             {
-                Close();
+                ManualClose();
                 return;
             }
 
@@ -234,6 +241,17 @@ namespace ROS.Game.UI
             if (Time.time < _nextScanTime) return;
             _nextScanTime = Time.time + 0.25f;
 
+            // Limpiar supresión si el jugador se alejó suficiente de esa caja
+            if (_suppressedContainer != null)
+            {
+                float suppressDist = Vector3.Distance(
+                    _bindInteractor.transform.position,
+                    _suppressedContainer.transform.position
+                );
+                if (suppressDist > maximumOpenDistance * 1.5f)
+                    _suppressedContainer = null;
+            }
+
             DeathLootContainer[] containers =
                 FindObjectsByType<DeathLootContainer>(FindObjectsSortMode.None);
 
@@ -243,6 +261,7 @@ namespace ROS.Game.UI
             foreach (DeathLootContainer c in containers)
             {
                 if (c == null || c.IsEmpty) continue;
+                if (c == _suppressedContainer) continue;
                 if (!c.CanInteract(_bindInteractor)) continue;
                 float d = Vector3.Distance(
                     _bindInteractor.transform.position,
@@ -343,7 +362,7 @@ namespace ROS.Game.UI
                     new Rect(bar.xMax - 50f, bar.y + 4f, 46f, 28f),
                     "✕"))
             {
-                Close();
+                ManualClose();
                 GUIUtility.ExitGUI();
             }
         }
@@ -383,7 +402,7 @@ namespace ROS.Game.UI
                     ),
                     "Cerrar"))
             {
-                Close();
+                ManualClose();
                 GUIUtility.ExitGUI();
             }
 
