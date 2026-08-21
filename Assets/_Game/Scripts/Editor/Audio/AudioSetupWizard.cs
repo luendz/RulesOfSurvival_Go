@@ -32,18 +32,11 @@ namespace ROS.Game.Editor
         {
             SessionState.SetBool(SessionKey, true);
 
-            AssetDatabase.StartAssetEditing();
-            try
-            {
-                SetupCharacterAudio();
-                SetupWeaponAudio();
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-            }
+            SetupCharacterAudio();
+            SetupWeaponAudio();
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
 
             Debug.Log("[AudioSetupWizard] Audio setup complete.");
         }
@@ -172,15 +165,16 @@ namespace ROS.Game.Editor
 
             SerializedObject so = new SerializedObject(ctrl);
 
-            so.FindProperty("fireSource").objectReferenceValue =
-                GetOrAddAudioSource(root, "AudioSource_Fire", spatial: true, vol: 1f);
-            so.FindProperty("actionSource").objectReferenceValue =
-                GetOrAddAudioSource(root, "AudioSource_WeaponAction", spatial: true, vol: 0.8f);
+            AudioSource fireSrc   = GetOrAddAudioSource(root, "AudioSource_Fire",         spatial: true, vol: 1f);
+            AudioSource actionSrc = GetOrAddAudioSource(root, "AudioSource_WeaponAction", spatial: true, vol: 0.8f);
+            if (fireSrc != null)   so.FindProperty("fireSource").objectReferenceValue   = fireSrc;
+            if (actionSrc != null) so.FindProperty("actionSource").objectReferenceValue = actionSrc;
 
-            // Fire clips: shot_01/02/03 pattern
-            var fireClips = FindClips(firePrefix, "Weapons");
+            // Fire clips: exclude silencer/suppressor variants until attachments are implemented.
+            string[] noSilencer = new[]{ "silencer", "suppressed", "suppressor", "silenc" };
+            var fireClips = FindClips(firePrefix, "Weapons", excludes: noSilencer);
             if (fireClips.Length == 0)
-                fireClips = FindClips(firePrefix.Replace("_shot",""), "Weapons", includes: new[]{"shot"});
+                fireClips = FindClips(firePrefix.Replace("_shot",""), "Weapons", excludes: noSilencer, includes: new[]{"shot"});
             SetClipArray(so, "fireClips", fireClips);
 
             // Reload clips
@@ -253,14 +247,27 @@ namespace ROS.Game.Editor
             float vol)
         {
             Transform existing = parent.transform.Find(childName);
-            GameObject go = existing != null
-                ? existing.gameObject
-                : new GameObject(childName);
-
-            if (existing == null)
+            GameObject go;
+            if (existing != null)
+            {
+                go = existing.gameObject;
+            }
+            else
+            {
+                go = new GameObject(childName);
                 go.transform.SetParent(parent.transform, false);
+            }
 
-            AudioSource src = go.GetComponent<AudioSource>() ?? go.AddComponent<AudioSource>();
+            AudioSource src = go.GetComponent<AudioSource>();
+            if (src == null)
+                src = go.AddComponent<AudioSource>();
+
+            if (src == null)
+            {
+                Debug.LogError($"[AudioSetupWizard] Failed to add AudioSource to '{childName}'");
+                return null;
+            }
+
             src.spatialBlend  = spatial ? 1f : 0f;
             src.volume        = vol;
             src.playOnAwake   = false;

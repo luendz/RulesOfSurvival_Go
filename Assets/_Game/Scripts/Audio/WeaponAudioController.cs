@@ -59,11 +59,11 @@ namespace ROS.Game.Audio
 
             if (reloading && !_prevReloading)
             {
-                RandomAudioPlayer.Play(actionSource, reloadStartClips);
+                PlayAndLog(actionSource, reloadStartClips, "ReloadStart");
             }
             else if (!reloading && _prevReloading)
             {
-                RandomAudioPlayer.Play(actionSource, reloadEndClips);
+                PlayAndLog(actionSource, reloadEndClips, "ReloadEnd");
 
                 if (shellDropClips != null && shellDropClips.Length > 0)
                     Invoke(nameof(PlayShellDrop), shellDropDelay);
@@ -74,12 +74,22 @@ namespace ROS.Game.Audio
 
         private void OnFired()
         {
-            RandomAudioPlayer.Play(fireSource, fireClips);
+            PlayAndLog(fireSource, fireClips, "Fire");
         }
 
         private void PlayShellDrop()
         {
-            RandomAudioPlayer.Play(actionSource, shellDropClips);
+            PlayAndLog(actionSource, shellDropClips, "ShellDrop");
+        }
+
+        private void PlayAndLog(AudioSource source, AudioClip[] clips, string label)
+        {
+            AudioClip clip = RandomAudioPlayer.Pick(clips);
+            if (clip == null || source == null)
+                return;
+
+            Debug.Log($"[WeaponAudio] {name} | {label} → {clip.name}");
+            source.PlayOneShot(clip);
         }
     }
 }

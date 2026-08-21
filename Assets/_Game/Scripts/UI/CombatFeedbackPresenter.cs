@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ROS.Game.Audio;
 using ROS.Game.Combat;
 using ROS.Game.Weapons;
 using UnityEngine;
@@ -11,8 +12,8 @@ namespace ROS.Game.UI
         [SerializeField] private Health health;
         [SerializeField] private Transform directionReference;
         [SerializeField] private AudioSource audioSource;
-        [SerializeField] private AudioClip receivedDamageClip;
-        [SerializeField] private AudioClip hitConfirmedClip;
+        [SerializeField] private AudioClip[] receivedDamageClips;
+        [SerializeField] private AudioClip[] hitConfirmedClips;
         [SerializeField] private float hitmarkerDuration = 0.16f;
         [SerializeField] private float damageIndicatorDuration = 0.65f;
 
@@ -104,10 +105,7 @@ namespace ROS.Game.UI
             _lastHitWasFatal = result.WasFatal;
             _hitmarkerUntil = Time.unscaledTime + hitmarkerDuration;
 
-            if (audioSource != null && hitConfirmedClip != null)
-            {
-                audioSource.PlayOneShot(hitConfirmedClip);
-            }
+            RandomAudioPlayer.Play(audioSource, hitConfirmedClips);
         }
 
         private void OnDamaged(DamageResult result)
@@ -137,10 +135,7 @@ namespace ROS.Game.UI
             _damageIndicatorUntil =
                 Time.unscaledTime + damageIndicatorDuration;
 
-            if (audioSource != null && receivedDamageClip != null)
-            {
-                audioSource.PlayOneShot(receivedDamageClip);
-            }
+            RandomAudioPlayer.Play(audioSource, receivedDamageClips);
         }
 
         private void OnGUI()
