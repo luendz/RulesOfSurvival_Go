@@ -111,30 +111,20 @@ namespace ROS.Game.UI
             _container = container;
             _interactor = interactor;
             _playerInventory = inventory;
-            _input =
-                interactor.GetComponent<
-                    PlayerInputReader
-                >();
-            _health =
-                interactor.GetComponent<Health>();
+            _input = interactor.GetComponent<PlayerInputReader>();
+            _health = interactor.GetComponent<Health>();
             _scrollPosition = Vector2.zero;
             _selectedIndex = 0;
             _minimized = false;
 
-            if (_input != null)
-            {
-                _input.SetUiBlocked(true);
-            }
+            if (_input != null) _input.WeaponScrollBlocked = true;
 
             return true;
         }
 
         public void Close()
         {
-            if (_input != null)
-            {
-                _input.SetUiBlocked(false);
-            }
+            if (_input != null) _input.WeaponScrollBlocked = false;
 
             _container = null;
             _interactor = null;
@@ -203,17 +193,20 @@ namespace ROS.Game.UI
             InventoryStack[] stacks = SnapshotStacks();
             if (stacks.Length == 0) return;
 
-            // Navegación con flechas
-            if (Keyboard.current.upArrowKey.wasPressedThisFrame)
+            // Navegación con rueda del ratón
+            if (Mouse.current != null)
             {
-                _selectedIndex = Mathf.Max(0, _selectedIndex - 1);
-                ScrollToSelected(stacks.Length);
-            }
-
-            if (Keyboard.current.downArrowKey.wasPressedThisFrame)
-            {
-                _selectedIndex = Mathf.Min(stacks.Length - 1, _selectedIndex + 1);
-                ScrollToSelected(stacks.Length);
+                float scroll = Mouse.current.scroll.ReadValue().y;
+                if (scroll > 0f)
+                {
+                    _selectedIndex = Mathf.Max(0, _selectedIndex - 1);
+                    ScrollToSelected(stacks.Length);
+                }
+                else if (scroll < 0f)
+                {
+                    _selectedIndex = Mathf.Min(stacks.Length - 1, _selectedIndex + 1);
+                    ScrollToSelected(stacks.Length);
+                }
             }
 
             // F recoge el ítem seleccionado

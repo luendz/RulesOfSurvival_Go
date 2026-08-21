@@ -42,6 +42,7 @@ namespace ROS.Game.Input
         public int WeaponScrollDirection { get; private set; }
 
         public bool UiBlocked { get; private set; }
+        public bool WeaponScrollBlocked { get; set; }
         public bool UsesExternalControl { get; private set; }
 
         private InputAction _move;
@@ -424,7 +425,7 @@ namespace ROS.Game.Input
         {
             WeaponScrollDirection = 0;
 
-            if (Mouse.current == null)
+            if (WeaponScrollBlocked || Mouse.current == null)
                 return;
 
             float scrollY =
