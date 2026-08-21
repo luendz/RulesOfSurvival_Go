@@ -55,8 +55,7 @@ namespace ROS.Game.UI
             bool alive = _health != null && _health.IsAlive;
             if (!alive)
             {
-                Destroy(_root.gameObject);
-                _root = null;
+                ForceDestroy();
                 return;
             }
 
@@ -70,7 +69,8 @@ namespace ROS.Game.UI
         {
             if (_root != null)
             {
-                Destroy(_root.gameObject);
+                _root.gameObject.SetActive(false); // oculto inmediato (mismo frame)
+                Destroy(_root.gameObject);         // limpieza diferida de memoria
                 _root = null;
             }
             enabled = false;
