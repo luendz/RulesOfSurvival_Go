@@ -1,4 +1,5 @@
 using System.Collections;
+using ROS.Game.Audio;
 using UnityEngine;
 
 namespace ROS.Game.Weapons
@@ -25,8 +26,8 @@ namespace ROS.Game.Weapons
 
         [Header("Impact Audio")]
         [SerializeField] private AudioSource impactAudioSource;
-        [SerializeField] private AudioClip surfaceImpactClip;
-        [SerializeField] private AudioClip characterImpactClip;
+        [SerializeField] private AudioClip[] surfaceImpactClips;
+        [SerializeField] private AudioClip[] characterImpactClips;
 
         [Header("Bullet Hole")]
         [SerializeField] private GameObject bulletHolePrefab;
@@ -256,18 +257,13 @@ namespace ROS.Game.Weapons
         private void PlayImpactSound(bool hitCharacter)
         {
             if (impactAudioSource == null)
-            {
                 return;
-            }
 
-            AudioClip clip = hitCharacter
-                ? characterImpactClip
-                : surfaceImpactClip;
+            AudioClip[] clips = hitCharacter
+                ? characterImpactClips
+                : surfaceImpactClips;
 
-            if (clip != null)
-            {
-                impactAudioSource.PlayOneShot(clip);
-            }
+            RandomAudioPlayer.Play(impactAudioSource, clips);
         }
 
         private void SpawnBulletHole(Vector3 hitPoint, Vector3 hitNormal)

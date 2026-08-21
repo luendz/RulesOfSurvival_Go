@@ -1761,11 +1761,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a0709abc8cc824469e2c310f99090e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.HudPresenter
-  health: {fileID: 0}
   equipment: {fileID: 0}
   input: {fileID: 0}
-  aim: {fileID: 0}
-  battleRoyale: {fileID: 0}
   parachute: {fileID: 0}
   showCrosshair: 1
   crosshairArmLength: 8
@@ -1774,8 +1771,6 @@ MonoBehaviour:
   maxCrosshairGap: 45
   pixelsPerSpreadDegree: 10
   crosshairSmoothSpeed: 14
-  showStatus: 0
-  showControls: 0
   debugCurrentSpread: 0
   debugTargetGap: 0
   debugCurrentGap: 0
