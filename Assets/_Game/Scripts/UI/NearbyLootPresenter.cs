@@ -88,11 +88,15 @@ namespace ROS.Game.UI
                 float iconSize = 24f;
                 float textOffsetX = 0f;
 
-                if (candidate is LootPickup lootIcon && lootIcon.Item != null && lootIcon.Item.icon != null)
+                if (candidate is LootPickup lootIcon && lootIcon.Item != null)
                 {
+                    Texture2D iconTex = LootIconHelper.GetTexture(
+                        lootIcon.Item.icon,
+                        lootIcon.Item.itemType
+                    );
                     GUI.DrawTexture(
                         new Rect(rowRect.x, rowRect.y + 1f, iconSize, iconSize),
-                        lootIcon.Item.icon.texture,
+                        iconTex,
                         ScaleMode.ScaleToFit
                     );
                     textOffsetX = iconSize + 4f;

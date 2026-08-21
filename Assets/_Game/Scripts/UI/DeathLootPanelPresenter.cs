@@ -535,19 +535,16 @@ namespace ROS.Game.UI
                 GUIContent.none
             );
 
-            // Icono
+            // Icono (real o fallback de color por tipo)
             float iconSize = 42f;
-            float textStartX = 14f;
+            float textStartX = iconSize + 16f;
 
-            if (item.icon != null)
-            {
-                GUI.DrawTexture(
-                    new Rect(8f, y + 4f, iconSize, iconSize),
-                    item.icon.texture,
-                    ScaleMode.ScaleToFit
-                );
-                textStartX = iconSize + 16f;
-            }
+            Texture2D iconTex = LootIconHelper.GetTexture(item.icon, item.itemType);
+            GUI.DrawTexture(
+                new Rect(8f, y + 4f, iconSize, iconSize),
+                iconTex,
+                ScaleMode.ScaleToFit
+            );
 
             GUI.Label(
                 new Rect(textStartX, y + 5f, width - textStartX - 205f, 24f),
