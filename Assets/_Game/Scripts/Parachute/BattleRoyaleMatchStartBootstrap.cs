@@ -162,7 +162,11 @@ namespace ROS.Game.Parachute
             // HUD: kill feed, indicador de dirección de daño, estado del equipo
             Health localHealth = input.GetComponent<Health>();
             ProtectiveEquipment protection = input.GetComponent<ProtectiveEquipment>();
-            PlayerLootEquipment lootEquipment = input.GetComponent<PlayerLootEquipment>();
+
+            // LootRuntimeSetup también agrega PlayerLootEquipment pero el orden
+            // de RuntimeInitializeOnLoadMethod no está garantizado; nos aseguramos aquí.
+            PlayerLootEquipment lootEquipment = input.GetComponent<PlayerLootEquipment>()
+                ?? input.gameObject.AddComponent<PlayerLootEquipment>();
 
             KillFeedPresenter killFeed = flowObject.AddComponent<KillFeedPresenter>();
             killFeed.Bind(manager, localHealth);
