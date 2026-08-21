@@ -12,7 +12,7 @@ namespace ROS.Game.UI
         private const float BarHeight      = 0.12f;
 
         private Health    _health;
-        private Transform _root;
+        private Transform _root;         // GameObject raíz independiente (no hijo del bot)
         private Transform _fillTransform;
         private RawImage  _fillImage;
         private Camera    _cam;
@@ -48,16 +48,25 @@ namespace ROS.Game.UI
             }
         }
 
+        private void OnDestroy()
+        {
+            // Garantiza que el canvas raíz se destruya si el componente es eliminado
+            DestroyCanvas();
+        }
+
         private void LateUpdate()
         {
             if (_root == null) return;
 
-            bool alive = _health != null && _health.IsAlive;
-            if (!alive)
+            // Si el bot ya no existe o está muerto, ocultar
+            if (_health == null || !_health.IsAlive)
             {
                 ForceDestroy();
                 return;
             }
+
+            // Seguir la posición del bot (canvas es raíz independiente)
+            _root.position = transform.position + Vector3.up * VerticalOffset;
 
             if (_cam == null) _cam = Camera.main;
             if (_cam != null) _root.rotation = _cam.transform.rotation;
@@ -65,20 +74,25 @@ namespace ROS.Game.UI
 
         private void OnHealthChanged(float current, float max) => Refresh();
 
+        private void OnDied(DamageInfo _)
+        {
+            ForceDestroy();
+        }
+
         public void ForceDestroy()
         {
-            if (_root != null)
-            {
-                _root.gameObject.SetActive(false); // oculto inmediato (mismo frame)
-                Destroy(_root.gameObject);         // limpieza diferida de memoria
-                _root = null;
-            }
+            DestroyCanvas();
             enabled = false;
         }
 
-        private void OnDied(ROS.Game.Combat.DamageInfo _)
+        private void DestroyCanvas()
         {
-            ForceDestroy();
+            if (_root != null)
+            {
+                _root.gameObject.SetActive(false); // ocultado síncrono
+                Destroy(_root.gameObject);         // limpieza diferida
+                _root = null;
+            }
         }
 
         private void Refresh()
@@ -89,7 +103,6 @@ namespace ROS.Game.UI
                 ? Mathf.Clamp01(_health.CurrentHealth / _health.MaxHealth)
                 : 0f;
 
-            // Escalar desde el borde izquierdo (pivot = left-center)
             Vector3 s = _fillTransform.localScale;
             s.x = Mathf.Max(0f, t);
             _fillTransform.localScale = s;
@@ -104,9 +117,11 @@ namespace ROS.Game.UI
 
         private void BuildCanvas()
         {
+            // Canvas raíz: NO es hijo del bot para que su ciclo de vida sea
+            // completamente independiente del bot y sus componentes.
             GameObject canvasObj = new GameObject("BotHealthBarCanvas");
-            canvasObj.transform.SetParent(transform, false);
-            canvasObj.transform.localPosition = new Vector3(0f, VerticalOffset, 0f);
+            canvasObj.transform.position =
+                transform.position + Vector3.up * VerticalOffset;
             _root = canvasObj.transform;
 
             Canvas canvas = canvasObj.AddComponent<Canvas>();
@@ -128,15 +143,14 @@ namespace ROS.Game.UI
             bgr.offsetMin     = Vector2.zero;
             bgr.offsetMax     = Vector2.zero;
 
-            // Relleno: pivot en el borde izquierdo, sin offsets
-            // localScale.x controla qué fracción se muestra
+            // Relleno: pivot izquierdo, localScale.x controla el ancho visible
             GameObject fillObj  = new GameObject("Fill");
             fillObj.transform.SetParent(canvasObj.transform, false);
             _fillImage            = fillObj.AddComponent<RawImage>();
             _fillImage.texture    = Texture2D.whiteTexture;
             _fillImage.color      = Color.green;
             RectTransform fr      = fillObj.GetComponent<RectTransform>();
-            fr.pivot              = new Vector2(0f, 0.5f); // pivot izquierdo
+            fr.pivot              = new Vector2(0f, 0.5f);
             fr.anchorMin          = Vector2.zero;
             fr.anchorMax          = Vector2.one;
             fr.offsetMin          = Vector2.zero;
