@@ -168,7 +168,6 @@ namespace ROS.Game.UI
         private static void CleanupLegacyHud()
         {
             DisableAll<NearbyLootPresenter>();
-            DisableAll<CombatWeaponHud>();
             DisableAll<CompassUI>();
             DisableAll<BattleRoyalePanelUI>();
             DisableAll<VitalsPanelUI>();
