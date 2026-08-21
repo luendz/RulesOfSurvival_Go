@@ -2,7 +2,7 @@ LISTA DE ESTADO DE IMPLEMENTACION - RULES OF SURVIVAL
 ====================================================
 
 Actualizado: 21 de agosto de 2026
-Base revisada: commit 201c79e (crosshair portado a Canvas)
+Base revisada: commit a159115 (brujula horizontal)
 
 Leyenda:
 [OK]        Implementado en el proyecto actual.
@@ -166,10 +166,12 @@ codex/armas-por-tipo-loot y codex/integracion-desarrollo
 [OK] Circulo actual, dano por fase, temporizador y avisos de zona.
 [OK] Condicion de victoria y ganador.
 [OK] Inicio mediante avion y spawns aereos para jugador y bots.
-[PENDIENTE] Ruta del avion dibujada sobre el mapa.
-[PENDIENTE] Minimapa.
-[PENDIENTE] Mapa completo.
-[PENDIENTE] Brujula.
+[OK] Minimapa ortografico en esquina superior izquierda: jugador (verde),
+     bots vivos (rojo) y circulo de Safe Zone (azul). MinimapSystem.
+[OK] Brujula horizontal en borde superior con N/NE/E/SE/S/SO/O/NO;
+     sigue el yaw de la camara incluyendo free-look. CompassUI.
+[PENDIENTE] Mapa completo (pantalla completa al pulsar M).
+[PENDIENTE] Ruta del avion dibujada sobre el minimapa o mapa.
 
 
 10. AVION, CAIDA Y PARACAIDAS [PARCIAL]
