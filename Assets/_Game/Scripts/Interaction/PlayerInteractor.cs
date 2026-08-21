@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ROS.Game.Input;
 using UnityEngine;
@@ -29,6 +30,8 @@ namespace ROS.Game.Interaction
                 : null;
 
         public IReadOnlyList<IInteractable> Nearby => _nearby;
+
+        public event Action<IInteractable> Interacted;
 
         private void Awake()
         {
@@ -67,6 +70,7 @@ namespace ROS.Game.Interaction
             }
 
             interactable.Interact(gameObject);
+            Interacted?.Invoke(interactable);
 
             _current = null;
         }

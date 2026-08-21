@@ -2,6 +2,8 @@ using ROS.Game.Character;
 using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Input;
+using ROS.Game.Interaction;
+using ROS.Game.Loot;
 using ROS.Game.Parachute;
 using ROS.Game.Weapons;
 using UnityEngine;
@@ -54,6 +56,11 @@ namespace ROS.Game.Animation
         private static readonly int Dead =
             Animator.StringToHash("Dead");
 
+        private static readonly int PickupItem =
+            Animator.StringToHash("PickupItem");
+
+        private PlayerInteractor _interactor;
+
         private void Awake()
         {
             if (animator == null)
@@ -85,6 +92,22 @@ namespace ROS.Game.Animation
             {
                 parachute = GetComponentInParent<ParachuteController>();
             }
+
+            _interactor = GetComponentInParent<PlayerInteractor>();
+            if (_interactor != null)
+                _interactor.Interacted += OnInteracted;
+        }
+
+        private void OnDestroy()
+        {
+            if (_interactor != null)
+                _interactor.Interacted -= OnInteracted;
+        }
+
+        private void OnInteracted(IInteractable interactable)
+        {
+            if (interactable is LootPickup && animator != null)
+                animator.SetTrigger(PickupItem);
         }
 
         private void Reset()
