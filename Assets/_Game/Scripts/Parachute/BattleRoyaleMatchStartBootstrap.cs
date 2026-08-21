@@ -187,6 +187,11 @@ namespace ROS.Game.Parachute
                 flowObject.GetComponent<BattleRoyaleBotDirector>()
             );
 
+            DeathLootPanelPresenter deathLootPanel =
+                new GameObject("DeathLootPanelPresenter")
+                    .AddComponent<DeathLootPanelPresenter>();
+            deathLootPanel.Bind(input.gameObject);
+
             BattleRoyaleStartMenu menu =
                 flowObject.AddComponent<BattleRoyaleStartMenu>();
             menu.Configure(sequence, input, playerCamera);

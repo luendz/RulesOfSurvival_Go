@@ -78,13 +78,28 @@ namespace ROS.Game.UI
                     label += " (nivel igual o inferior)";
                 }
 
+                Rect rowRect = new Rect(
+                    panel.x + 14f,
+                    panel.y + 39f + i * 31f,
+                    width - 28f,
+                    27f
+                );
+
+                float iconSize = 24f;
+                float textOffsetX = 0f;
+
+                if (candidate is LootPickup lootIcon && lootIcon.Item != null && lootIcon.Item.icon != null)
+                {
+                    GUI.DrawTexture(
+                        new Rect(rowRect.x, rowRect.y + 1f, iconSize, iconSize),
+                        lootIcon.Item.icon.texture,
+                        ScaleMode.ScaleToFit
+                    );
+                    textOffsetX = iconSize + 4f;
+                }
+
                 GUI.Label(
-                    new Rect(
-                        panel.x + 14f,
-                        panel.y + 39f + i * 31f,
-                        width - 28f,
-                        27f
-                    ),
+                    new Rect(rowRect.x + textOffsetX, rowRect.y, rowRect.width - textOffsetX, rowRect.height),
                     prefix + label,
                     current ? _currentStyle : _rowStyle
                 );

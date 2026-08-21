@@ -24,6 +24,15 @@ namespace ROS.Game.UI
         private GUIStyle _headerStyle;
         private GUIStyle _itemStyle;
         private GUIStyle _mutedStyle;
+        private GUIStyle _selectedBgStyle;
+
+        // Navegación teclado
+        private int _selectedIndex;
+        private bool _minimized;
+
+        // Auto-proximidad
+        private GameObject _bindInteractor;
+        private float _nextScanTime;
 
         public bool IsOpen =>
             _container != null &&
@@ -32,6 +41,13 @@ namespace ROS.Game.UI
 
         public DeathLootContainer OpenedContainer =>
             _container;
+
+        // ---------------------------------------------------------------
+
+        public void Bind(GameObject interactor)
+        {
+            _bindInteractor = interactor;
+        }
 
         public static DeathLootPanelPresenter
             OpenOrCreate(
@@ -83,6 +99,13 @@ namespace ROS.Game.UI
                 return false;
             }
 
+            // No reabrir si ya es la misma caja
+            if (_container == container)
+            {
+                _minimized = false;
+                return true;
+            }
+
             Close();
 
             _container = container;
@@ -95,6 +118,8 @@ namespace ROS.Game.UI
             _health =
                 interactor.GetComponent<Health>();
             _scrollPosition = Vector2.zero;
+            _selectedIndex = 0;
+            _minimized = false;
 
             if (_input != null)
             {
@@ -117,6 +142,8 @@ namespace ROS.Game.UI
             _input = null;
             _health = null;
             _scrollPosition = Vector2.zero;
+            _selectedIndex = 0;
+            _minimized = false;
         }
 
         private void OnDisable()
@@ -126,8 +153,10 @@ namespace ROS.Game.UI
 
         private void Update()
         {
+            // Auto-scan de proximidad cuando el panel está cerrado
             if (!IsOpen)
             {
+                AutoScanProximity();
                 return;
             }
 
@@ -153,14 +182,102 @@ namespace ROS.Game.UI
                 return;
             }
 
-            if (
-                Keyboard.current != null &&
-                Keyboard.current.escapeKey
-                    .wasPressedThisFrame
-            )
+            if (Keyboard.current == null) return;
+
+            // ESC cierra completamente
+            if (Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 Close();
+                return;
             }
+
+            // Tab minimiza / restaura
+            if (Keyboard.current.tabKey.wasPressedThisFrame)
+            {
+                _minimized = !_minimized;
+                return;
+            }
+
+            if (_minimized) return;
+
+            InventoryStack[] stacks = SnapshotStacks();
+            if (stacks.Length == 0) return;
+
+            // Navegación con flechas
+            if (Keyboard.current.upArrowKey.wasPressedThisFrame)
+            {
+                _selectedIndex = Mathf.Max(0, _selectedIndex - 1);
+                ScrollToSelected(stacks.Length);
+            }
+
+            if (Keyboard.current.downArrowKey.wasPressedThisFrame)
+            {
+                _selectedIndex = Mathf.Min(stacks.Length - 1, _selectedIndex + 1);
+                ScrollToSelected(stacks.Length);
+            }
+
+            // F recoge el ítem seleccionado
+            if (Keyboard.current.fKey.wasPressedThisFrame)
+            {
+                if (_selectedIndex >= 0 && _selectedIndex < stacks.Length)
+                {
+                    InventoryStack sel = stacks[_selectedIndex];
+                    if (sel != null && sel.item != null &&
+                        _playerInventory.GetMaxAddableAmount(sel.item) > 0)
+                    {
+                        _container.TryLoot(sel.item, sel.amount, _playerInventory);
+                        stacks = SnapshotStacks();
+                        if (_selectedIndex >= stacks.Length)
+                            _selectedIndex = Mathf.Max(0, stacks.Length - 1);
+                        CloseIfEmpty();
+                    }
+                }
+            }
+        }
+
+        private void AutoScanProximity()
+        {
+            if (_bindInteractor == null) return;
+            if (Time.time < _nextScanTime) return;
+            _nextScanTime = Time.time + 0.25f;
+
+            DeathLootContainer[] containers =
+                FindObjectsByType<DeathLootContainer>(FindObjectsSortMode.None);
+
+            float best = float.MaxValue;
+            DeathLootContainer nearest = null;
+
+            foreach (DeathLootContainer c in containers)
+            {
+                if (c == null || c.IsEmpty) continue;
+                if (!c.CanInteract(_bindInteractor)) continue;
+                float d = Vector3.Distance(
+                    _bindInteractor.transform.position,
+                    c.transform.position
+                );
+                if (d <= maximumOpenDistance && d < best)
+                {
+                    best = d;
+                    nearest = c;
+                }
+            }
+
+            if (nearest != null)
+            {
+                Open(nearest, _bindInteractor);
+            }
+        }
+
+        private void ScrollToSelected(int count)
+        {
+            if (count <= 0) return;
+            float rowH = 58f;
+            float targetY = _selectedIndex * rowH;
+            _scrollPosition.y = Mathf.Clamp(
+                targetY - 100f,
+                0f,
+                Mathf.Max(0f, count * rowH - 200f)
+            );
         }
 
         private void OnGUI()
@@ -171,6 +288,12 @@ namespace ROS.Game.UI
             }
 
             EnsureStyles();
+
+            if (_minimized)
+            {
+                DrawMinimizedBar();
+                return;
+            }
 
             float width =
                 Mathf.Min(720f, Screen.width - 40f);
@@ -200,30 +323,72 @@ namespace ROS.Game.UI
             DrawContents(contentRect);
         }
 
+        private void DrawMinimizedBar()
+        {
+            float barW = 340f;
+            float barH = 36f;
+            Rect bar = new Rect(
+                (Screen.width - barW) * 0.5f,
+                Screen.height * 0.5f - barH * 0.5f,
+                barW,
+                barH
+            );
+            GUI.Box(bar, GUIContent.none);
+            GUI.Label(
+                new Rect(bar.x + 14f, bar.y + 6f, bar.width - 120f, 24f),
+                _container.DisplayName + $"  ({_container.ItemCount} obj.)",
+                _headerStyle
+            );
+            if (GUI.Button(
+                    new Rect(bar.xMax - 110f, bar.y + 4f, 56f, 28f),
+                    "Abrir"))
+            {
+                _minimized = false;
+                GUIUtility.ExitGUI();
+            }
+            if (GUI.Button(
+                    new Rect(bar.xMax - 50f, bar.y + 4f, 46f, 28f),
+                    "✕"))
+            {
+                Close();
+                GUIUtility.ExitGUI();
+            }
+        }
+
         private void DrawHeader(Rect contentRect)
         {
             GUI.Label(
                 new Rect(
                     contentRect.x,
                     contentRect.y,
-                    contentRect.width - 90f,
+                    contentRect.width - 200f,
                     38f
                 ),
                 _container.DisplayName,
                 _titleStyle
             );
 
-            if (
-                GUI.Button(
+            if (GUI.Button(
                     new Rect(
-                        contentRect.xMax - 80f,
+                        contentRect.xMax - 180f,
                         contentRect.y,
-                        80f,
+                        86f,
                         32f
                     ),
-                    "Cerrar"
-                )
-            )
+                    "Minimizar"))
+            {
+                _minimized = true;
+                GUIUtility.ExitGUI();
+            }
+
+            if (GUI.Button(
+                    new Rect(
+                        contentRect.xMax - 88f,
+                        contentRect.y,
+                        88f,
+                        32f
+                    ),
+                    "Cerrar"))
             {
                 Close();
                 GUIUtility.ExitGUI();
@@ -238,7 +403,8 @@ namespace ROS.Game.UI
                 ),
                 $"Caja: {_container.ItemCount} objetos   |   " +
                 $"Mochila: {_playerInventory.UsedCapacity:0.0} / " +
-                $"{_playerInventory.Capacity:0.0}",
+                $"{_playerInventory.Capacity:0.0}   |   " +
+                "↑↓ Navegar · F Recoger · Tab Minimizar · Esc Cerrar",
                 _headerStyle
             );
         }
@@ -279,7 +445,8 @@ namespace ROS.Game.UI
                 DrawStackRow(
                     stacks[i],
                     i * 58f,
-                    listRect.width - 22f
+                    listRect.width - 22f,
+                    i == _selectedIndex
                 );
             }
 
@@ -319,7 +486,8 @@ namespace ROS.Game.UI
         private void DrawStackRow(
             InventoryStack stack,
             float y,
-            float width
+            float width,
+            bool selected
         )
         {
             if (
@@ -341,19 +509,42 @@ namespace ROS.Game.UI
                         .GetMaxAddableAmount(item)
                 );
 
+            // Fondo de selección amarillo
+            if (selected)
+            {
+                Color prev = GUI.color;
+                GUI.color = new Color(1f, 0.88f, 0.1f, 0.28f);
+                GUI.Box(new Rect(0f, y, width, 50f), GUIContent.none, _selectedBgStyle);
+                GUI.color = prev;
+            }
+
             GUI.Box(
                 new Rect(0f, y, width, 50f),
                 GUIContent.none
             );
 
+            // Icono
+            float iconSize = 42f;
+            float textStartX = 14f;
+
+            if (item.icon != null)
+            {
+                GUI.DrawTexture(
+                    new Rect(8f, y + 4f, iconSize, iconSize),
+                    item.icon.texture,
+                    ScaleMode.ScaleToFit
+                );
+                textStartX = iconSize + 16f;
+            }
+
             GUI.Label(
-                new Rect(14f, y + 5f, width - 205f, 24f),
+                new Rect(textStartX, y + 5f, width - textStartX - 205f, 24f),
                 $"{item.displayName}  x{stack.amount}",
                 _itemStyle
             );
 
             GUI.Label(
-                new Rect(14f, y + 27f, width - 205f, 18f),
+                new Rect(textStartX, y + 27f, width - textStartX - 205f, 18f),
                 $"{item.itemType} · {item.weight:0.##} por unidad",
                 _mutedStyle
             );
@@ -471,7 +662,7 @@ namespace ROS.Game.UI
                 _headerStyle =
                     new GUIStyle(GUI.skin.label)
                     {
-                        fontSize = 16
+                        fontSize = 13
                     };
             }
 
@@ -501,6 +692,15 @@ namespace ROS.Game.UI
                                 )
                         }
                     };
+            }
+
+            if (_selectedBgStyle == null)
+            {
+                _selectedBgStyle = new GUIStyle(GUI.skin.box);
+                Texture2D tex = new Texture2D(1, 1);
+                tex.SetPixel(0, 0, new Color(1f, 0.88f, 0.1f, 0.35f));
+                tex.Apply();
+                _selectedBgStyle.normal.background = tex;
             }
         }
     }
