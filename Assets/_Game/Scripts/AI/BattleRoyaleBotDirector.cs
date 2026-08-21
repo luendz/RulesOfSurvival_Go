@@ -96,7 +96,8 @@ namespace ROS.Game.AI
                     _airplane,
                     _matchManager,
                     CalculateLandingTarget(i, _botCount),
-                    CalculateJumpProgress(i)
+                    CalculateJumpProgress(i),
+                    _matchManager != null ? _matchManager.SafeZone : null
                 );
 
                 Health health = botObject.GetComponent<Health>();

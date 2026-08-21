@@ -1,9 +1,13 @@
 using ROS.Game.AI;
 using ROS.Game.BattleRoyale;
 using ROS.Game.CameraSystem;
+using ROS.Game.Combat;
 using ROS.Game.Core;
+using ROS.Game.Gameplay;
 using ROS.Game.Input;
+using ROS.Game.Inventory;
 using ROS.Game.UI;
+using ROS.Game.Weapons;
 using ROS.Game.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -148,6 +152,36 @@ namespace ROS.Game.Parachute
             hud.Configure(sequence, parachute);
 
             input.gameObject.AddComponent<DamageNumberSpawner>();
+
+            // Conectar munición del inventario a las armas
+            input.gameObject.AddComponent<WeaponAmmoConnector>();
+
+            // Sistema de consumibles (vendaje/botiquín con tecla F)
+            input.gameObject.AddComponent<ConsumableController>();
+
+            // HUD: kill feed, indicador de dirección de daño, estado del equipo
+            Health localHealth = input.GetComponent<Health>();
+            InventoryComponent inventory = input.GetComponent<InventoryComponent>();
+            ProtectiveEquipment protection = input.GetComponent<ProtectiveEquipment>();
+
+            KillFeedPresenter killFeed = flowObject.AddComponent<KillFeedPresenter>();
+            killFeed.Bind(manager, localHealth);
+
+            DamageDirectionIndicator damageDir =
+                flowObject.AddComponent<DamageDirectionIndicator>();
+            damageDir.Bind(localHealth, input.transform);
+
+            EquipmentStatusPresenter equipStatus =
+                flowObject.AddComponent<EquipmentStatusPresenter>();
+            equipStatus.Bind(inventory, protection);
+
+            // Minimapa
+            MinimapSystem minimap = flowObject.AddComponent<MinimapSystem>();
+            minimap.Bind(
+                input.transform,
+                manager.SafeZone,
+                flowObject.GetComponent<BattleRoyaleBotDirector>()
+            );
 
             BattleRoyaleStartMenu menu =
                 flowObject.AddComponent<BattleRoyaleStartMenu>();

@@ -31,6 +31,8 @@ namespace ROS.Game.BattleRoyale
         public Health Winner { get; private set; }
         public EliminationInfo LastElimination { get; private set; }
 
+        public SafeZoneController SafeZone => safeZone;
+
         public event Action<MatchState> StateChanged;
         public event Action<int> AliveCountChanged;
         public event Action<EliminationInfo> PlayerEliminated;

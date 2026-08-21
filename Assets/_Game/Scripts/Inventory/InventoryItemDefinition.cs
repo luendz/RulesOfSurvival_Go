@@ -51,6 +51,16 @@ namespace ROS.Game.Inventory
         public float backpackCapacity;
 
         [Tooltip(
+            "Tipo de munición que representa este ítem (solo para ItemType.Ammo)."
+        )]
+        public AmmoType ammoType = AmmoType.None;
+
+        [Tooltip(
+            "Definición de consumible si este ítem se puede usar (vendaje, botiquín…)."
+        )]
+        public ConsumableDefinition consumableDefinition;
+
+        [Tooltip(
             "Definición jugable si este objeto representa un arma."
         )]
         public WeaponDefinition weaponDefinition;

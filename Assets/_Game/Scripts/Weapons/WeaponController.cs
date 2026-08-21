@@ -4,6 +4,7 @@ using ROS.Game.Character;
 using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Input;
+using ROS.Game.Inventory;
 using UnityEngine;
 
 namespace ROS.Game.Weapons
@@ -46,10 +47,16 @@ namespace ROS.Game.Weapons
         [SerializeField] private int debugLastShotImpacts;
         [SerializeField] private int debugLastShotCharacterImpacts;
 
+        // Fuente de munición del inventario (opcional; si es null usa reserva local)
+        private InventoryComponent       _ammoInventory;
+        private InventoryItemDefinition  _ammoItemDef;
+
         public WeaponDefinition Definition => definition;
         public float DamageScale { get; set; } = 1f;
         public int AmmoInMagazine { get; private set; }
-        public int ReserveAmmo => reserveAmmo;
+        public int ReserveAmmo => _ammoInventory != null && _ammoItemDef != null
+            ? _ammoInventory.GetAmount(_ammoItemDef)
+            : reserveAmmo;
         public bool IsReloading { get; private set; }
         public bool IsBurstFiring => _burstShotsRemaining > 0;
         public WeaponFireMode CurrentFireMode { get; private set; }
@@ -102,6 +109,20 @@ namespace ROS.Game.Weapons
         private float _lastShotTime = -999f;
         private bool _usesExternalShotDirection;
         private Vector3 _externalShotDirection;
+
+        /// <summary>
+        /// Conecta la reserva de munición de este arma al inventario del portador.
+        /// A partir de este punto la recarga consume ítems del inventario en vez de
+        /// la reserva interna del prefab.
+        /// </summary>
+        public void SetAmmoSource(
+            InventoryComponent       inventory,
+            InventoryItemDefinition  ammoDef)
+        {
+            _ammoInventory = inventory;
+            _ammoItemDef   = ammoDef;
+            AmmoChanged?.Invoke();
+        }
 
         public void DisableForElimination()
         {
@@ -907,14 +928,15 @@ namespace ROS.Game.Weapons
                 definition.magazineSize -
                 AmmoInMagazine;
 
-            int amount =
-                Mathf.Min(
-                    needed,
-                    reserveAmmo
-                );
+            int available = ReserveAmmo; // usa inventario si está conectado
+            int amount    = Mathf.Min(needed, available);
 
             AmmoInMagazine += amount;
-            reserveAmmo -= amount;
+
+            if (_ammoInventory != null && _ammoItemDef != null)
+                _ammoInventory.Remove(_ammoItemDef, amount);
+            else
+                reserveAmmo -= amount;
 
             IsReloading = false;
             ActiveReloadDuration = 0f;

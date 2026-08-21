@@ -29,6 +29,7 @@ namespace ROS.Game.AI
         private Health _health;
         private AirplaneController _airplane;
         private BattleRoyaleManager _matchManager;
+        private SafeZoneController _safeZone;
         private Transform _controlFrame;
         private Health _target;
         private Vector3 _landingTarget;
@@ -76,12 +77,14 @@ namespace ROS.Game.AI
             AirplaneController airplane,
             BattleRoyaleManager matchManager,
             Vector3 landingTarget,
-            float jumpProgress
+            float jumpProgress,
+            SafeZoneController safeZone = null
         )
         {
             BotIndex = botIndex;
             _airplane = airplane;
             _matchManager = matchManager;
+            _safeZone = safeZone;
             _landingTarget = landingTarget;
             _roamTarget = landingTarget;
             _jumpProgress = Mathf.Clamp01(jumpProgress);
@@ -190,10 +193,24 @@ namespace ROS.Game.AI
                 _nextThinkTime = Time.time + NextFloat(0.35f, 0.62f);
                 _target = FindNearestEnemy();
 
-                if (_target == null &&
-                    PlanarDistanceTo(_roamTarget) < 3.5f)
+                if (_target == null)
                 {
-                    _roamTarget = RandomMapPoint();
+                    if (_safeZone != null && _safeZone.IsOutside(transform.position))
+                    {
+                        // Ir hacia un punto aleatorio dentro del radio de la zona
+                        Vector3 zoneCenter = _safeZone.Center;
+                        float safeRadius  = _safeZone.Radius * 0.7f;
+                        Vector2 offset    = UnityEngine.Random.insideUnitCircle * safeRadius;
+                        _roamTarget = new Vector3(
+                            zoneCenter.x + offset.x,
+                            zoneCenter.y,
+                            zoneCenter.z + offset.y
+                        );
+                    }
+                    else if (PlanarDistanceTo(_roamTarget) < 3.5f)
+                    {
+                        _roamTarget = RandomMapPoint();
+                    }
                 }
             }
 
