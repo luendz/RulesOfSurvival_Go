@@ -28,7 +28,7 @@ namespace ROS.Game.Character
 
         [Header("Lean")]
         [Min(0.1f)]
-        [SerializeField] private float leanSpeed = 6.5f;
+        [SerializeField] private float leanSpeed = 20f;
 
         [Header("Restrictions")]
         [SerializeField] private bool cancelWhileSprinting = true;
