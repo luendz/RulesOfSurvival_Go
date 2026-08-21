@@ -2,7 +2,7 @@ LISTA DE ESTADO DE IMPLEMENTACION - RULES OF SURVIVAL
 ====================================================
 
 Actualizado: 21 de agosto de 2026
-Base revisada: commit a159115 (brujula horizontal)
+Base revisada: consumibles completos (punto 7)
 
 Leyenda:
 [OK]        Implementado en el proyecto actual.
@@ -34,8 +34,8 @@ Rama realizada: codex/muerte-eliminacion-fin-partida
 [OK] Bloqueo de movimiento, salto y posturas al morir.
 [OK] Bloqueo de interaccion, disparo, recarga y cambio de arma.
 [OK] Cancelacion de recargas activas.
-[PENDIENTE] Cancelacion de consumibles activos; el sistema de consumibles aun
-            no esta implementado.
+[OK] Cancelacion de consumibles activos al morir: ConsumableController se
+     suscribe a Health.Died y llama CancelUse().
 [OK] Estado de animacion de muerte y pose provisional de respaldo.
 [OK] Camara de eliminacion.
 [OK] Morir por disparo o Safe Zone deja al jugador inactivo.
@@ -129,15 +129,19 @@ codex/armas-por-tipo-loot y codex/integracion-desarrollo
 [OK] Circuito completo: disparo, recarga, consumo de municion del inventario.
 
 
-7. CONSUMIBLES [PENDIENTE]
+7. CONSUMIBLES [PARCIAL]
 
-[PARCIAL] Existen datos y loot provisional para vendaje y botiquin.
-[PENDIENTE] ConsumableDefinition funcional.
-[PENDIENTE] Tiempo de uso y barra de progreso.
-[PENDIENTE] Limites configurables de curacion.
-[PENDIENTE] Cancelacion por disparo, dano o movimiento.
-[PENDIENTE] Sistema de energia para bebidas.
-[PENDIENTE] Consumo de una unidad solamente al completar la accion.
+[OK] Items de vendaje (heal_bandage, 75hp, 3s) y botiquin (heal_medkit,
+     100hp, 7s) con ConsumableDefinition asignada.
+[OK] ConsumableDefinition funcional con campos configurables.
+[OK] Tiempo de uso con barra de progreso Canvas centrada en pantalla.
+[OK] Limites configurables de curacion (respectMaxFraction, maxHealthFraction).
+[OK] Cancelacion por dano (cancelOnDamage) o movimiento (cancelOnMove).
+[OK] Cancelacion al morir: ConsumableController suscrito a Health.Died.
+[OK] Consumo de una unidad solamente al completar la accion.
+[OK] Tecla H para usar/cancelar; fallback por defecto si falta el asset.
+[PENDIENTE] Sistema de energia para bebidas (energyAmount existe en el
+            campo pero no hay sistema de stamina implementado).
 
 
 8. HUD INTEGRADO [PARCIAL]
@@ -304,11 +308,11 @@ RESUMEN GENERAL
 ---------------
 
 [OK] Puntos completamente cubiertos: 5 y 6.
-[PARCIAL] Puntos con base funcional: 0, 1, 2, 3, 4, 8, 9, 10, 11, 13,
-          14 y 15.
-[PENDIENTE o inicial] Puntos principales por desarrollar: 7, 12, 16, 17 y 18.
+[PARCIAL] Puntos con base funcional: 0, 1, 2, 3, 4, 7, 8, 9, 10, 11,
+          13, 14 y 15.
+[PENDIENTE o inicial] Puntos principales por desarrollar: 12, 16, 17 y 18.
 
 Prioridades inmediatas sugeridas segun las dependencias pendientes:
-1. Implementar consumibles y su cancelacion (punto 7).
-2. Crear minimapa, mapa y brujula (punto 9).
-3. Crear el primer POI jugable antes de avanzar al multijugador (punto 11).
+1. Crear el primer POI jugable antes de avanzar al multijugador (punto 11).
+2. Slots de armas y acceso rapido a consumibles en el HUD (punto 8).
+3. Energia para bebidas cuando exista sistema de stamina (punto 7).

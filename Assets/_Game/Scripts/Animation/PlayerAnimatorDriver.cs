@@ -1,6 +1,7 @@
 using ROS.Game.Character;
 using ROS.Game.Combat;
 using ROS.Game.Core;
+using ROS.Game.Gameplay;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
 using ROS.Game.Loot;
@@ -59,7 +60,11 @@ namespace ROS.Game.Animation
         private static readonly int PickupItem =
             Animator.StringToHash("PickupItem");
 
-        private PlayerInteractor _interactor;
+        private static readonly int Healing =
+            Animator.StringToHash("Healing");
+
+        private PlayerInteractor    _interactor;
+        private ConsumableController _consumable;
 
         private void Awake()
         {
@@ -96,6 +101,7 @@ namespace ROS.Game.Animation
             _interactor = GetComponentInParent<PlayerInteractor>();
             if (_interactor != null)
                 _interactor.Interacted += OnInteracted;
+
         }
 
         private void OnDestroy()
@@ -146,6 +152,7 @@ namespace ROS.Game.Animation
             animator.SetFloat(Speed, 0f);
             animator.SetBool(Aim, false);
             animator.SetBool(Reloading, false);
+            SetBoolIfPresent(Healing, false);
             SetBoolIfPresent(Dead, true);
         }
 
@@ -299,6 +306,14 @@ namespace ROS.Game.Animation
             animator.SetBool(
                 Reloading,
                 IsReloading()
+            );
+
+            if (_consumable == null)
+                _consumable = GetComponentInParent<ConsumableController>();
+
+            SetBoolIfPresent(
+                Healing,
+                _consumable != null && _consumable.IsUsing
             );
 
             animator.SetFloat(

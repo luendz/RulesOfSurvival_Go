@@ -19,6 +19,7 @@ MonoBehaviour:
   weight: 0.1
   rarity: 0
   pickupMode: 0
+  consumableDefinition: {fileID: 11400000, guid: 8a9e36ac48be446791511b5bc1c4c410, type: 2}
   icon: {fileID: 0}
   worldModel: {fileID: 919132149155446097, guid: cd0d5819ff0210d47b805dbc04229c4d, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}

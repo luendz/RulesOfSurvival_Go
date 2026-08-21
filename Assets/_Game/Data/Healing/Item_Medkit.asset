@@ -23,7 +23,7 @@ MonoBehaviour:
   protectionLevel: 0
   backpackCapacity: 0
   ammoType: 5
-  consumableDefinition: {fileID: 0}
+  consumableDefinition: {fileID: 11400000, guid: f05a7902122b4e17a36d84ba4ca50313, type: 2}
   weaponDefinition: {fileID: 0}
   weaponPrefab: {fileID: 0}
   preferredWeaponSlot: 0

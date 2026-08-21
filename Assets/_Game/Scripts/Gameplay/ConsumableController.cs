@@ -19,6 +19,7 @@ namespace ROS.Game.Gameplay
         private Health             _health;
         private InventoryComponent _inventory;
 
+        public  bool                  IsUsing => _isUsing;
         private bool                  _isUsing;
         private bool                  _damagedDuringUse;
         private Coroutine             _useRoutine;
@@ -43,11 +44,13 @@ namespace ROS.Game.Gameplay
         private void OnEnable()
         {
             if (_health != null) _health.Damaged += OnDamaged;
+            if (_health != null) _health.Died    += OnDied;
         }
 
         private void OnDisable()
         {
             if (_health != null) _health.Damaged -= OnDamaged;
+            if (_health != null) _health.Died    -= OnDied;
         }
 
         private void OnDestroy()
@@ -195,6 +198,7 @@ namespace ROS.Game.Gameplay
         }
 
         private void OnDamaged(DamageResult _) => _damagedDuringUse = true;
+        private void OnDied(DamageInfo _) { if (_isUsing) CancelUse(); }
 
         // ---------------------------------------------------------------  UI
 
