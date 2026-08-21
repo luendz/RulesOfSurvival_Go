@@ -25,6 +25,8 @@ namespace ROS.Game.Input
 
         public bool LeanLeftHeld { get; private set; }
         public bool LeanRightHeld { get; private set; }
+        public bool LeanLeftPressed { get; private set; }
+        public bool LeanRightPressed { get; private set; }
 
         public bool ShoulderSwitchPressed { get; private set; }
 
@@ -288,6 +290,12 @@ namespace ROS.Game.Input
             LeanRightHeld =
                 _leanRight.IsPressed();
 
+            LeanLeftPressed =
+                _leanLeft.WasPressedThisFrame();
+
+            LeanRightPressed =
+                _leanRight.WasPressedThisFrame();
+
             JumpPressed =
                 _jump.WasPressedThisFrame();
 
@@ -378,6 +386,8 @@ namespace ROS.Game.Input
             FreeLookHeld = false;
             LeanLeftHeld = false;
             LeanRightHeld = false;
+            LeanLeftPressed = false;
+            LeanRightPressed = false;
             ShoulderSwitchPressed = false;
             WeaponSlot1Pressed = false;
             WeaponSlot2Pressed = false;
@@ -413,6 +423,8 @@ namespace ROS.Game.Input
             InteractPressed = false;
             LeanLeftHeld = false;
             LeanRightHeld = false;
+            LeanLeftPressed = false;
+            LeanRightPressed = false;
             ShoulderSwitchPressed = false;
             WeaponSlot1Pressed = false;
             WeaponSlot2Pressed = false;
