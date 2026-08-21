@@ -27,7 +27,7 @@ MonoBehaviour:
   weaponDefinition: {fileID: 0}
   weaponPrefab: {fileID: 0}
   preferredWeaponSlot: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 8d15a4d689aec0942a20f7a29952075d, type: 3}
   worldModel: {fileID: 919132149155446097, guid: aa4f470e711e178449b8c2a25cd828a2, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}
   worldEulerAngles: {x: -90, y: 0, z: 0}
