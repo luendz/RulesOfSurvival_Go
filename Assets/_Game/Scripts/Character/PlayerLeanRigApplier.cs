@@ -16,16 +16,24 @@ namespace ROS.Game.Character
         [SerializeField] private Animator humanoidAnimator;
 
         [Header("Upper Body Distribution")]
+        [Tooltip("Peso aplicado a la cadera. Editable en Play Mode para ajustar el lean en tiempo real.")]
         [Range(0f, 1f)]
         [SerializeField] private float hipsWeight = 0.10f;
+
+        [Tooltip("Peso aplicado al Spine. Editable en Play Mode para ajustar el lean en tiempo real.")]
         [Range(0f, 1f)]
-        [SerializeField] private float spineWeight = 0.28f;
+        [SerializeField] private float spineWeight = 0.32f;
+
+        [Tooltip("Peso aplicado al Chest. Editable en Play Mode para ajustar el lean en tiempo real.")]
         [Range(0f, 1f)]
-        [SerializeField] private float chestWeight = 0.32f;
+        [SerializeField] private float chestWeight = 0.35f;
+
+        [Tooltip("Peso aplicado al UpperChest. Editable en Play Mode para ajustar el lean en tiempo real.")]
         [Range(0f, 1f)]
-        [SerializeField] private float upperChestWeight = 0.30f;
+        [SerializeField] private float upperChestWeight = 0.23f;
 
         [Header("Visual")]
+        [Tooltip("Inclinación máxima total del torso en grados. Puedes modificarla durante Play Mode.")]
         [Range(5f, 25f)]
         [SerializeField] private float maximumLeanDegrees = 15f;
 
