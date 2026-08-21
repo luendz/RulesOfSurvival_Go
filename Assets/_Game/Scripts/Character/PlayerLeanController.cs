@@ -27,20 +27,8 @@ namespace ROS.Game.Character
         [SerializeField] private Animator animator;
 
         [Header("Lean")]
-        [Range(5f, 25f)]
-        [SerializeField] private float maximumLeanDegrees = 13.5f;
         [Min(0.1f)]
         [SerializeField] private float leanSpeed = 6.5f;
-
-        [Header("Upper Body Distribution")]
-        [Range(0f, 1f)]
-        [SerializeField] private float hipsWeight = 0.12f;
-        [Range(0f, 1f)]
-        [SerializeField] private float spineWeight = 0.28f;
-        [Range(0f, 1f)]
-        [SerializeField] private float chestWeight = 0.30f;
-        [Range(0f, 1f)]
-        [SerializeField] private float upperChestWeight = 0.30f;
 
         [Header("Restrictions")]
         [SerializeField] private bool cancelWhileSprinting = true;
@@ -120,17 +108,6 @@ namespace ROS.Game.Character
 
             float target = ResolveObstructedTarget(TargetLean);
             UpdateLeanValue(target);
-        }
-
-        private void LateUpdate()
-        {
-            if (animator == null)
-            {
-                EnsureReferences();
-                CacheHumanoidBones();
-            }
-
-            ApplyUpperBodyLean();
         }
 
         public void ToggleLeft()
@@ -216,6 +193,14 @@ namespace ROS.Game.Character
                 return requestedLean;
             }
 
+            if (_hips == null &&
+                _spine == null &&
+                _chest == null &&
+                _upperChest == null)
+            {
+                CacheHumanoidBones();
+            }
+
             Transform originBone =
                 _upperChest != null
                     ? _upperChest
@@ -285,93 +270,52 @@ namespace ROS.Game.Character
             return Mathf.Sign(requestedLean) * allowedLean;
         }
 
-        private void ApplyUpperBodyLean()
-        {
-            if (Mathf.Abs(CurrentLean) <= 0.0001f)
-            {
-                return;
-            }
-
-            float totalWeight = 0f;
-
-            if (_hips != null)
-                totalWeight += hipsWeight;
-            if (_spine != null)
-                totalWeight += spineWeight;
-            if (_chest != null)
-                totalWeight += chestWeight;
-            if (_upperChest != null)
-                totalWeight += upperChestWeight;
-
-            if (totalWeight <= 0.0001f)
-            {
-                return;
-            }
-
-            Vector3 leanAxis = transform.forward;
-            float totalAngle = maximumLeanDegrees * CurrentLean;
-
-            ApplyBoneRotation(
-                _hips,
-                leanAxis,
-                totalAngle * hipsWeight / totalWeight
-            );
-            ApplyBoneRotation(
-                _spine,
-                leanAxis,
-                totalAngle * spineWeight / totalWeight
-            );
-            ApplyBoneRotation(
-                _chest,
-                leanAxis,
-                totalAngle * chestWeight / totalWeight
-            );
-            ApplyBoneRotation(
-                _upperChest,
-                leanAxis,
-                totalAngle * upperChestWeight / totalWeight
-            );
-        }
-
-        private static void ApplyBoneRotation(
-            Transform bone,
-            Vector3 worldAxis,
-            float angle
-        )
-        {
-            if (bone == null || Mathf.Abs(angle) <= 0.0001f)
-            {
-                return;
-            }
-
-            bone.rotation =
-                Quaternion.AngleAxis(angle, worldAxis) *
-                bone.rotation;
-        }
-
         private void EnsureReferences()
         {
             if (input == null)
+            {
                 input = GetComponent<PlayerInputReader>();
+            }
 
             if (motor == null)
+            {
                 motor = GetComponent<PlayerMotor>();
+            }
 
             if (equipment == null)
+            {
                 equipment = GetComponent<WeaponEquipmentController>();
+            }
 
             if (health == null)
+            {
                 health = GetComponent<Health>();
+            }
 
             if (parachute == null)
+            {
                 parachute = GetComponent<ParachuteController>();
+            }
 
-            if (animator == null)
-                animator = GetComponentInChildren<Animator>();
+            if (animator == null || !animator.isHuman)
+            {
+                Animator[] animators = GetComponentsInChildren<Animator>(true);
+
+                foreach (Animator candidate in animators)
+                {
+                    if (candidate != null && candidate.isHuman)
+                    {
+                        animator = candidate;
+                        break;
+                    }
+                }
+            }
         }
 
         private void CacheHumanoidBones()
         {
+            EnsureReferences();
+
             if (animator == null || !animator.isHuman)
             {
                 _hips = null;
