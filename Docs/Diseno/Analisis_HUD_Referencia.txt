@@ -1,0 +1,123 @@
+ANALISIS HUD DE REFERENCIA — RULES OF SURVIVAL
+===============================================
+
+Fuente: captura de pantalla del juego original (RoS mobile/PC).
+Fecha de analisis: 21 de agosto de 2026.
+
+
+ZONA 1 — ARRIBA CENTRO: BRUJULA
+--------------------------------
+- Tira horizontal con grados numericos: 150, 165, S, 195, 210, SW, 240, 255,
+  W, 285, 300, NW, 330.
+- Muestra grados intermedios ademas de las cardinales principales — densidad
+  mayor que la implementacion actual.
+- Etiquetas contextuales en los extremos de la tira: "LEFT REAR" y
+  "RIGHT REAR", que indican los flancos traseros del jugador.
+- Indicador de objetivo encima de la tira: distancia numerica (ej. "1068m")
+  con icono de pin de ubicacion y flecha apuntando hacia abajo.
+
+Estado en el proyecto: [PARCIAL]
+  [OK] Tira con cardinales N/NE/E/SE/S/SO/O/NO.
+  [OK] Sigue el yaw de la camara incluyendo free-look.
+  [PENDIENTE] Grados numericos intermedios entre cardinales.
+  [PENDIENTE] Etiquetas LEFT REAR / RIGHT REAR en los extremos.
+  [PENDIENTE] Indicador de distancia y pin de objetivo.
+
+
+ZONA 2 — ARRIBA DERECHA: ESTADISTICAS DE PARTIDA
+--------------------------------------------------
+- Panel rectangular semitransparente con dos cifras grandes:
+    "12 KILL  23 LEFT"
+- Subtexto con estadisticas adicionales:
+    "37 Sup. / 3098m Dist."
+  (suministros recogidos y distancia total recorrida).
+
+Estado en el proyecto: [PARCIAL]
+  [OK] Jugadores vivos (equivalente a "LEFT") visible en BattleRoyalePanelUI.
+  [PENDIENTE] Kills propios mostrados en tiempo real en el HUD.
+  [PENDIENTE] Contador de suministros recogidos.
+  [PENDIENTE] Distancia total recorrida.
+
+
+ZONA 3 — DERECHA CENTRO: PANEL DE LOOT ACTIVO
+-----------------------------------------------
+- Panel vertical titulado con el nombre del contenedor (ej. "Pirate Treasure").
+- Lista scrolleable de items del contenedor:
+    - Cada item tiene: icono a la izquierda + nombre + descripcion corta.
+    - Ejemplo: [icono] Lv.3 Armor / "Reduces damage"
+    - Ejemplo: [icono] Molotov Cocktail / "Continuous Fire Damage"
+- Item actualmente seleccionado resaltado en amarillo brillante.
+- Etiqueta lateral vertical "SCROLL TO SELECT".
+- Boton "FOLD" en el borde derecho para minimizar el panel.
+- Interaccion por deslizamiento tactico (no rueda de raton).
+
+Estado en el proyecto: [OK]
+  El panel de caja de muerte cubre todos estos elementos:
+  auto-apertura, navegacion con rueda, resaltado, boton cerrar.
+  La descripcion corta por item no esta implementada (solo nombre e icono).
+
+
+ZONA 4 — ABAJO DERECHA: SLOTS DE ARMAS
+----------------------------------------
+- Cuatro slots numerados del 1 al 4, visibles siempre.
+- El slot activo se muestra mas grande y con brillo/resaltado.
+- Cada slot muestra:
+    - Icono o silueta del arma.
+    - Municion actual / reserva (ej. "40/238").
+- Slot 3 y 4 vacios pero visibles como placeholders.
+- Debajo de los slots de arma: slot de granadas con cantidad (ej. "0/6").
+- Atajos de teclado visibles junto a los slots:
+    SHIFT+F1, ENTER CTRL+T, CAPS.
+
+Estado en el proyecto: [PENDIENTE]
+  No hay representacion visual de slots de arma en el HUD.
+  La municion se muestra en WeaponPanelUI pero no hay slots numerados.
+
+
+ZONA 5 — ABAJO CENTRO: ACCESO RAPIDO A CONSUMIBLES
+----------------------------------------------------
+- Fila horizontal de slots de consumibles con cantidad numerica debajo.
+- Items identificados en la imagen: bebida energetica (x6), item rojo (x3).
+- Flecha "^" encima de cada slot — sugiere multiples categorias apiladas
+  o seleccion de tipo dentro del mismo slot.
+- Los slots estan posicionados entre los dos grupos de vida/escudo del jugador.
+- Interaccion rapida: un toque/tecla activa el consumible seleccionado.
+
+Estado en el proyecto: [PENDIENTE]
+  El consumible se usa con H (primer item de curacion del inventario).
+  No hay representacion visual de slots rapidos de consumibles en HUD.
+
+
+ZONA 6 — ABAJO IZQUIERDA: MINIMAPA
+------------------------------------
+- Minimapa circular.
+- Jugador representado en el centro con icono de movimiento.
+- Numero de zona activa en amarillo (ej. "1").
+- Latencia de red en milisegundos (ej. "64ms").
+- Atajo "TAB" para expandir a mapa completo.
+
+Estado en el proyecto: [PARCIAL]
+  [OK] Minimapa ortografico con jugador, bots y circulo de Safe Zone.
+  [PENDIENTE] Numero de fase/zona activa visible en el minimapa.
+  [PENDIENTE] Indicador de latencia de red.
+  [PENDIENTE] Expansion a mapa completo con TAB o M.
+
+
+RESUMEN DE BRECHAS HUD (lo que falta implementar)
+--------------------------------------------------
+
+Prioridad alta (punto 8 pendiente):
+  1. Slots de armas (1-4) con icono, municion actual/reserva y resaltado
+     del slot activo.
+  2. Acceso rapido a consumibles: fila de slots con cantidad y tecla de uso.
+
+Prioridad media:
+  3. Grados numericos en la brujula entre cardinales.
+  4. Etiquetas LEFT REAR / RIGHT REAR en los extremos de la brujula.
+  5. Kill counter propio en tiempo real en el HUD de partida.
+
+Prioridad baja / depende de otras features:
+  6. Indicador de distancia y pin de objetivo (requiere sistema de objetivos).
+  7. Distancia total recorrida y suministros recogidos.
+  8. Latencia de red (requiere multijugador, punto 12).
+  9. Mapa completo expandible (punto 9 pendiente).
