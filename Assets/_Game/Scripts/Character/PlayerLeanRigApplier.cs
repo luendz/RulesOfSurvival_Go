@@ -125,7 +125,9 @@ namespace ROS.Game.Character
                 return;
             }
 
-            float totalAngle = maximumLeanDegrees * lean;
+            // El signo visual del rig Humanoid es opuesto al valor lógico
+            // usado por cámara/input: Left = -1 y Right = +1.
+            float totalAngle = -maximumLeanDegrees * lean;
             Vector3 worldAxis = transform.forward;
 
             ApplyBoneRotation(
