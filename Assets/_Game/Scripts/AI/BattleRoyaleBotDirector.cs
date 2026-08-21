@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
+using ROS.Game.Inventory;
 using ROS.Game.Parachute;
 using ROS.Game.Teams;
 using ROS.Game.UI;
@@ -109,6 +111,15 @@ namespace ROS.Game.AI
                 BotHealthBar.Attach(botObject);
                 ApplyBotDamageScale(botObject, 0.20f);
                 botObject.AddComponent<CharacterDeathDissolver>();
+
+                // Loot al morir
+                PlayerEliminationController elim =
+                    botObject.GetComponent<PlayerEliminationController>()
+                    ?? botObject.AddComponent<PlayerEliminationController>();
+                elim.Bind(_matchManager);
+
+                InventoryComponent inv = botObject.GetComponent<InventoryComponent>();
+                FillBotInventory(inv, i);
 
                 _bots.Add(bot);
             }
@@ -259,6 +270,40 @@ namespace ROS.Game.AI
             {
                 if (weapons[i] != null)
                     weapons[i].DamageScale = scale;
+            }
+        }
+
+        private static void FillBotInventory(InventoryComponent inv, int botIndex)
+        {
+            if (inv == null) return;
+
+            InventoryItemDefinition[] allDefs =
+                Resources.FindObjectsOfTypeAll<InventoryItemDefinition>();
+
+            System.Random rng = new System.Random(7919 * botIndex + 1337);
+
+            // Un ítem de cada categoría relevante
+            ItemType[] wanted = new ItemType[]
+            {
+                ItemType.Ammo,
+                ItemType.Healing,
+                ItemType.Armor,
+                ItemType.Helmet,
+            };
+
+            foreach (ItemType target in wanted)
+            {
+                foreach (InventoryItemDefinition def in allDefs)
+                {
+                    if (def == null || def.itemType != target) continue;
+
+                    int amount = target == ItemType.Ammo
+                        ? rng.Next(20, 61)
+                        : 1;
+
+                    inv.Add(def, amount);
+                    break;
+                }
             }
         }
 
