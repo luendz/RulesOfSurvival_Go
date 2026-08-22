@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
 using ROS.Game.UI;
@@ -37,9 +39,10 @@ namespace ROS.Game.Loot
         public bool IsEmpty => ItemCount <= 0;
 
         /// <summary>
-        /// Cantidad general de entradas/tipos de loot presentes en la caja.
-        /// Una pila de 52 balas cuenta como 1 objeto de loot, no como 52.
-        /// La cantidad concreta de cada entrada se conserva en InventoryStack.amount.
+        /// Cantidad general de objetos/tipos presentes en la caja.
+        /// Ejemplo: Rifle x1 + Munición Rifle x120 = 2 objetos de loot.
+        /// No suma cada bala como un objeto independiente ni duplica una misma
+        /// definición si internamente ocupa más de una pila por maxStack.
         /// </summary>
         public int ItemCount
         {
@@ -47,22 +50,27 @@ namespace ROS.Game.Loot
             {
                 EnsureInventory();
 
-                int count = 0;
+                HashSet<string> uniqueItems =
+                    new HashSet<string>();
 
                 foreach (
                     InventoryStack stack
                     in inventory.Stacks
                 )
                 {
-                    if (stack != null &&
-                        stack.item != null &&
-                        stack.amount > 0)
+                    if (stack == null ||
+                        stack.item == null ||
+                        stack.amount <= 0)
                     {
-                        count++;
+                        continue;
                     }
+
+                    uniqueItems.Add(
+                        GetGeneralItemKey(stack.item)
+                    );
                 }
 
-                return count;
+                return uniqueItems.Count;
             }
         }
 
@@ -221,6 +229,39 @@ namespace ROS.Game.Loot
             DestroyIfEmpty();
 
             return transferred;
+        }
+
+        private static string GetGeneralItemKey(
+            InventoryItemDefinition item
+        )
+        {
+            if (item == null)
+            {
+                return "null";
+            }
+
+            if (item.itemType == ItemType.Weapon &&
+                item.weaponDefinition != null)
+            {
+                string weaponId =
+                    item.weaponDefinition.weaponId;
+
+                return !string.IsNullOrWhiteSpace(weaponId)
+                    ? $"weapon:{weaponId}"
+                    : $"weapon:{item.weaponDefinition.GetInstanceID()}";
+            }
+
+            if (item.itemType == ItemType.Ammo)
+            {
+                return $"ammo:{item.ammoType}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.itemId))
+            {
+                return $"item:{item.itemId}";
+            }
+
+            return $"{item.itemType}:{item.displayName}";
         }
 
         private void DestroyIfEmpty()
