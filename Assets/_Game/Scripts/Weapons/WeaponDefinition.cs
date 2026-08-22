@@ -4,9 +4,7 @@ using UnityEngine;
 namespace ROS.Game.Weapons
 {
     [CreateAssetMenu(menuName = "ROS/Weapons/Weapon Definition", fileName = "Weapon_")]
-    public sealed class WeaponDefinition :
-        ScriptableObject,
-        IGameDataDefinition
+    public sealed class WeaponDefinition : ScriptableObject, IGameDataDefinition
     {
         [Header("Identity")]
         public string weaponId = "rifle_001";
@@ -21,19 +19,38 @@ namespace ROS.Game.Weapons
         public bool supportsAuto = true;
 
         [Header("Data Provenance")]
-        public DataConfidence dataConfidence =
-            DataConfidence.Prototype;
+        public DataConfidence dataConfidence = DataConfidence.Prototype;
 
         [Header("Ballistics")]
         [Min(1f)] public float damage = 28f;
         [Min(0.01f)] public float shotsPerSecond = 9f;
         [Min(1f)] public float range = 250f;
         [Min(1)] public int projectilesPerShot = 1;
+        [Tooltip("Velocidad de salida de la bala en metros por segundo. Se usa para tiempo de vuelo y caída balística.")]
+        [Min(1f)] public float muzzleVelocity = 800f;
+        [Tooltip("Multiplicador de gravedad usado por la bala. 0 desactiva la caída.")]
+        [Min(0f)] public float gravityScale = 1f;
+
+        [Header("Damage Falloff")]
+        [Tooltip("Distancia desde la que empieza a perder daño.")]
+        [Min(0f)] public float damageFalloffStart = 40f;
+        [Tooltip("Distancia donde alcanza el daño mínimo.")]
+        [Min(0f)] public float damageFalloffEnd = 200f;
+        [Range(0.05f, 1f)] public float minimumDamageMultiplier = 0.55f;
+        [Tooltip("0 = sin penetración, 1 = ignora por completo la reducción de armadura.")]
+        [Range(0f, 1f)] public float armorPenetration = 0.1f;
+
+        [Header("Hit Zone Multipliers")]
+        [Min(0f)] public float headDamageMultiplier = 2f;
+        [Min(0f)] public float torsoDamageMultiplier = 1f;
+        [Min(0f)] public float armDamageMultiplier = 0.75f;
+        [Min(0f)] public float legDamageMultiplier = 0.65f;
 
         [Header("Impact Feedback")]
         [Min(0.05f)] public float impactScale = 1f;
         [Min(0.05f)] public float bulletHoleScale = 1f;
         [Min(0.001f)] public float tracerWidth = 0.012f;
+        [Min(0f)] public float impactForce = 8f;
 
         [Header("Ammo")]
         [Min(1)] public int magazineSize = 30;
@@ -42,11 +59,25 @@ namespace ROS.Game.Weapons
         [Min(0.1f)] public float emptyReloadTime = 2.7f;
         [Min(1)] public int burstCount = 3;
 
-        [Header("Recoil")]
+        [Header("Recoil - Base")]
         [Min(0f)] public float verticalRecoil = 1.2f;
         [Min(0f)] public float horizontalRecoil = 0.35f;
         [Min(0f)] public float recoilReturnSpeed = 8f;
         [Min(0f)] public float recoilSnappiness = 14f;
+        [Min(0f)] public float recoilKickBack = 0.035f;
+
+        [Header("Recoil - State Multipliers")]
+        [Min(0f)] public float adsRecoilMultiplier = 0.78f;
+        [Min(0f)] public float crouchRecoilMultiplier = 0.82f;
+        [Min(0f)] public float movingRecoilMultiplier = 1.15f;
+        [Min(0f)] public float airborneRecoilMultiplier = 1.45f;
+
+        [Header("Recoil - Sustained Fire")]
+        [Min(0f)] public float recoilGrowthPerShot = 0.04f;
+        [Min(1f)] public float maxRecoilGrowthMultiplier = 1.65f;
+        [Min(0f)] public float recoilPatternResetDelay = 0.22f;
+        [Tooltip("Patrón opcional. X = horizontal, Y = vertical. Si está vacío se usa recoil aleatorio controlado.")]
+        public Vector2[] recoilPattern;
 
         [Header("Accuracy - Base")]
         [Tooltip("Spread when firing without aiming.")]
@@ -74,13 +105,9 @@ namespace ROS.Game.Weapons
         [HideInInspector] public float spreadDegrees = 0.9f;
 
         public string StableId => weaponId;
+        public DataConfidence Confidence => dataConfidence;
 
-        public DataConfidence Confidence =>
-            dataConfidence;
-
-        public bool SupportsFireMode(
-            WeaponFireMode mode
-        )
+        public bool SupportsFireMode(WeaponFireMode mode)
         {
             return mode switch
             {
@@ -93,27 +120,13 @@ namespace ROS.Game.Weapons
 
         public WeaponFireMode GetInitialFireMode()
         {
-            if (SupportsFireMode(fireMode))
-            {
-                return fireMode;
-            }
-
-            if (supportsSingle)
-            {
-                return WeaponFireMode.Single;
-            }
-
-            if (supportsBurst)
-            {
-                return WeaponFireMode.Burst;
-            }
-
+            if (SupportsFireMode(fireMode)) return fireMode;
+            if (supportsSingle) return WeaponFireMode.Single;
+            if (supportsBurst) return WeaponFireMode.Burst;
             return WeaponFireMode.Auto;
         }
 
-        public WeaponFireMode GetNextFireMode(
-            WeaponFireMode current
-        )
+        public WeaponFireMode GetNextFireMode(WeaponFireMode current)
         {
             WeaponFireMode[] orderedModes =
             {
@@ -122,39 +135,64 @@ namespace ROS.Game.Weapons
                 WeaponFireMode.Auto
             };
 
-            int currentIndex =
-                System.Array.IndexOf(
-                    orderedModes,
-                    current
-                );
+            int currentIndex = System.Array.IndexOf(orderedModes, current);
 
             for (int offset = 1; offset <= orderedModes.Length; offset++)
             {
-                int index =
-                    (currentIndex + offset + orderedModes.Length) %
-                    orderedModes.Length;
-
-                if (SupportsFireMode(orderedModes[index]))
-                {
-                    return orderedModes[index];
-                }
+                int index = (currentIndex + offset + orderedModes.Length) % orderedModes.Length;
+                if (SupportsFireMode(orderedModes[index])) return orderedModes[index];
             }
 
             return GetInitialFireMode();
         }
 
-        public float GetReloadDuration(
-            bool emptyMagazine
-        )
+        public float GetReloadDuration(bool emptyMagazine)
         {
-            return emptyMagazine
-                ? Mathf.Max(reloadTime, emptyReloadTime)
-                : reloadTime;
+            return emptyMagazine ? Mathf.Max(reloadTime, emptyReloadTime) : reloadTime;
         }
 
         public int GetProjectileCount()
         {
             return Mathf.Max(1, projectilesPerShot);
+        }
+
+        public float GetDamageMultiplierAtDistance(float distance)
+        {
+            float start = Mathf.Max(0f, damageFalloffStart);
+            float end = Mathf.Max(start + 0.01f, damageFalloffEnd);
+
+            if (distance <= start) return 1f;
+            if (distance >= end) return Mathf.Clamp(minimumDamageMultiplier, 0.05f, 1f);
+
+            float t = Mathf.InverseLerp(start, end, distance);
+            return Mathf.Lerp(1f, Mathf.Clamp(minimumDamageMultiplier, 0.05f, 1f), t);
+        }
+
+        public float GetDamageAtDistance(float distance)
+        {
+            return Mathf.Max(0f, damage) * GetDamageMultiplierAtDistance(distance);
+        }
+
+        public float GetHitZoneMultiplier(HitZone hitZone)
+        {
+            return hitZone switch
+            {
+                HitZone.Head => Mathf.Max(0f, headDamageMultiplier),
+                HitZone.Arm => Mathf.Max(0f, armDamageMultiplier),
+                HitZone.Leg => Mathf.Max(0f, legDamageMultiplier),
+                HitZone.None => Mathf.Max(0f, torsoDamageMultiplier),
+                _ => Mathf.Max(0f, torsoDamageMultiplier)
+            };
+        }
+
+        public float GetRecoilStateMultiplier(bool aiming, bool crouching, bool moving, bool airborne)
+        {
+            float multiplier = 1f;
+            if (aiming) multiplier *= adsRecoilMultiplier;
+            if (crouching) multiplier *= crouchRecoilMultiplier;
+            if (moving) multiplier *= movingRecoilMultiplier;
+            if (airborne) multiplier *= airborneRecoilMultiplier;
+            return Mathf.Max(0f, multiplier);
         }
     }
 }
