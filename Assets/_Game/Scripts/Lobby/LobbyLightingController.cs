@@ -285,7 +285,7 @@ namespace ROS.Game.Lobby
             GameObject shadow = GameObject.CreatePrimitive(PrimitiveType.Quad);
             shadow.name = "Lobby Contact Shadow";
             shadow.transform.position = character.position + new Vector3(0f, 0.012f, 0.08f);
-            shadow.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            shadow.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
             shadow.transform.localScale = new Vector3(
                 Mathf.Max(0.1f, contactShadowSize.x),
                 Mathf.Max(0.1f, contactShadowSize.y),
