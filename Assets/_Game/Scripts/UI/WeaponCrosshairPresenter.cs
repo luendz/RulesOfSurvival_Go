@@ -57,10 +57,10 @@ namespace ROS.Game.UI
                 _nextResolveTime = Time.unscaledTime + 0.15f;
                 ResolveLocalEquipment();
                 EnsureVisuals();
-                SuppressCompetingCrosshairs();
             }
 
             RefreshCrosshair();
+            SuppressCompetingCrosshairs();
         }
 
         private void OnDisable()
@@ -172,8 +172,6 @@ namespace ROS.Game.UI
             if (_root == null)
                 return;
 
-            SuppressCompetingCrosshairs();
-
             WeaponController weapon =
                 _equipment != null
                     ? _equipment.EquippedWeapon
@@ -219,9 +217,7 @@ namespace ROS.Game.UI
         private void SuppressCompetingCrosshairs()
         {
             Scene activeScene = SceneManager.GetActiveScene();
-
-            Graphic[] graphics =
-                Resources.FindObjectsOfTypeAll<Graphic>();
+            Graphic[] graphics = Resources.FindObjectsOfTypeAll<Graphic>();
 
             for (int i = 0; i < graphics.Length; i++)
             {
@@ -234,7 +230,7 @@ namespace ROS.Game.UI
                 }
 
                 bool looksLikeCrosshair =
-                    ContainsCrosshairName(graphic.gameObject.name);
+                    ContainsCrosshairNameInHierarchy(graphic.transform);
 
                 if (graphic is Text text)
                 {
@@ -257,6 +253,21 @@ namespace ROS.Game.UI
         {
             return _root != null &&
                    graphic.transform.IsChildOf(_root);
+        }
+
+        private static bool ContainsCrosshairNameInHierarchy(Transform transformToCheck)
+        {
+            Transform current = transformToCheck;
+
+            while (current != null)
+            {
+                if (ContainsCrosshairName(current.gameObject.name))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private static bool ContainsCrosshairName(string objectName)
