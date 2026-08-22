@@ -126,6 +126,7 @@ GameObject:
   - component: {fileID: 100001}
   - component: {fileID: 100002}
   - component: {fileID: 100003}
+  - component: {fileID: 100004}
   m_Layer: 0
   m_Name: LobbyRoot
   m_TagString: Untagged
@@ -181,3 +182,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Lobby.LobbyBackgroundController
   backgroundSprite: {fileID: 21300000, guid: adecdb98627c713409512c62210b0bae, type: 3}
   planeDistance: 90
+  backgroundBrightness: 0.9
+  vignetteStrength: 0.16
+--- !u!114 &100004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f3cb5b3a1d54a25aa249cd1715b4358, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Lobby.LobbyLightingController
+  ambientSky: {r: 0.42, g: 0.56, b: 0.75, a: 1}
+  ambientEquator: {r: 0.28, g: 0.36, b: 0.48, a: 1}
+  ambientGround: {r: 0.16, g: 0.2, b: 0.27, a: 1}
+  ambientIntensity: 1.15
+  keyColor: {r: 1, g: 0.93, b: 0.82, a: 1}
+  keyIntensity: 1.55
+  faceFillColor: {r: 1, g: 0.88, b: 0.76, a: 1}
+  faceFillIntensity: 3.6
+  coolFillColor: {r: 0.48, g: 0.68, b: 1, a: 1}
+  coolFillIntensity: 2.5
+  rimColor: {r: 1, g: 0.62, b: 0.32, a: 1}
+  rimIntensity: 3.4
+  contactShadowOpacity: 0.28
+  contactShadowSize: {x: 1.45, y: 0.62}
