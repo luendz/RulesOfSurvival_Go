@@ -79,8 +79,7 @@ namespace ROS.Game.BattleRoyale
 
             // Antes de desactivar armas/componentes, convertir el equipamiento
             // jugable en entradas de inventario. Los bots clonados pueden tener
-            // armas equipadas sin que esas armas existan como stacks, y eso
-            // generaba una caja visible pero con ItemCount == 0.
+            // armas equipadas sin que esas armas existan como stacks.
             EnsureDeathInventorySnapshot();
 
             BlockGameplay();
@@ -130,10 +129,10 @@ namespace ROS.Game.BattleRoyale
 
         /// <summary>
         /// Garantiza que la caja de muerte represente lo que el jugador/bot
-        /// realmente llevaba. PlayerLootEquipment conserva referencias de ítems
-        /// equipados cuando vienen del sistema de loot; para armas preinstaladas
-        /// directamente en WeaponEquipmentController se crea una definición
-        /// runtime equivalente y, además, una pila de su munición restante.
+        /// realmente llevaba. Cuando existe un InventoryItemDefinition real,
+        /// se reutiliza directamente para conservar icono, rareza, modelo,
+        /// peso y demás metadata. Solo se crea una definición runtime como
+        /// respaldo cuando no existe una definición de datos equivalente.
         /// </summary>
         private void EnsureDeathInventorySnapshot()
         {
@@ -185,17 +184,17 @@ namespace ROS.Game.BattleRoyale
                 return;
             }
 
-            AddRuntimeWeaponSnapshot(
+            AddWeaponSnapshot(
                 equipment.PrimarySlot1,
                 1,
                 representedWeapons
             );
-            AddRuntimeWeaponSnapshot(
+            AddWeaponSnapshot(
                 equipment.PrimarySlot2,
                 2,
                 representedWeapons
             );
-            AddRuntimeWeaponSnapshot(
+            AddWeaponSnapshot(
                 equipment.SidearmSlot,
                 3,
                 representedWeapons
@@ -217,7 +216,7 @@ namespace ROS.Game.BattleRoyale
             }
         }
 
-        private void AddRuntimeWeaponSnapshot(
+        private void AddWeaponSnapshot(
             WeaponController weapon,
             int slot,
             HashSet<WeaponDefinition> representedWeapons
@@ -233,28 +232,28 @@ namespace ROS.Game.BattleRoyale
             if (definition != null &&
                 !representedWeapons.Contains(definition))
             {
-                InventoryItemDefinition weaponItem =
-                    ScriptableObject.CreateInstance<
-                        InventoryItemDefinition
-                    >();
+                InventoryItemDefinition canonicalWeapon =
+                    FindCanonicalWeaponItem(definition);
 
-                weaponItem.name =
-                    $"LootRuntime_{definition.displayName}";
-                weaponItem.itemId =
-                    $"runtime_death_weapon_{definition.weaponId}_{GetInstanceID()}_{slot}";
-                weaponItem.displayName =
-                    string.IsNullOrWhiteSpace(definition.displayName)
-                        ? weapon.gameObject.name
-                        : definition.displayName;
-                weaponItem.itemType = ItemType.Weapon;
-                weaponItem.dataConfidence = DataConfidence.Prototype;
-                weaponItem.maxStack = 1;
-                weaponItem.weight = 0f;
-                weaponItem.weaponDefinition = definition;
-                weaponItem.preferredWeaponSlot = slot;
-                weaponItem.hideFlags = HideFlags.DontSave;
+                if (canonicalWeapon != null)
+                {
+                    if (inventory.GetAmount(canonicalWeapon) <= 0)
+                    {
+                        inventory.Add(canonicalWeapon, 1);
+                    }
+                }
+                else
+                {
+                    InventoryItemDefinition runtimeWeapon =
+                        CreateRuntimeWeaponItem(
+                            weapon,
+                            definition,
+                            slot
+                        );
 
-                inventory.Add(weaponItem, 1);
+                    inventory.Add(runtimeWeapon, 1);
+                }
+
                 representedWeapons.Add(definition);
             }
 
@@ -269,23 +268,248 @@ namespace ROS.Game.BattleRoyale
                 return;
             }
 
-            InventoryItemDefinition ammoItem =
+            InventoryItemDefinition canonicalAmmo =
+                FindCanonicalAmmoItem(definition.ammoType);
+
+            if (canonicalAmmo != null)
+            {
+                inventory.Add(canonicalAmmo, totalAmmo);
+                return;
+            }
+
+            InventoryItemDefinition runtimeAmmo =
+                CreateRuntimeAmmoItem(
+                    definition.ammoType,
+                    totalAmmo,
+                    slot
+                );
+
+            inventory.Add(runtimeAmmo, totalAmmo);
+        }
+
+        private InventoryItemDefinition CreateRuntimeWeaponItem(
+            WeaponController weapon,
+            WeaponDefinition definition,
+            int slot
+        )
+        {
+            InventoryItemDefinition item =
                 ScriptableObject.CreateInstance<
                     InventoryItemDefinition
                 >();
 
-            ammoItem.name = $"LootRuntime_Ammo_{definition.ammoType}";
-            ammoItem.itemId =
-                $"runtime_death_ammo_{definition.ammoType}_{GetInstanceID()}_{slot}";
-            ammoItem.displayName = $"Munición {definition.ammoType}";
-            ammoItem.itemType = ItemType.Ammo;
-            ammoItem.dataConfidence = DataConfidence.Prototype;
-            ammoItem.maxStack = Mathf.Max(totalAmmo, 1);
-            ammoItem.weight = 0f;
-            ammoItem.ammoType = definition.ammoType;
-            ammoItem.hideFlags = HideFlags.DontSave;
+            item.name = $"LootRuntime_{definition.displayName}";
+            item.itemId =
+                $"runtime_death_weapon_{definition.weaponId}_{GetInstanceID()}_{slot}";
+            item.displayName =
+                string.IsNullOrWhiteSpace(definition.displayName)
+                    ? weapon.gameObject.name
+                    : definition.displayName;
+            item.itemType = ItemType.Weapon;
+            item.dataConfidence = DataConfidence.Prototype;
+            item.maxStack = 1;
+            item.weight = 0f;
+            item.weaponDefinition = definition;
+            item.preferredWeaponSlot = slot;
 
-            inventory.Add(ammoItem, totalAmmo);
+            // Si no hay definición exacta, intentar al menos conservar un icono
+            // compatible ya cargado. Solo se usa cuando la coincidencia es única
+            // para evitar mostrar un arma incorrecta.
+            item.icon = FindCompatibleWeaponIcon(definition);
+            item.hideFlags = HideFlags.DontSave;
+            return item;
+        }
+
+        private InventoryItemDefinition CreateRuntimeAmmoItem(
+            AmmoType ammoType,
+            int totalAmmo,
+            int slot
+        )
+        {
+            InventoryItemDefinition item =
+                ScriptableObject.CreateInstance<
+                    InventoryItemDefinition
+                >();
+
+            item.name = $"LootRuntime_Ammo_{ammoType}";
+            item.itemId =
+                $"runtime_death_ammo_{ammoType}_{GetInstanceID()}_{slot}";
+            item.displayName = $"Munición {ammoType}";
+            item.itemType = ItemType.Ammo;
+            item.dataConfidence = DataConfidence.Prototype;
+            item.maxStack = Mathf.Max(totalAmmo, 1);
+            item.weight = 0f;
+            item.ammoType = ammoType;
+            item.icon = FindCompatibleAmmoIcon(ammoType);
+            item.hideFlags = HideFlags.DontSave;
+            return item;
+        }
+
+        private static InventoryItemDefinition FindCanonicalWeaponItem(
+            WeaponDefinition definition
+        )
+        {
+            if (definition == null)
+            {
+                return null;
+            }
+
+            InventoryItemDefinition[] definitions =
+                Resources.FindObjectsOfTypeAll<InventoryItemDefinition>();
+
+            InventoryItemDefinition exactWithoutIcon = null;
+            InventoryItemDefinition idMatch = null;
+            InventoryItemDefinition nameMatch = null;
+
+            string targetId = NormalizeKey(definition.weaponId);
+            string targetName = NormalizeKey(definition.displayName);
+
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                InventoryItemDefinition candidate = definitions[i];
+                if (!IsCanonicalAsset(candidate) ||
+                    candidate.itemType != ItemType.Weapon ||
+                    candidate.weaponDefinition == null)
+                {
+                    continue;
+                }
+
+                if (candidate.weaponDefinition == definition)
+                {
+                    if (candidate.icon != null)
+                    {
+                        return candidate;
+                    }
+
+                    exactWithoutIcon ??= candidate;
+                    continue;
+                }
+
+                if (idMatch == null &&
+                    !string.IsNullOrEmpty(targetId) &&
+                    NormalizeKey(candidate.weaponDefinition.weaponId) == targetId)
+                {
+                    idMatch = candidate;
+                }
+
+                if (nameMatch == null &&
+                    !string.IsNullOrEmpty(targetName) &&
+                    NormalizeKey(candidate.displayName) == targetName)
+                {
+                    nameMatch = candidate;
+                }
+            }
+
+            return idMatch ?? nameMatch ?? exactWithoutIcon;
+        }
+
+        private static InventoryItemDefinition FindCanonicalAmmoItem(
+            AmmoType ammoType
+        )
+        {
+            InventoryItemDefinition[] definitions =
+                Resources.FindObjectsOfTypeAll<InventoryItemDefinition>();
+
+            InventoryItemDefinition fallback = null;
+
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                InventoryItemDefinition candidate = definitions[i];
+                if (!IsCanonicalAsset(candidate) ||
+                    candidate.itemType != ItemType.Ammo ||
+                    candidate.ammoType != ammoType)
+                {
+                    continue;
+                }
+
+                if (candidate.icon != null)
+                {
+                    return candidate;
+                }
+
+                fallback ??= candidate;
+            }
+
+            return fallback;
+        }
+
+        private static Sprite FindCompatibleWeaponIcon(
+            WeaponDefinition definition
+        )
+        {
+            InventoryItemDefinition exact =
+                FindCanonicalWeaponItem(definition);
+
+            if (exact != null && exact.icon != null)
+            {
+                return exact.icon;
+            }
+
+            InventoryItemDefinition[] definitions =
+                Resources.FindObjectsOfTypeAll<InventoryItemDefinition>();
+
+            Sprite uniqueIcon = null;
+            int compatibleCount = 0;
+
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                InventoryItemDefinition candidate = definitions[i];
+                if (!IsCanonicalAsset(candidate) ||
+                    candidate.itemType != ItemType.Weapon ||
+                    candidate.weaponDefinition == null ||
+                    candidate.icon == null)
+                {
+                    continue;
+                }
+
+                WeaponDefinition candidateWeapon = candidate.weaponDefinition;
+                if (candidateWeapon.family != definition.family ||
+                    candidateWeapon.ammoType != definition.ammoType)
+                {
+                    continue;
+                }
+
+                compatibleCount++;
+                uniqueIcon = candidate.icon;
+
+                if (compatibleCount > 1)
+                {
+                    return null;
+                }
+            }
+
+            return uniqueIcon;
+        }
+
+        private static Sprite FindCompatibleAmmoIcon(AmmoType ammoType)
+        {
+            InventoryItemDefinition ammo =
+                FindCanonicalAmmoItem(ammoType);
+
+            return ammo != null ? ammo.icon : null;
+        }
+
+        private static bool IsCanonicalAsset(
+            InventoryItemDefinition item
+        )
+        {
+            return item != null &&
+                   (item.hideFlags & HideFlags.DontSave) == 0;
+        }
+
+        private static string NormalizeKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return value
+                .Trim()
+                .ToLowerInvariant()
+                .Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .Replace("-", string.Empty);
         }
 
         private void BlockGameplay()
