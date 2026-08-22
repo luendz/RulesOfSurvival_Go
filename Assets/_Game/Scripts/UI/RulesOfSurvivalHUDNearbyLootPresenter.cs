@@ -14,23 +14,38 @@ using UnityEngine.UI;
 namespace ROS.Game.UI
 {
     /// <summary>
-    /// Único propietario del panel amarillo de loot de jugador muerto del HUD ROS.
+    /// Propietario único del HUD de loot de jugadores muertos.
     ///
-    /// Flujo definitivo:
-    /// 1) PlayerInteractor detecta DeathLootContainer y muestra "Abrir...".
-    /// 2) F ejecuta DeathLootContainer.Interact().
-    /// 3) DeathLootContainer llama OpenOrCreate() de este presenter.
-    /// 4) El panel amarillo queda abierto hasta alejarse, vaciar la caja o ESC.
-    /// 5) Con el panel abierto, rueda selecciona y F recoge.
+    /// Flujo:
+    /// - PlayerInteractor detecta DeathLootContainer y muestra "Abrir...".
+    /// - F llama DeathLootContainer.Interact().
+    /// - Interact() llama OpenOrCreate() aquí.
+    /// - Este presenter crea y controla un panel ROS dedicado que ningún otro
+    ///   presenter conoce, evitando conflictos con Canvas/NearbyLoot heredado.
+    /// - Rueda selecciona, F recoge, ESC o alejarse cierra.
     ///
-    /// También mantiene el indicador discreto de objeto cercano debajo de KILL/LEFT.
+    /// También mantiene el indicador discreto de objeto cercano debajo de
+    /// KILL/LEFT y usa el icono real del InventoryItemDefinition cuando existe.
     /// </summary>
-    [DefaultExecutionOrder(2600)]
+    [DefaultExecutionOrder(2800)]
     [DisallowMultipleComponent]
     public sealed class RulesOfSurvivalHUDNearbyLootPresenter : MonoBehaviour
     {
         private const string SceneName = "07_BattleRoyaleTest";
         private const float MaximumOpenDistance = 4.5f;
+        private const int VisibleRows = 7;
+
+        private static readonly Color Yellow =
+            new Color(1f, 0.86f, 0.03f, 0.98f);
+
+        private static readonly Color YellowSelected =
+            new Color(1f, 0.93f, 0.28f, 1f);
+
+        private static readonly Color Dark =
+            new Color(0.025f, 0.035f, 0.045f, 0.94f);
+
+        private static readonly Color RowText =
+            new Color(0.05f, 0.05f, 0.05f, 1f);
 
         private PlayerInputReader _localInput;
         private PlayerInteractor _interactor;
@@ -44,6 +59,22 @@ namespace ROS.Game.UI
         private RectTransform _nearbyRoot;
         private Image _nearbyIcon;
         private Text _nearbyText;
+
+        private RectTransform _deathLootRoot;
+        private Text _deathLootTitle;
+        private Text _deathLootFooter;
+        private readonly List<LootRowView> _rowViews =
+            new List<LootRowView>(VisibleRows);
+
+        private sealed class LootRowView
+        {
+            public RectTransform Root;
+            public Image Background;
+            public Image Icon;
+            public Text Name;
+            public Text Amount;
+            public Image Selection;
+        }
 
         public bool IsOpen =>
             _openedContainer != null &&
@@ -68,9 +99,6 @@ namespace ROS.Game.UI
                 .AddComponent<RulesOfSurvivalHUDNearbyLootPresenter>();
         }
 
-        /// <summary>
-        /// Punto único de entrada desde DeathLootContainer.Interact().
-        /// </summary>
         public static RulesOfSurvivalHUDNearbyLootPresenter OpenOrCreate(
             DeathLootContainer container,
             GameObject interactor
@@ -107,22 +135,19 @@ namespace ROS.Game.UI
                 return false;
             }
 
-            // Si F se vuelve a pulsar mientras ya está abierta la misma caja,
-            // NO reiniciar el frame de apertura. Así ese mismo F puede recoger
-            // el objeto seleccionado en LateUpdate.
-            if (_openedContainer == container && IsOpen)
-            {
-                return true;
-            }
-
             _localInput = interactor.GetComponent<PlayerInputReader>();
             _interactor = interactor.GetComponent<PlayerInteractor>();
             _inventory = inventory;
-            _openedContainer = container;
-            _selectedIndex = 0;
-            _openedFrame = Time.frameCount;
+
+            if (_openedContainer != container)
+            {
+                _openedContainer = container;
+                _selectedIndex = 0;
+                _openedFrame = Time.frameCount;
+            }
 
             RepairEmptyContainerIfNeeded(_openedContainer);
+            EnsureDeathLootPanel();
             DrawOpenedPanel();
             return true;
         }
@@ -132,7 +157,11 @@ namespace ROS.Game.UI
             _openedContainer = null;
             _selectedIndex = 0;
             _openedFrame = -1;
-            HideLootPanel();
+
+            if (_deathLootRoot != null)
+            {
+                _deathLootRoot.gameObject.SetActive(false);
+            }
         }
 
         private void LateUpdate()
@@ -142,8 +171,10 @@ namespace ROS.Game.UI
                 _nextResolveTime = Time.unscaledTime + 0.15f;
                 ResolveLocalPlayer();
                 EnsureNearbyIndicator();
+                EnsureDeathLootPanel();
             }
 
+            HideLegacyNearbyLootPanel();
             UpdateNearbyIndicator();
             UpdateOpenedLoot();
         }
@@ -152,16 +183,8 @@ namespace ROS.Game.UI
         {
             if (IsValidLocalInput(_localInput))
             {
-                if (_interactor == null)
-                {
-                    _interactor = _localInput.GetComponent<PlayerInteractor>();
-                }
-
-                if (_inventory == null)
-                {
-                    _inventory = _localInput.GetComponent<InventoryComponent>();
-                }
-
+                _interactor ??= _localInput.GetComponent<PlayerInteractor>();
+                _inventory ??= _localInput.GetComponent<InventoryComponent>();
                 return;
             }
 
@@ -182,20 +205,14 @@ namespace ROS.Game.UI
         {
             if (!IsOpen)
             {
-                // Este presenter es el dueño final del panel. Si no hay caja
-                // explícitamente abierta, cualquier activación de presenters
-                // anteriores se anula al final del frame.
-                HideLootPanel();
+                if (_deathLootRoot != null)
+                {
+                    _deathLootRoot.gameObject.SetActive(false);
+                }
                 return;
             }
 
-            if (_localInput == null || _inventory == null)
-            {
-                Close();
-                return;
-            }
-
-            if (_openedContainer == null)
+            if (_localInput == null || _inventory == null || _openedContainer == null)
             {
                 Close();
                 return;
@@ -237,7 +254,6 @@ namespace ROS.Game.UI
             HandleSelection(stacks.Count);
             DrawOpenedPanel(stacks);
 
-            // No recoger en el mismo frame en el que F abrió la caja.
             if (Time.frameCount != _openedFrame)
             {
                 HandlePickup(stacks);
@@ -304,6 +320,234 @@ namespace ROS.Game.UI
             );
         }
 
+        private void EnsureDeathLootPanel()
+        {
+            GameObject hud = GameObject.Find("ROS_HUD_Runtime");
+            if (hud == null)
+            {
+                return;
+            }
+
+            Transform canvas = hud.transform.Find("Canvas");
+            if (canvas == null)
+            {
+                return;
+            }
+
+            Transform existing = canvas.Find("DeathLootPanelROS");
+            if (existing != null)
+            {
+                _deathLootRoot = existing as RectTransform;
+                CacheDeathLootPanelReferences(existing);
+                return;
+            }
+
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            GameObject rootObject = new GameObject("DeathLootPanelROS");
+            rootObject.transform.SetParent(canvas, false);
+            _deathLootRoot = rootObject.AddComponent<RectTransform>();
+            _deathLootRoot.anchorMin = new Vector2(1f, 0.5f);
+            _deathLootRoot.anchorMax = new Vector2(1f, 0.5f);
+            _deathLootRoot.pivot = new Vector2(1f, 0.5f);
+            _deathLootRoot.anchoredPosition = new Vector2(-22f, 0f);
+            _deathLootRoot.sizeDelta = new Vector2(270f, 430f);
+
+            Image rootBackground = rootObject.AddComponent<Image>();
+            rootBackground.color = Yellow;
+            rootBackground.raycastTarget = false;
+
+            Outline rootOutline = rootObject.AddComponent<Outline>();
+            rootOutline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            rootOutline.effectDistance = new Vector2(2f, -2f);
+
+            GameObject titleObject = new GameObject("Title");
+            titleObject.transform.SetParent(_deathLootRoot, false);
+            RectTransform titleRect = titleObject.AddComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0f, 1f);
+            titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.anchoredPosition = Vector2.zero;
+            titleRect.sizeDelta = new Vector2(0f, 38f);
+            Image titleBg = titleObject.AddComponent<Image>();
+            titleBg.color = Dark;
+            titleBg.raycastTarget = false;
+
+            GameObject titleTextObject = new GameObject("Text");
+            titleTextObject.transform.SetParent(titleRect, false);
+            RectTransform titleTextRect = titleTextObject.AddComponent<RectTransform>();
+            Stretch(titleTextRect, 10f, 3f, 8f, 2f);
+            _deathLootTitle = titleTextObject.AddComponent<Text>();
+            _deathLootTitle.font = font;
+            _deathLootTitle.fontSize = 17;
+            _deathLootTitle.fontStyle = FontStyle.BoldAndItalic;
+            _deathLootTitle.alignment = TextAnchor.MiddleLeft;
+            _deathLootTitle.color = Color.white;
+            _deathLootTitle.raycastTarget = false;
+            AddOutline(titleTextObject, new Color(0f, 0f, 0f, 0.9f));
+
+            _rowViews.Clear();
+            for (int i = 0; i < VisibleRows; i++)
+            {
+                _rowViews.Add(CreateLootRow(_deathLootRoot, font, i));
+            }
+
+            GameObject footerObject = new GameObject("Footer");
+            footerObject.transform.SetParent(_deathLootRoot, false);
+            RectTransform footerRect = footerObject.AddComponent<RectTransform>();
+            footerRect.anchorMin = new Vector2(0f, 0f);
+            footerRect.anchorMax = new Vector2(1f, 0f);
+            footerRect.pivot = new Vector2(0.5f, 0f);
+            footerRect.anchoredPosition = Vector2.zero;
+            footerRect.sizeDelta = new Vector2(0f, 30f);
+            Image footerBg = footerObject.AddComponent<Image>();
+            footerBg.color = Dark;
+            footerBg.raycastTarget = false;
+
+            GameObject footerTextObject = new GameObject("Text");
+            footerTextObject.transform.SetParent(footerRect, false);
+            RectTransform footerTextRect = footerTextObject.AddComponent<RectTransform>();
+            Stretch(footerTextRect, 5f, 2f, 5f, 2f);
+            _deathLootFooter = footerTextObject.AddComponent<Text>();
+            _deathLootFooter.font = font;
+            _deathLootFooter.fontSize = 10;
+            _deathLootFooter.fontStyle = FontStyle.Bold;
+            _deathLootFooter.alignment = TextAnchor.MiddleCenter;
+            _deathLootFooter.color = new Color(1f, 0.90f, 0.12f, 1f);
+            _deathLootFooter.raycastTarget = false;
+
+            _deathLootRoot.gameObject.SetActive(false);
+        }
+
+        private LootRowView CreateLootRow(
+            RectTransform parent,
+            Font font,
+            int rowIndex
+        )
+        {
+            GameObject rowObject = new GameObject($"Row_{rowIndex}");
+            rowObject.transform.SetParent(parent, false);
+            RectTransform rowRect = rowObject.AddComponent<RectTransform>();
+            rowRect.anchorMin = new Vector2(0f, 1f);
+            rowRect.anchorMax = new Vector2(1f, 1f);
+            rowRect.pivot = new Vector2(0.5f, 1f);
+            rowRect.anchoredPosition = new Vector2(0f, -38f - rowIndex * 51f);
+            rowRect.sizeDelta = new Vector2(0f, 51f);
+
+            Image rowBackground = rowObject.AddComponent<Image>();
+            rowBackground.color = Yellow;
+            rowBackground.raycastTarget = false;
+
+            GameObject selectionObject = new GameObject("Selection");
+            selectionObject.transform.SetParent(rowRect, false);
+            RectTransform selectionRect = selectionObject.AddComponent<RectTransform>();
+            selectionRect.anchorMin = Vector2.zero;
+            selectionRect.anchorMax = Vector2.one;
+            selectionRect.offsetMin = Vector2.zero;
+            selectionRect.offsetMax = Vector2.zero;
+            Image selection = selectionObject.AddComponent<Image>();
+            selection.color = Color.clear;
+            selection.raycastTarget = false;
+
+            GameObject iconObject = new GameObject("Icon");
+            iconObject.transform.SetParent(rowRect, false);
+            RectTransform iconRect = iconObject.AddComponent<RectTransform>();
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(7f, 0f);
+            iconRect.sizeDelta = new Vector2(43f, 43f);
+            Image icon = iconObject.AddComponent<Image>();
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+
+            GameObject nameObject = new GameObject("Name");
+            nameObject.transform.SetParent(rowRect, false);
+            RectTransform nameRect = nameObject.AddComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0f, 0f);
+            nameRect.anchorMax = new Vector2(1f, 1f);
+            nameRect.offsetMin = new Vector2(56f, 3f);
+            nameRect.offsetMax = new Vector2(-42f, -3f);
+            Text name = nameObject.AddComponent<Text>();
+            name.font = font;
+            name.fontSize = 13;
+            name.fontStyle = FontStyle.Bold;
+            name.alignment = TextAnchor.MiddleLeft;
+            name.color = RowText;
+            name.horizontalOverflow = HorizontalWrapMode.Wrap;
+            name.verticalOverflow = VerticalWrapMode.Truncate;
+            name.raycastTarget = false;
+
+            GameObject amountObject = new GameObject("Amount");
+            amountObject.transform.SetParent(rowRect, false);
+            RectTransform amountRect = amountObject.AddComponent<RectTransform>();
+            amountRect.anchorMin = new Vector2(1f, 0f);
+            amountRect.anchorMax = new Vector2(1f, 1f);
+            amountRect.pivot = new Vector2(1f, 0.5f);
+            amountRect.anchoredPosition = new Vector2(-5f, 0f);
+            amountRect.sizeDelta = new Vector2(36f, 0f);
+            Text amount = amountObject.AddComponent<Text>();
+            amount.font = font;
+            amount.fontSize = 12;
+            amount.fontStyle = FontStyle.Bold;
+            amount.alignment = TextAnchor.MiddleRight;
+            amount.color = RowText;
+            amount.raycastTarget = false;
+
+            GameObject dividerObject = new GameObject("Divider");
+            dividerObject.transform.SetParent(rowRect, false);
+            RectTransform dividerRect = dividerObject.AddComponent<RectTransform>();
+            dividerRect.anchorMin = new Vector2(0f, 0f);
+            dividerRect.anchorMax = new Vector2(1f, 0f);
+            dividerRect.pivot = new Vector2(0.5f, 0f);
+            dividerRect.anchoredPosition = Vector2.zero;
+            dividerRect.sizeDelta = new Vector2(0f, 1f);
+            Image divider = dividerObject.AddComponent<Image>();
+            divider.color = new Color(0f, 0f, 0f, 0.22f);
+            divider.raycastTarget = false;
+
+            return new LootRowView
+            {
+                Root = rowRect,
+                Background = rowBackground,
+                Icon = icon,
+                Name = name,
+                Amount = amount,
+                Selection = selection
+            };
+        }
+
+        private void CacheDeathLootPanelReferences(Transform root)
+        {
+            _deathLootTitle ??= root.Find("Title/Text")?.GetComponent<Text>();
+            _deathLootFooter ??= root.Find("Footer/Text")?.GetComponent<Text>();
+
+            if (_rowViews.Count == VisibleRows)
+            {
+                return;
+            }
+
+            _rowViews.Clear();
+            for (int i = 0; i < VisibleRows; i++)
+            {
+                Transform row = root.Find($"Row_{i}");
+                if (row == null)
+                {
+                    continue;
+                }
+
+                _rowViews.Add(new LootRowView
+                {
+                    Root = row as RectTransform,
+                    Background = row.GetComponent<Image>(),
+                    Icon = row.Find("Icon")?.GetComponent<Image>(),
+                    Name = row.Find("Name")?.GetComponent<Text>(),
+                    Amount = row.Find("Amount")?.GetComponent<Text>(),
+                    Selection = row.Find("Selection")?.GetComponent<Image>()
+                });
+            }
+        }
+
         private void DrawOpenedPanel()
         {
             if (_openedContainer == null)
@@ -316,76 +560,91 @@ namespace ROS.Game.UI
 
         private void DrawOpenedPanel(List<InventoryStack> stacks)
         {
-            GameObject hud = GameObject.Find("ROS_HUD_Runtime");
-            if (hud == null)
+            EnsureDeathLootPanel();
+            if (_deathLootRoot == null)
             {
                 return;
             }
 
-            Transform panel = hud.transform.Find("Canvas/NearbyLoot");
-            if (panel == null)
-            {
-                return;
-            }
+            _deathLootRoot.gameObject.SetActive(true);
+            _deathLootRoot.SetAsLastSibling();
 
-            panel.gameObject.SetActive(true);
-            panel.SetAsLastSibling();
-
-            Text title = panel.Find("Title/TitleText")?.GetComponent<Text>();
-            if (title != null)
+            if (_deathLootTitle != null)
             {
-                title.text = _openedContainer != null
+                _deathLootTitle.text = _openedContainer != null
                     ? _openedContainer.DisplayName.ToUpperInvariant()
                     : "LOOT";
             }
 
-            const int visibleRows = 7;
             int firstVisible = Mathf.Clamp(
-                _selectedIndex - visibleRows + 1,
+                _selectedIndex - VisibleRows + 1,
                 0,
-                Mathf.Max(0, stacks.Count - visibleRows)
+                Mathf.Max(0, stacks.Count - VisibleRows)
             );
 
-            for (int rowIndex = 0; rowIndex < visibleRows; rowIndex++)
+            for (int rowIndex = 0; rowIndex < _rowViews.Count; rowIndex++)
             {
-                Text row = panel.Find($"LootRow_{rowIndex}")?.GetComponent<Text>();
-                if (row == null)
+                LootRowView view = _rowViews[rowIndex];
+                int stackIndex = firstVisible + rowIndex;
+
+                if (view?.Root == null)
                 {
                     continue;
                 }
 
-                int stackIndex = firstVisible + rowIndex;
                 if (stackIndex >= stacks.Count)
                 {
-                    row.text = string.Empty;
+                    view.Root.gameObject.SetActive(false);
                     continue;
                 }
+
+                view.Root.gameObject.SetActive(true);
 
                 InventoryStack stack = stacks[stackIndex];
                 bool selected = stackIndex == _selectedIndex;
 
-                row.text =
-                    $"{(selected ? "▶ " : "  ")}{stack.item.displayName}  x{stack.amount}";
-                row.color = selected
-                    ? new Color(0.15f, 0.08f, 0.20f, 1f)
-                    : Color.black;
+                if (view.Name != null)
+                {
+                    view.Name.text = stack.item.displayName;
+                }
+
+                if (view.Amount != null)
+                {
+                    view.Amount.text = stack.amount > 1
+                        ? $"x{stack.amount}"
+                        : string.Empty;
+                }
+
+                if (view.Icon != null)
+                {
+                    view.Icon.sprite = stack.item.icon;
+                    view.Icon.enabled = stack.item.icon != null;
+                    view.Icon.color = Color.white;
+                }
+
+                if (view.Background != null)
+                {
+                    view.Background.color = selected
+                        ? YellowSelected
+                        : Yellow;
+                }
+
+                if (view.Selection != null)
+                {
+                    view.Selection.color = selected
+                        ? new Color(0.35f, 0.12f, 0.42f, 0.18f)
+                        : Color.clear;
+                }
             }
 
-            Text toggle = panel.Find("ToggleBg/ToggleHint")?.GetComponent<Text>();
-            if (toggle != null)
+            if (_deathLootFooter != null)
             {
-                toggle.text = "RUEDA • F RECOGER • ESC CERRAR";
-            }
-
-            Text interaction =
-                hud.transform.Find("Canvas/InteractionHint")?.GetComponent<Text>();
-            if (interaction != null)
-            {
-                interaction.text = "RUEDA: seleccionar   |   [F] recoger   |   [ESC] cerrar";
+                _deathLootFooter.text =
+                    $"{_selectedIndex + 1}/{stacks.Count}  •  RUEDA  •  F RECOGER  •  ESC";
             }
         }
 
-        private static void HideLootPanel()
+        private static void HideLegacyNearbyLootPanel()
         {
             GameObject hud = GameObject.Find("ROS_HUD_Runtime");
             if (hud == null)
@@ -393,16 +652,12 @@ namespace ROS.Game.UI
                 return;
             }
 
-            Transform panel = hud.transform.Find("Canvas/NearbyLoot");
-            if (panel != null && panel.gameObject.activeSelf)
+            Transform legacyPanel = hud.transform.Find("Canvas/NearbyLoot");
+            if (legacyPanel != null && legacyPanel.gameObject.activeSelf)
             {
-                panel.gameObject.SetActive(false);
+                legacyPanel.gameObject.SetActive(false);
             }
         }
-
-        // -----------------------------------------------------------------
-        // Indicador de objeto cercano debajo de KILL / LEFT
-        // -----------------------------------------------------------------
 
         private void EnsureNearbyIndicator()
         {
@@ -427,9 +682,10 @@ namespace ROS.Game.UI
                 return;
             }
 
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
             GameObject rootObject = new GameObject("NearbyObjectIndicator");
             rootObject.transform.SetParent(canvas, false);
-
             _nearbyRoot = rootObject.AddComponent<RectTransform>();
             _nearbyRoot.anchorMin = Vector2.one;
             _nearbyRoot.anchorMax = Vector2.one;
@@ -449,7 +705,6 @@ namespace ROS.Game.UI
             iconRect.pivot = new Vector2(0f, 0.5f);
             iconRect.anchoredPosition = new Vector2(6f, 0f);
             iconRect.sizeDelta = new Vector2(34f, 34f);
-
             _nearbyIcon = iconObject.AddComponent<Image>();
             _nearbyIcon.preserveAspect = true;
             _nearbyIcon.raycastTarget = false;
@@ -457,13 +712,9 @@ namespace ROS.Game.UI
             GameObject textObject = new GameObject("Text");
             textObject.transform.SetParent(_nearbyRoot, false);
             RectTransform textRect = textObject.AddComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(45f, 3f);
-            textRect.offsetMax = new Vector2(-5f, -3f);
-
+            Stretch(textRect, 45f, 3f, 5f, 3f);
             _nearbyText = textObject.AddComponent<Text>();
-            _nearbyText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _nearbyText.font = font;
             _nearbyText.fontSize = 11;
             _nearbyText.fontStyle = FontStyle.Bold;
             _nearbyText.alignment = TextAnchor.MiddleLeft;
@@ -471,10 +722,7 @@ namespace ROS.Game.UI
             _nearbyText.horizontalOverflow = HorizontalWrapMode.Wrap;
             _nearbyText.verticalOverflow = VerticalWrapMode.Truncate;
             _nearbyText.raycastTarget = false;
-
-            Outline outline = textObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
-            outline.effectDistance = new Vector2(1f, -1f);
+            AddOutline(textObject, new Color(0f, 0f, 0f, 0.8f));
 
             _nearbyRoot.gameObject.SetActive(false);
         }
@@ -502,9 +750,12 @@ namespace ROS.Game.UI
                 label = $"Caja abierta: {_openedContainer.ItemCount} objetos";
             }
 
-            _nearbyText.text = string.IsNullOrWhiteSpace(label)
-                ? "OBJETO CERCANO"
-                : label;
+            if (_nearbyText != null)
+            {
+                _nearbyText.text = string.IsNullOrWhiteSpace(label)
+                    ? "OBJETO CERCANO"
+                    : label;
+            }
 
             if (_nearbyIcon != null)
             {
@@ -589,10 +840,9 @@ namespace ROS.Game.UI
                 return null;
             }
 
-            const BindingFlags flags =
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic;
+            const BindingFlags flags = BindingFlags.Instance |
+                                       BindingFlags.Public |
+                                       BindingFlags.NonPublic;
 
             System.Type type = component.GetType();
 
@@ -622,16 +872,12 @@ namespace ROS.Game.UI
                 }
                 catch
                 {
-                    // Ignorar propiedades Unity no disponibles durante teardown.
+                    // Algunas propiedades Unity pueden lanzar durante teardown.
                 }
             }
 
             return null;
         }
-
-        // -----------------------------------------------------------------
-        // Respaldo para cajas antiguas que hayan quedado vacías.
-        // -----------------------------------------------------------------
 
         private static void RepairEmptyContainerIfNeeded(
             DeathLootContainer container
@@ -656,7 +902,7 @@ namespace ROS.Game.UI
                 return;
             }
 
-            HashSet<WeaponDefinition> represented =
+            HashSet<WeaponDefinition> addedDefinitions =
                 new HashSet<WeaponDefinition>();
 
             WeaponController[] weapons =
@@ -665,32 +911,28 @@ namespace ROS.Game.UI
             for (int i = 0; i < weapons.Length; i++)
             {
                 WeaponController weapon = weapons[i];
-                if (weapon == null || weapon.Definition == null)
+                if (weapon == null)
                 {
                     continue;
                 }
 
                 WeaponDefinition definition = weapon.Definition;
-
-                if (represented.Add(definition))
+                if (definition != null && addedDefinitions.Add(definition))
                 {
                     InventoryItemDefinition weaponItem =
                         ScriptableObject.CreateInstance<InventoryItemDefinition>();
-
                     weaponItem.name = $"DeathLoot_{definition.displayName}";
                     weaponItem.itemId =
-                        $"death_weapon_{definition.weaponId}_{source.GetInstanceID()}_{i}";
-                    weaponItem.displayName =
-                        string.IsNullOrWhiteSpace(definition.displayName)
-                            ? weapon.gameObject.name
-                            : definition.displayName;
+                        $"death_runtime_weapon_{definition.weaponId}_{source.GetInstanceID()}_{i}";
+                    weaponItem.displayName = string.IsNullOrWhiteSpace(definition.displayName)
+                        ? weapon.gameObject.name
+                        : definition.displayName;
                     weaponItem.itemType = ItemType.Weapon;
                     weaponItem.maxStack = 1;
                     weaponItem.weight = 0f;
                     weaponItem.weaponDefinition = definition;
                     weaponItem.preferredWeaponSlot = Mathf.Clamp(i + 1, 1, 3);
                     weaponItem.hideFlags = HideFlags.DontSave;
-
                     container.StoredInventory.Add(weaponItem, 1);
                 }
 
@@ -698,25 +940,23 @@ namespace ROS.Game.UI
                     Mathf.Max(0, weapon.AmmoInMagazine) +
                     Mathf.Max(0, weapon.ReserveAmmo);
 
-                if (definition.ammoType == AmmoType.None || ammoAmount <= 0)
+                if (definition != null &&
+                    definition.ammoType != AmmoType.None &&
+                    ammoAmount > 0)
                 {
-                    continue;
+                    InventoryItemDefinition ammo =
+                        ScriptableObject.CreateInstance<InventoryItemDefinition>();
+                    ammo.name = $"DeathLoot_Ammo_{definition.ammoType}";
+                    ammo.itemId =
+                        $"death_runtime_ammo_{definition.ammoType}_{source.GetInstanceID()}_{i}";
+                    ammo.displayName = $"Munición {definition.ammoType}";
+                    ammo.itemType = ItemType.Ammo;
+                    ammo.maxStack = Mathf.Max(1, ammoAmount);
+                    ammo.weight = 0f;
+                    ammo.ammoType = definition.ammoType;
+                    ammo.hideFlags = HideFlags.DontSave;
+                    container.StoredInventory.Add(ammo, ammoAmount);
                 }
-
-                InventoryItemDefinition ammo =
-                    ScriptableObject.CreateInstance<InventoryItemDefinition>();
-
-                ammo.name = $"DeathLoot_Ammo_{definition.ammoType}";
-                ammo.itemId =
-                    $"death_ammo_{definition.ammoType}_{source.GetInstanceID()}_{i}";
-                ammo.displayName = $"Munición {definition.ammoType}";
-                ammo.itemType = ItemType.Ammo;
-                ammo.maxStack = Mathf.Max(1, ammoAmount);
-                ammo.weight = 0f;
-                ammo.ammoType = definition.ammoType;
-                ammo.hideFlags = HideFlags.DontSave;
-
-                container.StoredInventory.Add(ammo, ammoAmount);
             }
         }
 
@@ -731,15 +971,11 @@ namespace ROS.Game.UI
                 return result;
             }
 
-            IReadOnlyList<InventoryStack> stacks =
-                container.StoredInventory.Stacks;
-
-            for (int i = 0; i < stacks.Count; i++)
+            IReadOnlyList<InventoryStack> source = container.StoredInventory.Stacks;
+            for (int i = 0; i < source.Count; i++)
             {
-                InventoryStack stack = stacks[i];
-                if (stack != null &&
-                    stack.item != null &&
-                    stack.amount > 0)
+                InventoryStack stack = source[i];
+                if (stack != null && stack.item != null && stack.amount > 0)
                 {
                     result.Add(stack);
                 }
@@ -753,14 +989,14 @@ namespace ROS.Game.UI
             PlayerInputReader[] inputs =
                 Resources.FindObjectsOfTypeAll<PlayerInputReader>();
 
-            Scene scene = SceneManager.GetActiveScene();
+            Scene activeScene = SceneManager.GetActiveScene();
             PlayerInputReader fallback = null;
 
             for (int i = 0; i < inputs.Length; i++)
             {
                 PlayerInputReader candidate = inputs[i];
                 if (!IsValidLocalInput(candidate) ||
-                    candidate.gameObject.scene != scene)
+                    candidate.gameObject.scene != activeScene)
                 {
                     continue;
                 }
@@ -786,6 +1022,32 @@ namespace ROS.Game.UI
             return input != null &&
                    input.gameObject.scene.IsValid() &&
                    !input.UsesExternalControl;
+        }
+
+        private static void Stretch(
+            RectTransform rect,
+            float left,
+            float top,
+            float right,
+            float bottom
+        )
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(left, bottom);
+            rect.offsetMax = new Vector2(-right, -top);
+        }
+
+        private static void AddOutline(GameObject target, Color color)
+        {
+            Outline outline = target.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = target.AddComponent<Outline>();
+            }
+
+            outline.effectColor = color;
+            outline.effectDistance = new Vector2(1f, -1f);
         }
     }
 }
