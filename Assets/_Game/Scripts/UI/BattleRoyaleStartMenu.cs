@@ -1,5 +1,6 @@
 using ROS.Game.CameraSystem;
 using ROS.Game.Input;
+using ROS.Game.Lobby;
 using ROS.Game.Parachute;
 using UnityEngine;
 
@@ -38,6 +39,15 @@ namespace ROS.Game.UI
             if (input != null)
             {
                 input.SetUiBlocked(true);
+            }
+
+            // Si la partida viene desde el lobby, el botón JUGAR ya representa
+            // la confirmación del usuario y entramos directamente al flujo BR.
+            // Abrir 07_BattleRoyaleTest directamente desde el editor conserva
+            // este menú para pruebas y modo libre.
+            if (LobbySession.ConsumeLaunchRequest())
+            {
+                StartMatch();
             }
         }
 
