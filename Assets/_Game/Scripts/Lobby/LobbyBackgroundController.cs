@@ -14,8 +14,12 @@ namespace ROS.Game.Lobby
         [SerializeField, Range(0f, 0.35f)] private float vignetteStrength = 0.16f;
 
         private Canvas _backgroundCanvas;
+        private Image _backgroundImage;
         private Texture2D _vignetteTexture;
         private Sprite _vignetteSprite;
+
+        public float BackgroundBrightness => backgroundBrightness;
+        public float VignetteStrength => vignetteStrength;
 
         private void Start()
         {
@@ -33,6 +37,23 @@ namespace ROS.Game.Lobby
             {
                 Destroy(_vignetteTexture);
             }
+        }
+
+        public void SetBackgroundBrightness(float value)
+        {
+            backgroundBrightness = Mathf.Clamp(value, 0.5f, 1f);
+            ApplyBackgroundBrightness();
+        }
+
+        private void ApplyBackgroundBrightness()
+        {
+            if (_backgroundImage == null)
+            {
+                return;
+            }
+
+            float brightness = Mathf.Clamp01(backgroundBrightness);
+            _backgroundImage.color = new Color(brightness, brightness, brightness, 1f);
         }
 
         private void BuildBackground()
@@ -85,13 +106,12 @@ namespace ROS.Game.Lobby
             rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = new Vector2(1920f, 1080f);
 
-            Image image = backgroundObject.GetComponent<Image>();
-            image.sprite = backgroundSprite;
-            image.type = Image.Type.Simple;
-            image.preserveAspect = false;
-            image.raycastTarget = false;
-            float brightness = Mathf.Clamp01(backgroundBrightness);
-            image.color = new Color(brightness, brightness, brightness, 1f);
+            _backgroundImage = backgroundObject.GetComponent<Image>();
+            _backgroundImage.sprite = backgroundSprite;
+            _backgroundImage.type = Image.Type.Simple;
+            _backgroundImage.preserveAspect = false;
+            _backgroundImage.raycastTarget = false;
+            ApplyBackgroundBrightness();
 
             AspectRatioFitter fitter = backgroundObject.GetComponent<AspectRatioFitter>();
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
