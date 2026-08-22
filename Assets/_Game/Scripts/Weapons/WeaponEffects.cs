@@ -364,7 +364,7 @@ namespace ROS.Game.Weapons
             if (randomizeBulletHoleRotation)
             {
                 surfaceRotation *= Quaternion.AngleAxis(
-                    Random.Range(0f, 360f),
+                    UnityEngine.Random.Range(0f, 360f),
                     Vector3.forward
                 );
             }
