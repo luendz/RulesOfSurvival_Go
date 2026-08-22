@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using ROS.Game.Animation;
 using ROS.Game.CameraSystem;
 using ROS.Game.Character;
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
@@ -75,6 +77,12 @@ namespace ROS.Game.BattleRoyale
 
             IsEliminated = true;
 
+            // Antes de desactivar armas/componentes, convertir el equipamiento
+            // jugable en entradas de inventario. Los bots clonados pueden tener
+            // armas equipadas sin que esas armas existan como stacks, y eso
+            // generaba una caja visible pero con ItemCount == 0.
+            EnsureDeathInventorySnapshot();
+
             BlockGameplay();
             SpawnLootContainer();
             EnterDeathCamera();
@@ -118,6 +126,166 @@ namespace ROS.Game.BattleRoyale
                 visualRoot =
                     transform.Find("VisualRoot");
             }
+        }
+
+        /// <summary>
+        /// Garantiza que la caja de muerte represente lo que el jugador/bot
+        /// realmente llevaba. PlayerLootEquipment conserva referencias de ítems
+        /// equipados cuando vienen del sistema de loot; para armas preinstaladas
+        /// directamente en WeaponEquipmentController se crea una definición
+        /// runtime equivalente y, además, una pila de su munición restante.
+        /// </summary>
+        private void EnsureDeathInventorySnapshot()
+        {
+            EnsureReferences();
+
+            if (inventory == null)
+            {
+                return;
+            }
+
+            PlayerLootEquipment lootEquipment =
+                GetComponent<PlayerLootEquipment>();
+
+            HashSet<WeaponDefinition> representedWeapons =
+                new HashSet<WeaponDefinition>();
+
+            if (lootEquipment != null)
+            {
+                AddEquippedItemIfMissing(lootEquipment.HelmetItem);
+                AddEquippedItemIfMissing(lootEquipment.VestItem);
+                AddEquippedItemIfMissing(lootEquipment.BackpackItem);
+
+                for (int slot = 1; slot <= 3; slot++)
+                {
+                    InventoryItemDefinition weaponItem =
+                        lootEquipment.GetWeaponItem(slot);
+
+                    if (weaponItem == null)
+                    {
+                        continue;
+                    }
+
+                    AddEquippedItemIfMissing(weaponItem);
+
+                    if (weaponItem.weaponDefinition != null)
+                    {
+                        representedWeapons.Add(
+                            weaponItem.weaponDefinition
+                        );
+                    }
+                }
+            }
+
+            WeaponEquipmentController equipment =
+                GetComponent<WeaponEquipmentController>();
+
+            if (equipment == null)
+            {
+                return;
+            }
+
+            AddRuntimeWeaponSnapshot(
+                equipment.PrimarySlot1,
+                1,
+                representedWeapons
+            );
+            AddRuntimeWeaponSnapshot(
+                equipment.PrimarySlot2,
+                2,
+                representedWeapons
+            );
+            AddRuntimeWeaponSnapshot(
+                equipment.SidearmSlot,
+                3,
+                representedWeapons
+            );
+        }
+
+        private void AddEquippedItemIfMissing(
+            InventoryItemDefinition item
+        )
+        {
+            if (item == null || inventory == null)
+            {
+                return;
+            }
+
+            if (inventory.GetAmount(item) <= 0)
+            {
+                inventory.Add(item, 1);
+            }
+        }
+
+        private void AddRuntimeWeaponSnapshot(
+            WeaponController weapon,
+            int slot,
+            HashSet<WeaponDefinition> representedWeapons
+        )
+        {
+            if (weapon == null || inventory == null)
+            {
+                return;
+            }
+
+            WeaponDefinition definition = weapon.Definition;
+
+            if (definition != null &&
+                !representedWeapons.Contains(definition))
+            {
+                InventoryItemDefinition weaponItem =
+                    ScriptableObject.CreateInstance<
+                        InventoryItemDefinition
+                    >();
+
+                weaponItem.name =
+                    $"LootRuntime_{definition.displayName}";
+                weaponItem.itemId =
+                    $"runtime_death_weapon_{definition.weaponId}_{GetInstanceID()}_{slot}";
+                weaponItem.displayName =
+                    string.IsNullOrWhiteSpace(definition.displayName)
+                        ? weapon.gameObject.name
+                        : definition.displayName;
+                weaponItem.itemType = ItemType.Weapon;
+                weaponItem.dataConfidence = DataConfidence.Prototype;
+                weaponItem.maxStack = 1;
+                weaponItem.weight = 0f;
+                weaponItem.weaponDefinition = definition;
+                weaponItem.preferredWeaponSlot = slot;
+                weaponItem.hideFlags = HideFlags.DontSave;
+
+                inventory.Add(weaponItem, 1);
+                representedWeapons.Add(definition);
+            }
+
+            int totalAmmo =
+                Mathf.Max(0, weapon.AmmoInMagazine) +
+                Mathf.Max(0, weapon.ReserveAmmo);
+
+            if (definition == null ||
+                definition.ammoType == AmmoType.None ||
+                totalAmmo <= 0)
+            {
+                return;
+            }
+
+            InventoryItemDefinition ammoItem =
+                ScriptableObject.CreateInstance<
+                    InventoryItemDefinition
+                >();
+
+            ammoItem.name = $"LootRuntime_Ammo_{definition.ammoType}";
+            ammoItem.itemId =
+                $"runtime_death_ammo_{definition.ammoType}_{GetInstanceID()}_{slot}";
+            ammoItem.displayName = $"Munición {definition.ammoType}";
+            ammoItem.itemType = ItemType.Ammo;
+            ammoItem.dataConfidence = DataConfidence.Prototype;
+            ammoItem.maxStack = Mathf.Max(totalAmmo, 1);
+            ammoItem.weight = 0f;
+            ammoItem.ammoType = definition.ammoType;
+            ammoItem.hideFlags = HideFlags.DontSave;
+
+            inventory.Add(ammoItem, totalAmmo);
         }
 
         private void BlockGameplay()
