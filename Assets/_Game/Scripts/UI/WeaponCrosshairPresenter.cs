@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Weapons;
@@ -11,6 +12,8 @@ namespace ROS.Game.UI
     /// Presenta una retícula distinta según la familia del arma equipada por
     /// el jugador local. Las armas normales usan '+'. Las escopetas usan
     /// '( )' y la apertura lateral acompaña suavemente al spread real.
+    /// Este componente también suprime retículas heredadas para evitar dobles
+    /// mirillas en pantalla.
     /// </summary>
     [DefaultExecutionOrder(850)]
     public sealed class WeaponCrosshairPresenter : MonoBehaviour
@@ -23,13 +26,15 @@ namespace ROS.Game.UI
         [SerializeField] private float shotgunMaxHalfGap = 34f;
         [SerializeField] private float spreadForMaxGap = 7f;
 
+        private readonly HashSet<GameObject> _suppressedCrosshairs =
+            new HashSet<GameObject>();
+
         private PlayerInputReader _localInput;
         private WeaponEquipmentController _equipment;
         private RectTransform _root;
         private Text _normalCrosshair;
         private Text _shotgunLeft;
         private Text _shotgunRight;
-        private GameObject _legacyCrosshair;
         private float _nextResolveTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -52,6 +57,7 @@ namespace ROS.Game.UI
                 _nextResolveTime = Time.unscaledTime + 0.15f;
                 ResolveLocalEquipment();
                 EnsureVisuals();
+                SuppressCompetingCrosshairs();
             }
 
             RefreshCrosshair();
@@ -59,8 +65,7 @@ namespace ROS.Game.UI
 
         private void OnDisable()
         {
-            if (_legacyCrosshair != null)
-                _legacyCrosshair.SetActive(true);
+            RestoreSuppressedCrosshairs();
         }
 
         private void ResolveLocalEquipment()
@@ -92,8 +97,6 @@ namespace ROS.Game.UI
                 return;
             }
 
-            // Fallback únicamente si no se pudo resolver un PlayerInputReader.
-            // Se evita seleccionar objetos cuyo nombre parezca pertenecer a bots.
             WeaponEquipmentController[] equipments =
                 Resources.FindObjectsOfTypeAll<WeaponEquipmentController>();
 
@@ -125,13 +128,6 @@ namespace ROS.Game.UI
             Transform canvas = hud.transform.Find("Canvas");
             if (canvas == null)
                 return;
-
-            Transform legacy = canvas.Find("Crosshair");
-            if (legacy != null)
-            {
-                _legacyCrosshair = legacy.gameObject;
-                _legacyCrosshair.SetActive(false);
-            }
 
             GameObject rootObject = new GameObject("WeaponCrosshair");
             rootObject.transform.SetParent(canvas, false);
@@ -176,6 +172,8 @@ namespace ROS.Game.UI
             if (_root == null)
                 return;
 
+            SuppressCompetingCrosshairs();
+
             WeaponController weapon =
                 _equipment != null
                     ? _equipment.EquippedWeapon
@@ -216,6 +214,70 @@ namespace ROS.Game.UI
 
             SetAnchoredX(_shotgunLeft.rectTransform, -halfGap);
             SetAnchoredX(_shotgunRight.rectTransform, halfGap);
+        }
+
+        private void SuppressCompetingCrosshairs()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+
+            Graphic[] graphics =
+                Resources.FindObjectsOfTypeAll<Graphic>();
+
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                Graphic graphic = graphics[i];
+                if (graphic == null ||
+                    graphic.gameObject.scene != activeScene ||
+                    IsOwnedCrosshairGraphic(graphic))
+                {
+                    continue;
+                }
+
+                bool looksLikeCrosshair =
+                    ContainsCrosshairName(graphic.gameObject.name);
+
+                if (graphic is Text text)
+                {
+                    string value = text.text != null
+                        ? text.text.Trim()
+                        : string.Empty;
+
+                    looksLikeCrosshair |= value == "+";
+                }
+
+                if (!looksLikeCrosshair || !graphic.gameObject.activeSelf)
+                    continue;
+
+                _suppressedCrosshairs.Add(graphic.gameObject);
+                graphic.gameObject.SetActive(false);
+            }
+        }
+
+        private bool IsOwnedCrosshairGraphic(Graphic graphic)
+        {
+            return _root != null &&
+                   graphic.transform.IsChildOf(_root);
+        }
+
+        private static bool ContainsCrosshairName(string objectName)
+        {
+            if (string.IsNullOrEmpty(objectName))
+                return false;
+
+            string normalized = objectName.ToLowerInvariant();
+            return normalized.Contains("crosshair") ||
+                   normalized.Contains("reticle");
+        }
+
+        private void RestoreSuppressedCrosshairs()
+        {
+            foreach (GameObject suppressed in _suppressedCrosshairs)
+            {
+                if (suppressed != null)
+                    suppressed.SetActive(true);
+            }
+
+            _suppressedCrosshairs.Clear();
         }
 
         private static PlayerInputReader FindLocalPlayerInput()
@@ -286,10 +348,6 @@ namespace ROS.Game.UI
             text.raycastTarget = false;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
-
-            Outline outline = go.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-            outline.effectDistance = new Vector2(1f, -1f);
 
             return text;
         }
