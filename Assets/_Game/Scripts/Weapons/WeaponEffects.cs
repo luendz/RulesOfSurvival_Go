@@ -29,6 +29,8 @@ namespace ROS.Game.Weapons
         [Header("Tracer")]
         [SerializeField] private LineRenderer tracer;
         [SerializeField] private float tracerDuration = 0.04f;
+        [Range(2, 32)]
+        [SerializeField] private int tracerSegments = 10;
 
         [Header("Impact")]
         [SerializeField] private GameObject impactPrefab;
@@ -53,6 +55,7 @@ namespace ROS.Game.Weapons
 
         private Coroutine _tracerRoutine;
         private Material _runtimeTracerMaterial;
+        private WeaponDefinition _definition;
         private float _impactScale = 1f;
         private float _bulletHoleScale = 1f;
         private float _tracerWidth = 0.012f;
@@ -71,6 +74,9 @@ namespace ROS.Game.Weapons
         {
             if (weapon == null)
                 weapon = GetComponent<WeaponController>();
+
+            if (_definition == null && weapon != null)
+                _definition = weapon.Definition;
 
             if (muzzle == null)
                 muzzle = FindChildRecursive(transform, "MuzzlePoint");
@@ -92,6 +98,7 @@ namespace ROS.Game.Weapons
             if (definition == null)
                 return;
 
+            _definition = definition;
             _impactScale = Mathf.Max(0.05f, definition.impactScale);
             _bulletHoleScale = Mathf.Max(0.05f, definition.bulletHoleScale);
             _tracerWidth = Mathf.Max(0.001f, definition.tracerWidth);
@@ -154,9 +161,7 @@ namespace ROS.Game.Weapons
             PlayImpactSound(hitCharacter, surfaceType);
 
             if (!hitCharacter)
-            {
                 SpawnBulletHole(hitPoint, hitNormal, surfaceType);
-            }
         }
 
         private void EnsureTracer()
@@ -238,9 +243,51 @@ namespace ROS.Game.Weapons
         private IEnumerator TracerRoutine(Vector3 hitPoint)
         {
             tracer.enabled = true;
-            tracer.positionCount = 2;
-            tracer.SetPosition(0, muzzle.position);
-            tracer.SetPosition(1, hitPoint);
+
+            Vector3 start = muzzle.position;
+            bool useArc = _definition != null &&
+                          _definition.gravityScale > 0f &&
+                          _definition.muzzleVelocity > 1f;
+
+            if (!useArc)
+            {
+                tracer.positionCount = 2;
+                tracer.SetPosition(0, start);
+                tracer.SetPosition(1, hitPoint);
+            }
+            else
+            {
+                int segments = Mathf.Clamp(tracerSegments, 2, 32);
+                tracer.positionCount = segments;
+
+                float distance = Vector3.Distance(start, hitPoint);
+                float totalTime = WeaponBallistics.EstimateTravelTime(
+                    distance,
+                    _definition.muzzleVelocity
+                );
+
+                Vector3 initialDirection = WeaponBallistics.ApplyDropToAimDirection(
+                    start,
+                    hitPoint,
+                    _definition.muzzleVelocity,
+                    _definition.gravityScale
+                );
+                Vector3 initialVelocity = initialDirection * _definition.muzzleVelocity;
+
+                for (int i = 0; i < segments; i++)
+                {
+                    float t = totalTime * i / (segments - 1f);
+                    Vector3 position = WeaponBallistics.EvaluatePosition(
+                        start,
+                        initialVelocity,
+                        _definition.gravityScale,
+                        t
+                    );
+                    tracer.SetPosition(i, position);
+                }
+
+                tracer.SetPosition(segments - 1, hitPoint);
+            }
 
             yield return new WaitForSeconds(tracerDuration);
 
