@@ -22,7 +22,7 @@ MonoBehaviour:
   pickupMode: 2
   protectionLevel: 0
   backpackCapacity: 0
-  ammoType: 5
+  ammoType: 3
   consumableDefinition: {fileID: 0}
   weaponDefinition: {fileID: 11400000, guid: edfbc0aa7b6b18b489dcedf3bfdc5205, type: 2}
   weaponPrefab: {fileID: 90324603120357232, guid: 6d0faaa5ff6b02a4f9e8c53210cc8b24, type: 3}
