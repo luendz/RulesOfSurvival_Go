@@ -13,17 +13,17 @@ namespace ROS.Game.UI
 {
     /// <summary>
     /// Capa de estabilidad para el HUD reconstruido.
-    /// Corrige dos conflictos de presentación detectados durante las pruebas:
-    /// 1) el panel de loot de una caja de jugador muerto debe usar SIEMPRE el
-    ///    PlayerInteractor del jugador local y no el de un bot;
-    /// 2) los colores de los slots de armas deben tener un único estado final
-    ///    por frame para evitar el parpadeo producido por varios presentadores.
+    /// Mantiene estable el estado visual de los slots de armas y garantiza que
+    /// las cajas de jugadores muertos se detecten de forma automática alrededor
+    /// del jugador local, incluso si por alguna razón PlayerInteractor todavía no
+    /// incluyó la caja en Current/Nearby durante ese frame.
     /// </summary>
     [DefaultExecutionOrder(2200)]
     [DisallowMultipleComponent]
     public sealed class RulesOfSurvivalHUDStabilityFix : MonoBehaviour
     {
         private const string SceneName = "07_BattleRoyaleTest";
+        private const float DeathLootDetectionDistance = 4.25f;
 
         private static readonly Color SlotNormal =
             new Color(0.08f, 0.095f, 0.105f, 0.88f);
@@ -63,7 +63,7 @@ namespace ROS.Game.UI
         {
             if (Time.unscaledTime >= _nextResolveTime)
             {
-                _nextResolveTime = Time.unscaledTime + 0.25f;
+                _nextResolveTime = Time.unscaledTime + 0.20f;
                 ResolveLocalPlayer();
             }
 
@@ -157,7 +157,7 @@ namespace ROS.Game.UI
 
         private void UpdateDeathLootPanel()
         {
-            if (_interactor == null || _inventory == null)
+            if (_localInput == null || _inventory == null)
             {
                 return;
             }
@@ -188,25 +188,75 @@ namespace ROS.Game.UI
 
         private DeathLootContainer FindNearbyDeathContainer()
         {
-            if (_interactor.Current is DeathLootContainer current &&
-                current != null &&
-                !current.IsEmpty)
+            // Primera opción: usar la detección normal del PlayerInteractor.
+            if (_interactor != null)
             {
-                return current;
-            }
-
-            IReadOnlyList<IInteractable> nearby = _interactor.Nearby;
-            for (int i = 0; i < nearby.Count; i++)
-            {
-                if (nearby[i] is DeathLootContainer container &&
-                    container != null &&
-                    !container.IsEmpty)
+                if (_interactor.Current is DeathLootContainer current &&
+                    current != null &&
+                    !current.IsEmpty)
                 {
-                    return container;
+                    return current;
+                }
+
+                IReadOnlyList<IInteractable> nearby = _interactor.Nearby;
+                for (int i = 0; i < nearby.Count; i++)
+                {
+                    if (nearby[i] is DeathLootContainer container &&
+                        container != null &&
+                        !container.IsEmpty)
+                    {
+                        return container;
+                    }
                 }
             }
 
-            return null;
+            // Respaldo robusto: buscar directamente la caja más cercana en la
+            // escena. Así el HUD no depende de que OverlapSphere haya detectado
+            // exactamente ese collider durante el frame actual.
+            Transform playerTransform = _localInput != null
+                ? _localInput.transform
+                : null;
+
+            if (playerTransform == null)
+            {
+                return null;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            DeathLootContainer[] containers =
+                Resources.FindObjectsOfTypeAll<DeathLootContainer>();
+
+            DeathLootContainer nearest = null;
+            float nearestSqrDistance =
+                DeathLootDetectionDistance * DeathLootDetectionDistance;
+
+            Vector3 playerPosition = playerTransform.position;
+
+            for (int i = 0; i < containers.Length; i++)
+            {
+                DeathLootContainer candidate = containers[i];
+                if (candidate == null ||
+                    candidate.gameObject.scene != activeScene ||
+                    !candidate.gameObject.activeInHierarchy ||
+                    candidate.IsEmpty)
+                {
+                    continue;
+                }
+
+                Vector3 delta = candidate.transform.position - playerPosition;
+                delta.y = 0f;
+                float sqrDistance = delta.sqrMagnitude;
+
+                if (sqrDistance > nearestSqrDistance)
+                {
+                    continue;
+                }
+
+                nearestSqrDistance = sqrDistance;
+                nearest = candidate;
+            }
+
+            return nearest;
         }
 
         private static List<InventoryStack> SnapshotValidStacks(
@@ -314,7 +364,8 @@ namespace ROS.Game.UI
 
                 InventoryStack stack = stacks[stackIndex];
                 bool selected = stackIndex == _selectedLootIndex;
-                row.text = $"{(selected ? "▶ " : "  ")}{stack.item.displayName}  x{stack.amount}";
+                row.text =
+                    $"{(selected ? "▶ " : "  ")}{stack.item.displayName}  x{stack.amount}";
                 row.color = selected
                     ? new Color(0.15f, 0.08f, 0.20f, 1f)
                     : Color.black;
