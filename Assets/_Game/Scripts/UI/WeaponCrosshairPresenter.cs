@@ -164,7 +164,7 @@ namespace ROS.Game.UI
                 _root,
                 "(",
                 font,
-                32
+                28
             );
 
             _shotgunRight = CreateText(
@@ -172,7 +172,7 @@ namespace ROS.Game.UI
                 _root,
                 ")",
                 font,
-                32
+                28
             );
         }
 
