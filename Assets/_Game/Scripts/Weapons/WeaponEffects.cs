@@ -1,11 +1,23 @@
+using System;
 using System.Collections;
 using ROS.Game.Audio;
+using ROS.Game.Core;
+using ROS.Game.Effects;
 using UnityEngine;
 
 namespace ROS.Game.Weapons
 {
     public sealed class WeaponEffects : MonoBehaviour
     {
+        [Serializable]
+        private sealed class SurfaceImpactVariant
+        {
+            public ImpactSurfaceType surfaceType = ImpactSurfaceType.Default;
+            public GameObject impactPrefab;
+            public GameObject bulletHolePrefab;
+            public AudioClip[] impactClips;
+        }
+
         [Header("References")]
         [SerializeField] private WeaponController weapon;
         [SerializeField] private Transform muzzle;
@@ -23,6 +35,10 @@ namespace ROS.Game.Weapons
         [SerializeField] private GameObject bloodImpactPrefab;
         [SerializeField] private float impactLifetime = 2f;
         [SerializeField] private float impactSurfaceOffset = 0.01f;
+
+        [Header("Surface Impact Variants")]
+        [SerializeField] private SurfaceImpactVariant[] surfaceVariants;
+        [SerializeField] private float surfaceProbeRadius = 0.08f;
 
         [Header("Impact Audio")]
         [SerializeField] private AudioSource impactAudioSource;
@@ -65,22 +81,16 @@ namespace ROS.Game.Weapons
             if (bulletHolePrefab == null)
                 bulletHolePrefab = Resources.Load<GameObject>("Effects/PF_BulletHole");
 
-            // Do not generate a ParticleSystem automatically. The previous runtime
-            // fallback rendered as a magenta square on some pipelines. A real muzzle
-            // flash can be assigned later without affecting firing/tracer logic.
             EnsureTracer();
 
             if (tracer != null)
                 tracer.enabled = false;
         }
 
-        public void ConfigureDefinition(
-            WeaponDefinition definition)
+        public void ConfigureDefinition(WeaponDefinition definition)
         {
             if (definition == null)
-            {
                 return;
-            }
 
             _impactScale = Mathf.Max(0.05f, definition.impactScale);
             _bulletHoleScale = Mathf.Max(0.05f, definition.bulletHoleScale);
@@ -130,17 +140,22 @@ namespace ROS.Game.Weapons
             if (!hasHit)
                 return;
 
+            ImpactSurfaceType surfaceType = hitCharacter
+                ? ImpactSurfaceType.Flesh
+                : ResolveSurfaceType(hitPoint);
+
             SpawnImpact(
                 hitPoint,
                 hitNormal,
-                hitCharacter
+                hitCharacter,
+                surfaceType
             );
 
-            PlayImpactSound(hitCharacter);
+            PlayImpactSound(hitCharacter, surfaceType);
 
             if (!hitCharacter)
             {
-                SpawnBulletHole(hitPoint, hitNormal);
+                SpawnBulletHole(hitPoint, hitNormal, surfaceType);
             }
         }
 
@@ -236,11 +251,15 @@ namespace ROS.Game.Weapons
         private void SpawnImpact(
             Vector3 hitPoint,
             Vector3 hitNormal,
-            bool hitCharacter)
+            bool hitCharacter,
+            ImpactSurfaceType surfaceType)
         {
+            SurfaceImpactVariant variant = FindVariant(surfaceType);
             GameObject prefab = hitCharacter && bloodImpactPrefab != null
                 ? bloodImpactPrefab
-                : impactPrefab;
+                : variant != null && variant.impactPrefab != null
+                    ? variant.impactPrefab
+                    : impactPrefab;
 
             if (prefab == null)
                 return;
@@ -254,21 +273,41 @@ namespace ROS.Game.Weapons
             Destroy(impact, impactLifetime);
         }
 
-        private void PlayImpactSound(bool hitCharacter)
+        private void PlayImpactSound(bool hitCharacter, ImpactSurfaceType surfaceType)
         {
             if (impactAudioSource == null)
                 return;
 
-            AudioClip[] clips = hitCharacter
-                ? characterImpactClips
-                : surfaceImpactClips;
+            AudioClip[] clips;
+
+            if (hitCharacter)
+            {
+                clips = characterImpactClips;
+            }
+            else
+            {
+                SurfaceImpactVariant variant = FindVariant(surfaceType);
+                clips = variant != null &&
+                        variant.impactClips != null &&
+                        variant.impactClips.Length > 0
+                    ? variant.impactClips
+                    : surfaceImpactClips;
+            }
 
             RandomAudioPlayer.Play(impactAudioSource, clips);
         }
 
-        private void SpawnBulletHole(Vector3 hitPoint, Vector3 hitNormal)
+        private void SpawnBulletHole(
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            ImpactSurfaceType surfaceType)
         {
-            if (bulletHolePrefab == null)
+            SurfaceImpactVariant variant = FindVariant(surfaceType);
+            GameObject prefab = variant != null && variant.bulletHolePrefab != null
+                ? variant.bulletHolePrefab
+                : bulletHolePrefab;
+
+            if (prefab == null)
                 return;
 
             Vector3 normal = GetSafeNormal(hitNormal);
@@ -284,14 +323,49 @@ namespace ROS.Game.Weapons
             }
 
             GameObject bulletHole = Instantiate(
-                bulletHolePrefab,
+                prefab,
                 spawnPosition,
                 surfaceRotation
             );
 
             bulletHole.transform.localScale *= _bulletHoleScale;
-
             Destroy(bulletHole, bulletHoleLifetime);
+        }
+
+        private ImpactSurfaceType ResolveSurfaceType(Vector3 hitPoint)
+        {
+            Collider[] colliders = Physics.OverlapSphere(
+                hitPoint,
+                Mathf.Max(0.001f, surfaceProbeRadius),
+                ~0,
+                QueryTriggerInteraction.Collide
+            );
+
+            foreach (Collider candidate in colliders)
+            {
+                if (candidate == null)
+                    continue;
+
+                ImpactSurface surface = candidate.GetComponentInParent<ImpactSurface>();
+                if (surface != null)
+                    return surface.SurfaceType;
+            }
+
+            return ImpactSurfaceType.Default;
+        }
+
+        private SurfaceImpactVariant FindVariant(ImpactSurfaceType surfaceType)
+        {
+            if (surfaceVariants == null)
+                return null;
+
+            foreach (SurfaceImpactVariant variant in surfaceVariants)
+            {
+                if (variant != null && variant.surfaceType == surfaceType)
+                    return variant;
+            }
+
+            return null;
         }
 
         private static Vector3 GetSafeNormal(Vector3 hitNormal)
