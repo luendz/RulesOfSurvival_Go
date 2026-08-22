@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
@@ -14,19 +15,16 @@ namespace ROS.Game.UI
 {
     /// <summary>
     /// Presentador final del loot cercano del HUD ROS.
-    /// Se ejecuta al final del frame para que ningún presenter anterior vuelva a
-    /// ocultar el panel amarillo después de haber detectado una caja de muerte.
-    /// También muestra, debajo de KILL/LEFT, el objeto/interactable más cercano.
+    /// Se ejecuta después del resto de presentadores para mantener visible
+    /// el loot de una caja de muerte cuando el jugador está cerca.
+    /// También muestra debajo de KILL/LEFT el objeto cercano y su icono.
     /// </summary>
     [DefaultExecutionOrder(2600)]
     [DisallowMultipleComponent]
     public sealed class RulesOfSurvivalHUDNearbyLootPresenter : MonoBehaviour
     {
         private const string SceneName = "07_BattleRoyaleTest";
-        private const float DeathLootDistance = 5.25f;
-
-        private static readonly Color Yellow = new Color(1f, 0.86f, 0.04f, 1f);
-        private static readonly Color Dark = new Color(0.025f, 0.035f, 0.045f, 0.90f);
+        private const float DeathLootDistance = 5.5f;
 
         private PlayerInputReader _localInput;
         private PlayerInteractor _interactor;
@@ -98,35 +96,36 @@ namespace ROS.Game.UI
                 return;
             }
 
-            DeathLootContainer nearest = FindNearestDeathContainer(false);
-            if (nearest != null && nearest.IsEmpty)
-            {
-                RepairEmptyDeathContainer(nearest);
-            }
-
+            DeathLootContainer nearest = FindNearestDeathContainer();
             if (nearest != _activeDeathContainer)
             {
                 _activeDeathContainer = nearest;
                 _selectedIndex = 0;
             }
 
-            if (_activeDeathContainer == null || _activeDeathContainer.IsEmpty)
+            if (_activeDeathContainer == null)
             {
                 return;
             }
 
+            if (_activeDeathContainer.IsEmpty)
+            {
+                RepairEmptyDeathContainer(_activeDeathContainer);
+            }
+
             List<InventoryStack> stacks = Snapshot(_activeDeathContainer);
+            DrawDeathLoot(stacks);
+
             if (stacks.Count == 0)
             {
                 return;
             }
 
             HandleSelection(stacks.Count);
-            DrawDeathLoot(stacks);
             HandlePickup(stacks);
         }
 
-        private DeathLootContainer FindNearestDeathContainer(bool requireContent)
+        private DeathLootContainer FindNearestDeathContainer()
         {
             if (_localInput == null)
             {
@@ -134,9 +133,11 @@ namespace ROS.Game.UI
             }
 
             Scene scene = SceneManager.GetActiveScene();
-            DeathLootContainer[] containers = Resources.FindObjectsOfTypeAll<DeathLootContainer>();
+            DeathLootContainer[] containers =
+                Resources.FindObjectsOfTypeAll<DeathLootContainer>();
+
             Vector3 playerPosition = _localInput.transform.position;
-            float maxSqr = DeathLootDistance * DeathLootDistance;
+            float nearestSqr = DeathLootDistance * DeathLootDistance;
             DeathLootContainer nearest = null;
 
             for (int i = 0; i < containers.Length; i++)
@@ -144,8 +145,7 @@ namespace ROS.Game.UI
                 DeathLootContainer candidate = containers[i];
                 if (candidate == null ||
                     candidate.gameObject.scene != scene ||
-                    !candidate.gameObject.activeInHierarchy ||
-                    (requireContent && candidate.IsEmpty))
+                    !candidate.gameObject.activeInHierarchy)
                 {
                     continue;
                 }
@@ -153,23 +153,18 @@ namespace ROS.Game.UI
                 Vector3 delta = candidate.transform.position - playerPosition;
                 delta.y = 0f;
                 float sqr = delta.sqrMagnitude;
-                if (sqr > maxSqr)
+                if (sqr > nearestSqr)
                 {
                     continue;
                 }
 
-                maxSqr = sqr;
+                nearestSqr = sqr;
                 nearest = candidate;
             }
 
             return nearest;
         }
 
-        /// <summary>
-        /// Algunos bots antiguos crean correctamente el cubo pero no tenían sus
-        /// armas representadas como InventoryStack. Si la caja llega vacía,
-        /// reconstruimos el contenido desde el jugador eliminado que la originó.
-        /// </summary>
         private static void RepairEmptyDeathContainer(DeathLootContainer container)
         {
             if (container == null || !container.IsEmpty || container.StoredInventory == null)
@@ -178,77 +173,81 @@ namespace ROS.Game.UI
             }
 
             string sourceName = container.SourcePlayerName;
-            if (string.IsNullOrWhiteSpace(sourceName))
+            GameObject source = string.IsNullOrWhiteSpace(sourceName)
+                ? null
+                : GameObject.Find(sourceName);
+
+            if (source != null)
+            {
+                HashSet<WeaponDefinition> added = new HashSet<WeaponDefinition>();
+                WeaponController[] weapons =
+                    source.GetComponentsInChildren<WeaponController>(true);
+
+                for (int i = 0; i < weapons.Length; i++)
+                {
+                    WeaponController weapon = weapons[i];
+                    if (weapon == null)
+                    {
+                        continue;
+                    }
+
+                    WeaponDefinition definition = weapon.Definition;
+                    if (definition != null && added.Add(definition))
+                    {
+                        InventoryItemDefinition weaponItem =
+                            ScriptableObject.CreateInstance<InventoryItemDefinition>();
+                        weaponItem.name = $"DeathLoot_{definition.displayName}";
+                        weaponItem.itemId =
+                            $"death_runtime_weapon_{definition.weaponId}_{source.GetInstanceID()}_{i}";
+                        weaponItem.displayName = string.IsNullOrWhiteSpace(definition.displayName)
+                            ? weapon.gameObject.name
+                            : definition.displayName;
+                        weaponItem.itemType = ItemType.Weapon;
+                        weaponItem.maxStack = 1;
+                        weaponItem.weight = 0f;
+                        weaponItem.weaponDefinition = definition;
+                        weaponItem.preferredWeaponSlot = Mathf.Clamp(i + 1, 1, 3);
+                        weaponItem.hideFlags = HideFlags.DontSave;
+                        container.StoredInventory.Add(weaponItem, 1);
+                    }
+
+                    int ammoAmount = Mathf.Max(0, weapon.AmmoInMagazine) +
+                                     Mathf.Max(0, weapon.ReserveAmmo);
+                    if (definition != null &&
+                        definition.ammoType != AmmoType.None &&
+                        ammoAmount > 0)
+                    {
+                        InventoryItemDefinition ammo =
+                            ScriptableObject.CreateInstance<InventoryItemDefinition>();
+                        ammo.name = $"DeathLoot_Ammo_{definition.ammoType}";
+                        ammo.itemId =
+                            $"death_runtime_ammo_{definition.ammoType}_{source.GetInstanceID()}_{i}";
+                        ammo.displayName = $"Munición {definition.ammoType}";
+                        ammo.itemType = ItemType.Ammo;
+                        ammo.maxStack = Mathf.Max(1, ammoAmount);
+                        ammo.weight = 0f;
+                        ammo.ammoType = definition.ammoType;
+                        ammo.hideFlags = HideFlags.DontSave;
+                        container.StoredInventory.Add(ammo, ammoAmount);
+                    }
+                }
+            }
+
+            if (!container.IsEmpty)
             {
                 return;
             }
 
-            GameObject source = GameObject.Find(sourceName);
-            if (source == null)
-            {
-                return;
-            }
-
-            HashSet<WeaponDefinition> addedDefinitions = new HashSet<WeaponDefinition>();
-            WeaponController[] weapons = source.GetComponentsInChildren<WeaponController>(true);
-
-            for (int i = 0; i < weapons.Length; i++)
-            {
-                WeaponController weapon = weapons[i];
-                if (weapon == null)
-                {
-                    continue;
-                }
-
-                WeaponDefinition definition = weapon.Definition;
-                if (definition != null && addedDefinitions.Add(definition))
-                {
-                    InventoryItemDefinition weaponItem = ScriptableObject.CreateInstance<InventoryItemDefinition>();
-                    weaponItem.name = $"DeathLoot_{definition.displayName}";
-                    weaponItem.itemId = $"death_runtime_weapon_{definition.weaponId}_{source.GetInstanceID()}_{i}";
-                    weaponItem.displayName = string.IsNullOrWhiteSpace(definition.displayName)
-                        ? weapon.gameObject.name
-                        : definition.displayName;
-                    weaponItem.itemType = ItemType.Weapon;
-                    weaponItem.maxStack = 1;
-                    weaponItem.weight = 0f;
-                    weaponItem.weaponDefinition = definition;
-                    weaponItem.preferredWeaponSlot = Mathf.Clamp(i + 1, 1, 3);
-                    weaponItem.hideFlags = HideFlags.DontSave;
-                    container.StoredInventory.Add(weaponItem, 1);
-                }
-
-                int ammoAmount = Mathf.Max(0, weapon.AmmoInMagazine) + Mathf.Max(0, weapon.ReserveAmmo);
-                if (definition != null && definition.ammoType != AmmoType.None && ammoAmount > 0)
-                {
-                    InventoryItemDefinition ammo = ScriptableObject.CreateInstance<InventoryItemDefinition>();
-                    ammo.name = $"DeathLoot_Ammo_{definition.ammoType}";
-                    ammo.itemId = $"death_runtime_ammo_{definition.ammoType}_{source.GetInstanceID()}_{i}";
-                    ammo.displayName = $"Munición {definition.ammoType}";
-                    ammo.itemType = ItemType.Ammo;
-                    ammo.maxStack = Mathf.Max(1, ammoAmount);
-                    ammo.weight = 0f;
-                    ammo.ammoType = definition.ammoType;
-                    ammo.hideFlags = HideFlags.DontSave;
-                    container.StoredInventory.Add(ammo, ammoAmount);
-                }
-            }
-
-            // Último respaldo: si el bot no tenía WeaponController ni stacks,
-            // dejar al menos una entrada visible para que una caja nunca sea
-            // visualmente interactuable pero lógicamente invisible para el HUD.
-            if (container.IsEmpty)
-            {
-                InventoryItemDefinition fallback = ScriptableObject.CreateInstance<InventoryItemDefinition>();
-                fallback.name = "DeathLoot_Suministros";
-                fallback.itemId = $"death_runtime_supplies_{source.GetInstanceID()}";
-                fallback.displayName = "Suministros del jugador";
-                fallback.itemType = ItemType.Misc;
-                fallback.maxStack = 1;
-                fallback.weight = 0f;
-                fallback.hideFlags = HideFlags.DontSave;
-                container.StoredInventory.Add(fallback, 1);
-            }
+            InventoryItemDefinition fallback =
+                ScriptableObject.CreateInstance<InventoryItemDefinition>();
+            fallback.name = "DeathLoot_Suministros";
+            fallback.itemId = $"death_runtime_supplies_{container.GetInstanceID()}";
+            fallback.displayName = "Suministros del jugador";
+            fallback.itemType = ItemType.Misc;
+            fallback.maxStack = 1;
+            fallback.weight = 0f;
+            fallback.hideFlags = HideFlags.DontSave;
+            container.StoredInventory.Add(fallback, 1);
         }
 
         private static List<InventoryStack> Snapshot(DeathLootContainer container)
@@ -272,25 +271,6 @@ namespace ROS.Game.UI
             return result;
         }
 
-        private void HandleSelection(int count)
-        {
-            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, count - 1));
-            if (Mouse.current == null)
-            {
-                return;
-            }
-
-            float scroll = Mouse.current.scroll.ReadValue().y;
-            if (scroll > 0.01f)
-            {
-                _selectedIndex = Mathf.Max(0, _selectedIndex - 1);
-            }
-            else if (scroll < -0.01f)
-            {
-                _selectedIndex = Mathf.Min(count - 1, _selectedIndex + 1);
-            }
-        }
-
         private void DrawDeathLoot(List<InventoryStack> stacks)
         {
             GameObject hud = GameObject.Find("ROS_HUD_Runtime");
@@ -299,7 +279,8 @@ namespace ROS.Game.UI
                 return;
             }
 
-            RectTransform panel = hud.transform.Find("Canvas/NearbyLoot") as RectTransform;
+            RectTransform panel =
+                hud.transform.Find("Canvas/NearbyLoot") as RectTransform;
             if (panel == null)
             {
                 return;
@@ -315,6 +296,12 @@ namespace ROS.Game.UI
             }
 
             const int visibleRows = 7;
+            _selectedIndex = Mathf.Clamp(
+                _selectedIndex,
+                0,
+                Mathf.Max(0, stacks.Count - 1)
+            );
+
             int firstVisible = Mathf.Clamp(
                 _selectedIndex - visibleRows + 1,
                 0,
@@ -332,7 +319,10 @@ namespace ROS.Game.UI
                 int stackIndex = firstVisible + rowIndex;
                 if (stackIndex >= stacks.Count)
                 {
-                    row.text = string.Empty;
+                    row.text = rowIndex == 0 && stacks.Count == 0
+                        ? "SIN OBJETOS"
+                        : string.Empty;
+                    row.color = Color.black;
                     continue;
                 }
 
@@ -347,7 +337,27 @@ namespace ROS.Game.UI
             Text toggle = panel.Find("ToggleBg/ToggleHint")?.GetComponent<Text>();
             if (toggle != null)
             {
-                toggle.text = "SCROLL • F RECOGER";
+                toggle.text = stacks.Count > 0
+                    ? "SCROLL • F RECOGER"
+                    : "SIN OBJETOS";
+            }
+        }
+
+        private void HandleSelection(int count)
+        {
+            if (count <= 0 || Mouse.current == null)
+            {
+                return;
+            }
+
+            float scroll = Mouse.current.scroll.ReadValue().y;
+            if (scroll > 0.01f)
+            {
+                _selectedIndex = Mathf.Max(0, _selectedIndex - 1);
+            }
+            else if (scroll < -0.01f)
+            {
+                _selectedIndex = Mathf.Min(count - 1, _selectedIndex + 1);
             }
         }
 
@@ -367,7 +377,11 @@ namespace ROS.Game.UI
                 return;
             }
 
-            _activeDeathContainer.TryLoot(selected.item, selected.amount, _inventory);
+            _activeDeathContainer.TryLoot(
+                selected.item,
+                selected.amount,
+                _inventory
+            );
         }
 
         private void EnsureNearbyIndicator()
@@ -393,16 +407,17 @@ namespace ROS.Game.UI
                 return;
             }
 
-            GameObject rootObject = new GameObject("NearbyObjectIndicator");
-            rootObject.transform.SetParent(canvas, false);
-            _nearbyRoot = rootObject.AddComponent<RectTransform>();
+            GameObject root = new GameObject("NearbyObjectIndicator");
+            root.transform.SetParent(canvas, false);
+
+            _nearbyRoot = root.AddComponent<RectTransform>();
             _nearbyRoot.anchorMin = Vector2.one;
             _nearbyRoot.anchorMax = Vector2.one;
             _nearbyRoot.pivot = Vector2.one;
-            _nearbyRoot.anchoredPosition = new Vector2(-24f, -58f);
+            _nearbyRoot.anchoredPosition = new Vector2(-24f, -60f);
             _nearbyRoot.sizeDelta = new Vector2(214f, 42f);
 
-            Image background = rootObject.AddComponent<Image>();
+            Image background = root.AddComponent<Image>();
             background.color = new Color(0.02f, 0.03f, 0.04f, 0.72f);
             background.raycastTarget = false;
 
@@ -416,16 +431,16 @@ namespace ROS.Game.UI
             iconRect.sizeDelta = new Vector2(34f, 34f);
             _nearbyIcon = iconObject.AddComponent<Image>();
             _nearbyIcon.preserveAspect = true;
-            _nearbyIcon.color = Color.white;
             _nearbyIcon.raycastTarget = false;
 
             GameObject textObject = new GameObject("Text");
             textObject.transform.SetParent(_nearbyRoot, false);
             RectTransform textRect = textObject.AddComponent<RectTransform>();
-            textRect.anchorMin = new Vector2(0f, 0f);
-            textRect.anchorMax = new Vector2(1f, 1f);
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
             textRect.offsetMin = new Vector2(45f, 3f);
             textRect.offsetMax = new Vector2(-5f, -3f);
+
             _nearbyText = textObject.AddComponent<Text>();
             _nearbyText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             _nearbyText.fontSize = 11;
@@ -457,13 +472,11 @@ namespace ROS.Game.UI
                 return;
             }
 
-            string label = interactable.InteractionLabel;
-            Sprite icon = ResolveIcon(interactable);
-
-            _nearbyText.text = string.IsNullOrWhiteSpace(label)
+            _nearbyText.text = string.IsNullOrWhiteSpace(interactable.InteractionLabel)
                 ? "OBJETO CERCANO"
-                : label;
+                : interactable.InteractionLabel;
 
+            Sprite icon = ResolveIcon(interactable);
             if (_nearbyIcon != null)
             {
                 _nearbyIcon.sprite = icon;
@@ -478,10 +491,9 @@ namespace ROS.Game.UI
         {
             if (_interactor != null)
             {
-                IInteractable current = _interactor.Current;
-                if (current != null)
+                if (_interactor.Current != null)
                 {
-                    return current;
+                    return _interactor.Current;
                 }
 
                 IReadOnlyList<IInteractable> nearby = _interactor.Nearby;
@@ -491,16 +503,16 @@ namespace ROS.Game.UI
                 }
             }
 
-            return FindNearestDeathContainer(false);
+            return FindNearestDeathContainer();
         }
 
         private static Sprite ResolveIcon(IInteractable interactable)
         {
-            if (interactable is DeathLootContainer deathContainer)
+            if (interactable is DeathLootContainer death)
             {
-                if (deathContainer.StoredInventory != null)
+                if (death.StoredInventory != null)
                 {
-                    IReadOnlyList<InventoryStack> stacks = deathContainer.StoredInventory.Stacks;
+                    IReadOnlyList<InventoryStack> stacks = death.StoredInventory.Stacks;
                     for (int i = 0; i < stacks.Count; i++)
                     {
                         InventoryItemDefinition item = stacks[i]?.item;
@@ -519,7 +531,8 @@ namespace ROS.Game.UI
                 return null;
             }
 
-            MonoBehaviour[] components = behaviour.GetComponentsInParent<MonoBehaviour>(true);
+            MonoBehaviour[] components =
+                behaviour.GetComponentsInParent<MonoBehaviour>(true);
             for (int i = 0; i < components.Length; i++)
             {
                 InventoryItemDefinition item = ExtractItemDefinition(components[i]);
@@ -579,7 +592,8 @@ namespace ROS.Game.UI
 
         private static PlayerInputReader FindLocalPlayerInput()
         {
-            PlayerInputReader[] inputs = Resources.FindObjectsOfTypeAll<PlayerInputReader>();
+            PlayerInputReader[] inputs =
+                Resources.FindObjectsOfTypeAll<PlayerInputReader>();
             Scene scene = SceneManager.GetActiveScene();
             PlayerInputReader fallback = null;
 
