@@ -155,10 +155,19 @@ namespace ROS.Game.Loot
                     ? source.gameObject.name
                     : string.Empty;
 
-            return
+            bool transferred =
                 source == null ||
                 source.Stacks.Count == 0 ||
                 source.TransferAllTo(inventory);
+
+            if (transferred)
+            {
+                // En la caja de muerte se quiere una fila por tipo de objeto.
+                // Por ejemplo, 120 balas se muestran como una sola entrada x120.
+                inventory.ConsolidateStacks();
+            }
+
+            return transferred;
         }
 
         public bool CanInteract(GameObject interactor)
