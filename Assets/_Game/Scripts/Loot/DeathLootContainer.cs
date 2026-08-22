@@ -145,7 +145,9 @@ namespace ROS.Game.Loot
                 return;
             }
 
-            DeathLootPanelPresenter.OpenOrCreate(
+            // El HUD ROS es el único propietario visual del loot de muertos.
+            // El presenter antiguo OnGUI queda fuera de este flujo.
+            RulesOfSurvivalHUDNearbyLootPresenter.OpenOrCreate(
                 this,
                 interactor
             );
