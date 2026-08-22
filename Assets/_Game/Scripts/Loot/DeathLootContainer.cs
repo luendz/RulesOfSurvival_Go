@@ -36,6 +36,11 @@ namespace ROS.Game.Loot
 
         public bool IsEmpty => ItemCount <= 0;
 
+        /// <summary>
+        /// Cantidad general de entradas/tipos de loot presentes en la caja.
+        /// Una pila de 52 balas cuenta como 1 objeto de loot, no como 52.
+        /// La cantidad concreta de cada entrada se conserva en InventoryStack.amount.
+        /// </summary>
         public int ItemCount
         {
             get
@@ -49,7 +54,38 @@ namespace ROS.Game.Loot
                     in inventory.Stacks
                 )
                 {
-                    if (stack != null)
+                    if (stack != null &&
+                        stack.item != null &&
+                        stack.amount > 0)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        /// <summary>
+        /// Total físico de unidades sumadas dentro de todas las pilas.
+        /// Se mantiene separado por si alguna lógica futura necesita ese dato.
+        /// </summary>
+        public int TotalUnitCount
+        {
+            get
+            {
+                EnsureInventory();
+
+                int count = 0;
+
+                foreach (
+                    InventoryStack stack
+                    in inventory.Stacks
+                )
+                {
+                    if (stack != null &&
+                        stack.item != null &&
+                        stack.amount > 0)
                     {
                         count += stack.amount;
                     }
