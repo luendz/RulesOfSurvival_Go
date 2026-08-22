@@ -119,7 +119,7 @@ namespace ROS.Game.Loot
 
         public bool CanInteract(GameObject interactor)
         {
-            if (interactor == null || ItemCount <= 0)
+            if (interactor == null)
             {
                 return false;
             }
@@ -145,8 +145,6 @@ namespace ROS.Game.Loot
                 return;
             }
 
-            // El HUD ROS es el único propietario visual del loot de muertos.
-            // El presenter antiguo OnGUI queda fuera de este flujo.
             RulesOfSurvivalHUDNearbyLootPresenter.OpenOrCreate(
                 this,
                 interactor
