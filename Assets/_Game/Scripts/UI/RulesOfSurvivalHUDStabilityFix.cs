@@ -1,29 +1,21 @@
-using System.Collections.Generic;
 using ROS.Game.Input;
-using ROS.Game.Interaction;
-using ROS.Game.Inventory;
-using ROS.Game.Loot;
 using ROS.Game.Weapons;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace ROS.Game.UI
 {
     /// <summary>
-    /// Capa de estabilidad para el HUD reconstruido.
-    /// Mantiene estable el estado visual de los slots de armas y garantiza que
-    /// las cajas de jugadores muertos se detecten de forma automática alrededor
-    /// del jugador local, incluso si por alguna razón PlayerInteractor todavía no
-    /// incluyó la caja en Current/Nearby durante ese frame.
+    /// Capa de estabilidad visual de los slots de armas.
+    /// El loot de muertos ya no se controla aquí para evitar múltiples writers
+    /// sobre Canvas/NearbyLoot.
     /// </summary>
     [DefaultExecutionOrder(2200)]
     [DisallowMultipleComponent]
     public sealed class RulesOfSurvivalHUDStabilityFix : MonoBehaviour
     {
         private const string SceneName = "07_BattleRoyaleTest";
-        private const float DeathLootDetectionDistance = 4.25f;
 
         private static readonly Color SlotNormal =
             new Color(0.08f, 0.095f, 0.105f, 0.88f);
@@ -35,11 +27,7 @@ namespace ROS.Game.UI
             new Color(1f, 0.86f, 0.06f, 1f);
 
         private PlayerInputReader _localInput;
-        private PlayerInteractor _interactor;
-        private InventoryComponent _inventory;
         private WeaponEquipmentController _weapons;
-        private DeathLootContainer _activeDeathContainer;
-        private int _selectedLootIndex;
         private float _nextResolveTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -68,7 +56,6 @@ namespace ROS.Game.UI
             }
 
             StabilizeWeaponSlots();
-            UpdateDeathLootPanel();
         }
 
         private void ResolveLocalPlayer()
@@ -76,27 +63,14 @@ namespace ROS.Game.UI
             if (!IsValidLocalInput(_localInput))
             {
                 _localInput = FindLocalPlayerInput();
-                _interactor = null;
-                _inventory = null;
                 _weapons = null;
-                _activeDeathContainer = null;
-                _selectedLootIndex = 0;
             }
 
-            if (_localInput == null)
+            if (_localInput != null && _weapons == null)
             {
-                return;
+                _weapons = _localInput.GetComponent<WeaponEquipmentController>();
             }
-
-            GameObject player = _localInput.gameObject;
-            _interactor ??= player.GetComponent<PlayerInteractor>();
-            _inventory ??= player.GetComponent<InventoryComponent>();
-            _weapons ??= player.GetComponent<WeaponEquipmentController>();
         }
-
-        // -----------------------------------------------------------------
-        // Slots de armas
-        // -----------------------------------------------------------------
 
         private void StabilizeWeaponSlots()
         {
@@ -125,9 +99,10 @@ namespace ROS.Game.UI
                     continue;
                 }
 
-                bool selected = slot <= 3 &&
-                                _weapons.EquippedSlot == slot &&
-                                _weapons.GetWeaponForSlot(slot) != null;
+                bool selected =
+                    slot <= 3 &&
+                    _weapons.EquippedSlot == slot &&
+                    _weapons.GetWeaponForSlot(slot) != null;
 
                 Image background = root.GetComponent<Image>();
                 if (background != null)
@@ -149,263 +124,6 @@ namespace ROS.Game.UI
                         : new Color(1f, 1f, 1f, 0.82f);
                 }
             }
-        }
-
-        // -----------------------------------------------------------------
-        // Loot de jugador muerto
-        // -----------------------------------------------------------------
-
-        private void UpdateDeathLootPanel()
-        {
-            if (_localInput == null || _inventory == null)
-            {
-                return;
-            }
-
-            DeathLootContainer nearby = FindNearbyDeathContainer();
-            if (nearby != _activeDeathContainer)
-            {
-                _activeDeathContainer = nearby;
-                _selectedLootIndex = 0;
-            }
-
-            if (_activeDeathContainer == null || _activeDeathContainer.IsEmpty)
-            {
-                return;
-            }
-
-            List<InventoryStack> stacks = SnapshotValidStacks(_activeDeathContainer);
-            if (stacks.Count == 0)
-            {
-                _activeDeathContainer = null;
-                return;
-            }
-
-            HandleLootSelection(stacks.Count);
-            DrawDeathLoot(stacks);
-            HandleLootPickup(stacks);
-        }
-
-        private DeathLootContainer FindNearbyDeathContainer()
-        {
-            // Primera opción: usar la detección normal del PlayerInteractor.
-            if (_interactor != null)
-            {
-                if (_interactor.Current is DeathLootContainer current &&
-                    current != null &&
-                    !current.IsEmpty)
-                {
-                    return current;
-                }
-
-                IReadOnlyList<IInteractable> nearby = _interactor.Nearby;
-                for (int i = 0; i < nearby.Count; i++)
-                {
-                    if (nearby[i] is DeathLootContainer container &&
-                        container != null &&
-                        !container.IsEmpty)
-                    {
-                        return container;
-                    }
-                }
-            }
-
-            // Respaldo robusto: buscar directamente la caja más cercana en la
-            // escena. Así el HUD no depende de que OverlapSphere haya detectado
-            // exactamente ese collider durante el frame actual.
-            Transform playerTransform = _localInput != null
-                ? _localInput.transform
-                : null;
-
-            if (playerTransform == null)
-            {
-                return null;
-            }
-
-            Scene activeScene = SceneManager.GetActiveScene();
-            DeathLootContainer[] containers =
-                Resources.FindObjectsOfTypeAll<DeathLootContainer>();
-
-            DeathLootContainer nearest = null;
-            float nearestSqrDistance =
-                DeathLootDetectionDistance * DeathLootDetectionDistance;
-
-            Vector3 playerPosition = playerTransform.position;
-
-            for (int i = 0; i < containers.Length; i++)
-            {
-                DeathLootContainer candidate = containers[i];
-                if (candidate == null ||
-                    candidate.gameObject.scene != activeScene ||
-                    !candidate.gameObject.activeInHierarchy ||
-                    candidate.IsEmpty)
-                {
-                    continue;
-                }
-
-                Vector3 delta = candidate.transform.position - playerPosition;
-                delta.y = 0f;
-                float sqrDistance = delta.sqrMagnitude;
-
-                if (sqrDistance > nearestSqrDistance)
-                {
-                    continue;
-                }
-
-                nearestSqrDistance = sqrDistance;
-                nearest = candidate;
-            }
-
-            return nearest;
-        }
-
-        private static List<InventoryStack> SnapshotValidStacks(
-            DeathLootContainer container
-        )
-        {
-            List<InventoryStack> result = new List<InventoryStack>();
-
-            if (container == null || container.StoredInventory == null)
-            {
-                return result;
-            }
-
-            IReadOnlyList<InventoryStack> source =
-                container.StoredInventory.Stacks;
-
-            for (int i = 0; i < source.Count; i++)
-            {
-                InventoryStack stack = source[i];
-                if (stack != null &&
-                    stack.item != null &&
-                    stack.amount > 0)
-                {
-                    result.Add(stack);
-                }
-            }
-
-            return result;
-        }
-
-        private void HandleLootSelection(int count)
-        {
-            _selectedLootIndex = Mathf.Clamp(
-                _selectedLootIndex,
-                0,
-                Mathf.Max(0, count - 1)
-            );
-
-            if (Mouse.current == null)
-            {
-                return;
-            }
-
-            float scroll = Mouse.current.scroll.ReadValue().y;
-            if (scroll > 0.01f)
-            {
-                _selectedLootIndex = Mathf.Max(0, _selectedLootIndex - 1);
-            }
-            else if (scroll < -0.01f)
-            {
-                _selectedLootIndex = Mathf.Min(
-                    count - 1,
-                    _selectedLootIndex + 1
-                );
-            }
-        }
-
-        private void DrawDeathLoot(List<InventoryStack> stacks)
-        {
-            GameObject hud = GameObject.Find("ROS_HUD_Runtime");
-            if (hud == null)
-            {
-                return;
-            }
-
-            Transform panel = hud.transform.Find("Canvas/NearbyLoot");
-            if (panel == null)
-            {
-                return;
-            }
-
-            panel.gameObject.SetActive(true);
-
-            Text title = panel.Find("Title/TitleText")?.GetComponent<Text>();
-            if (title != null)
-            {
-                title.text = string.IsNullOrWhiteSpace(
-                    _activeDeathContainer.DisplayName
-                )
-                    ? "LOOT"
-                    : _activeDeathContainer.DisplayName.ToUpperInvariant();
-            }
-
-            const int visibleRows = 7;
-            int firstVisible = Mathf.Clamp(
-                _selectedLootIndex - visibleRows + 1,
-                0,
-                Mathf.Max(0, stacks.Count - visibleRows)
-            );
-
-            for (int rowIndex = 0; rowIndex < visibleRows; rowIndex++)
-            {
-                Text row = panel.Find($"LootRow_{rowIndex}")?.GetComponent<Text>();
-                if (row == null)
-                {
-                    continue;
-                }
-
-                int stackIndex = firstVisible + rowIndex;
-                if (stackIndex >= stacks.Count)
-                {
-                    row.text = string.Empty;
-                    continue;
-                }
-
-                InventoryStack stack = stacks[stackIndex];
-                bool selected = stackIndex == _selectedLootIndex;
-                row.text =
-                    $"{(selected ? "▶ " : "  ")}{stack.item.displayName}  x{stack.amount}";
-                row.color = selected
-                    ? new Color(0.15f, 0.08f, 0.20f, 1f)
-                    : Color.black;
-            }
-
-            Text toggle = panel.Find("ToggleBg/ToggleHint")?.GetComponent<Text>();
-            if (toggle != null)
-            {
-                toggle.text = "SCROLL • F RECOGER";
-            }
-
-            Text interaction =
-                hud.transform.Find("Canvas/InteractionHint")?.GetComponent<Text>();
-            if (interaction != null)
-            {
-                interaction.text = "RUEDA: seleccionar   |   [F] recoger";
-            }
-        }
-
-        private void HandleLootPickup(List<InventoryStack> stacks)
-        {
-            if (Keyboard.current == null ||
-                !Keyboard.current.fKey.wasPressedThisFrame ||
-                _selectedLootIndex < 0 ||
-                _selectedLootIndex >= stacks.Count)
-            {
-                return;
-            }
-
-            InventoryStack selected = stacks[_selectedLootIndex];
-            if (selected == null || selected.item == null)
-            {
-                return;
-            }
-
-            _activeDeathContainer.TryLoot(
-                selected.item,
-                selected.amount,
-                _inventory
-            );
         }
 
         private static PlayerInputReader FindLocalPlayerInput()
