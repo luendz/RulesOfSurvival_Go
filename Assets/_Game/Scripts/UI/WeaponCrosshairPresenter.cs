@@ -478,7 +478,7 @@ namespace ROS.Game.UI
             text.font = font;
             text.text = value;
             text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = new Color(1f, 1f, 1f, 0.98f);
             text.raycastTarget = false;
