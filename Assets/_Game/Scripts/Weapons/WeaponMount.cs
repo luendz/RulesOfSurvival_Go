@@ -12,8 +12,7 @@ namespace ROS.Game.Weapons
 
     /// <summary>
     /// Offsets por arma y referencias físicas normalizadas para disparo, apuntado e IK.
-    /// Las referencias vacías se descubren automáticamente por nombre para mantener
-    /// compatibilidad con prefabs existentes.
+    /// Las referencias vacías se descubren automáticamente dentro del prefab del arma.
     /// </summary>
     public sealed class WeaponMount : MonoBehaviour
     {
@@ -47,29 +46,29 @@ namespace ROS.Game.Weapons
         [Tooltip("Expulsión de casquillos. Fallback: ShellEjectionPoint.")]
         [SerializeField] private Transform shellEjectionPoint;
 
-        public Transform MuzzlePoint => Resolve(ref muzzlePoint, "MuzzlePoint", transform);
-        public Transform AimPoint => Resolve(ref aimPoint, "AimPoint", MuzzlePoint != null ? MuzzlePoint : transform);
-        public Transform StockPoint => Resolve(ref stockPoint, "StockPoint", transform);
-        public Transform RightHandGrip => Resolve(ref rightHandGrip, "RightHandGrip", transform);
-        public Transform LeftHandIKTarget => Resolve(ref leftHandIKTarget, "LeftHandIK", transform);
-        public Transform ShellEjectionPoint => Resolve(ref shellEjectionPoint, "ShellEjectionPoint", MuzzlePoint != null ? MuzzlePoint : transform);
+        public Transform MuzzlePoint => Resolve(ref muzzlePoint, "MuzzlePoint", transform, transform);
+        public Transform AimPoint => Resolve(ref aimPoint, "AimPoint", transform, MuzzlePoint);
+        public Transform StockPoint => Resolve(ref stockPoint, "StockPoint", transform, null);
+        public Transform RightHandGrip => Resolve(ref rightHandGrip, "RightHandGrip", transform, transform);
+        public Transform LeftHandIKTarget => Resolve(ref leftHandIKTarget, "LeftHandIK", transform, null);
+        public Transform ShellEjectionPoint => Resolve(ref shellEjectionPoint, "ShellEjectionPoint", transform, MuzzlePoint);
 
         public Vector3 ShotOrigin => MuzzlePoint != null ? MuzzlePoint.position : transform.position;
         public Vector3 MechanicalForward
         {
             get
             {
-                if (AimPoint != null && MuzzlePoint != null)
+                Transform muzzle = MuzzlePoint;
+                Transform aim = AimPoint;
+
+                if (aim != null && muzzle != null && aim != muzzle)
                 {
-                    Vector3 delta = AimPoint.position - MuzzlePoint.position;
+                    Vector3 delta = aim.position - muzzle.position;
                     if (delta.sqrMagnitude > 0.0001f)
                         return delta.normalized;
                 }
 
-                if (MuzzlePoint != null)
-                    return MuzzlePoint.forward;
-
-                return transform.forward;
+                return muzzle != null ? muzzle.forward : transform.forward;
             }
         }
 
@@ -94,7 +93,8 @@ namespace ROS.Game.Weapons
 
         public bool HasCompleteFiringSetup()
         {
-            return MuzzlePoint != null && AimPoint != null;
+            return FindChildRecursive(transform, "MuzzlePoint") != null &&
+                   FindChildRecursive(transform, "AimPoint") != null;
         }
 
         private void ApplyLocalTransform(Vector3 localPosition, Vector3 localEulerAngles)
@@ -103,10 +103,14 @@ namespace ROS.Game.Weapons
             transform.localRotation = Quaternion.Euler(localEulerAngles);
         }
 
-        private static Transform Resolve(ref Transform field, string childName, Transform fallback)
+        private static Transform Resolve(
+            ref Transform field,
+            string childName,
+            Transform searchRoot,
+            Transform fallback)
         {
             if (field == null)
-                field = FindChildRecursive(fallback != null ? fallback.root : null, childName);
+                field = FindChildRecursive(searchRoot, childName);
 
             return field != null ? field : fallback;
         }
