@@ -11,9 +11,9 @@ namespace ROS.Game.Weapons
     }
 
     /// <summary>
-    /// Per-weapon local offsets used when the weapon is moved between character sockets.
-    /// Also exposes optional weapon-specific IK targets so the player rig can adapt to
-    /// whichever weapon is currently equipped.
+    /// Offsets por arma y referencias físicas normalizadas para disparo, apuntado e IK.
+    /// Las referencias vacías se descubren automáticamente por nombre para mantener
+    /// compatibilidad con prefabs existentes.
     /// </summary>
     public sealed class WeaponMount : MonoBehaviour
     {
@@ -33,18 +33,43 @@ namespace ROS.Game.Weapons
         [SerializeField] private Vector3 hipLocalPosition = new Vector3(0.18f, -0.05f, 0f);
         [SerializeField] private Vector3 hipLocalEulerAngles = Vector3.zero;
 
-        [Header("IK Targets")]
-        [Tooltip("Optional. If empty, a child named LeftHandIK is discovered automatically.")]
+        [Header("Weapon Physical Points")]
+        [Tooltip("Boca real del cañón. Fallback: hijo llamado MuzzlePoint.")]
+        [SerializeField] private Transform muzzlePoint;
+        [Tooltip("Eje visual/mecánico de mira. Fallback: hijo llamado AimPoint.")]
+        [SerializeField] private Transform aimPoint;
+        [Tooltip("Punto de contacto de la culata con el hombro. Fallback: StockPoint.")]
+        [SerializeField] private Transform stockPoint;
+        [Tooltip("Agarre de la mano derecha. Fallback: RightHandGrip.")]
+        [SerializeField] private Transform rightHandGrip;
+        [Tooltip("Agarre/IK de la mano izquierda. Fallback: LeftHandIK.")]
         [SerializeField] private Transform leftHandIKTarget;
+        [Tooltip("Expulsión de casquillos. Fallback: ShellEjectionPoint.")]
+        [SerializeField] private Transform shellEjectionPoint;
 
-        public Transform LeftHandIKTarget
+        public Transform MuzzlePoint => Resolve(ref muzzlePoint, "MuzzlePoint", transform);
+        public Transform AimPoint => Resolve(ref aimPoint, "AimPoint", MuzzlePoint != null ? MuzzlePoint : transform);
+        public Transform StockPoint => Resolve(ref stockPoint, "StockPoint", transform);
+        public Transform RightHandGrip => Resolve(ref rightHandGrip, "RightHandGrip", transform);
+        public Transform LeftHandIKTarget => Resolve(ref leftHandIKTarget, "LeftHandIK", transform);
+        public Transform ShellEjectionPoint => Resolve(ref shellEjectionPoint, "ShellEjectionPoint", MuzzlePoint != null ? MuzzlePoint : transform);
+
+        public Vector3 ShotOrigin => MuzzlePoint != null ? MuzzlePoint.position : transform.position;
+        public Vector3 MechanicalForward
         {
             get
             {
-                if (leftHandIKTarget == null)
-                    leftHandIKTarget = FindChildRecursive(transform, "LeftHandIK");
+                if (AimPoint != null && MuzzlePoint != null)
+                {
+                    Vector3 delta = AimPoint.position - MuzzlePoint.position;
+                    if (delta.sqrMagnitude > 0.0001f)
+                        return delta.normalized;
+                }
 
-                return leftHandIKTarget;
+                if (MuzzlePoint != null)
+                    return MuzzlePoint.forward;
+
+                return transform.forward;
             }
         }
 
@@ -67,10 +92,23 @@ namespace ROS.Game.Weapons
             }
         }
 
+        public bool HasCompleteFiringSetup()
+        {
+            return MuzzlePoint != null && AimPoint != null;
+        }
+
         private void ApplyLocalTransform(Vector3 localPosition, Vector3 localEulerAngles)
         {
             transform.localPosition = localPosition;
             transform.localRotation = Quaternion.Euler(localEulerAngles);
+        }
+
+        private static Transform Resolve(ref Transform field, string childName, Transform fallback)
+        {
+            if (field == null)
+                field = FindChildRecursive(fallback != null ? fallback.root : null, childName);
+
+            return field != null ? field : fallback;
         }
 
         private static Transform FindChildRecursive(Transform root, string childName)
