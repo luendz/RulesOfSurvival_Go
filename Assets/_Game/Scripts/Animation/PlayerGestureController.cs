@@ -30,6 +30,9 @@ namespace ROS.Game.Animation
         private float transitionDuration = 0.12f;
 
         [SerializeField, Min(0f)]
+        private float aimCancelTransitionDuration = 0.02f;
+
+        [SerializeField, Min(0f)]
         private float movementCancelThreshold = 0.18f;
 
         [SerializeField, Min(0f)]
@@ -114,6 +117,14 @@ namespace ROS.Game.Animation
                 return;
             }
 
+            // Apuntar tiene prioridad absoluta: debe cortar el gesto casi al
+            // instante para devolver control de combate al jugador.
+            if (HasAimCancelInput())
+            {
+                CancelGesture(aimCancelTransitionDuration);
+                return;
+            }
+
             if (HasCancelInput())
             {
                 CancelGesture();
@@ -188,8 +199,8 @@ namespace ROS.Game.Animation
             _ignoreIdleUntil =
                 Time.unscaledTime + Mathf.Max(0.08f, transitionDuration);
 
-            // El clic usado para confirmar el elemento sombreado del menú radial
-            // no debe convertirse inmediatamente en un disparo/cancelación.
+            // Esta gracia protege principalmente el clic izquierdo usado para
+            // confirmar una opción del menú radial. Apuntar NO usa esta gracia.
             _ignoreCombatInputUntil =
                 Time.unscaledTime + Mathf.Max(0.08f, combatInputGraceTime);
 
@@ -205,6 +216,11 @@ namespace ROS.Game.Animation
 
         public void CancelGesture()
         {
+            CancelGesture(transitionDuration);
+        }
+
+        private void CancelGesture(float cancelTransitionDuration)
+        {
             if (!IsPlaying)
                 return;
 
@@ -218,7 +234,7 @@ namespace ROS.Game.Animation
                 {
                     animator.CrossFade(
                         idleHash,
-                        transitionDuration,
+                        Mathf.Max(0f, cancelTransitionDuration),
                         _gestureLayerIndex,
                         0f
                     );
@@ -277,6 +293,11 @@ namespace ROS.Game.Animation
             return true;
         }
 
+        private bool HasAimCancelInput()
+        {
+            return input != null && input.AimHeld;
+        }
+
         private bool HasCancelInput()
         {
             if (input == null)
@@ -300,7 +321,7 @@ namespace ROS.Game.Animation
             if (Time.unscaledTime < _ignoreCombatInputUntil)
                 return false;
 
-            return input.AimHeld || input.FireHeld;
+            return input.FireHeld;
         }
 
         private void FinishGesture()
