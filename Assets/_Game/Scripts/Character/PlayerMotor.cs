@@ -37,6 +37,9 @@ namespace ROS.Game.Character
 
         public bool IsProne { get; private set; }
 
+        public bool ExternalMovementLocked =>
+            _externalMovementLocked;
+
         public bool IsGrounded
         {
             get
@@ -84,6 +87,7 @@ namespace ROS.Game.Character
         private CharacterController _controller;
         private PlayerInputReader _input;
         private Vector3 _velocity;
+        private bool _externalMovementLocked;
 
         private void Awake()
         {
@@ -130,6 +134,21 @@ namespace ROS.Game.Character
             cameraTransform = targetCamera;
         }
 
+        public void SetExternalMovementLocked(bool locked)
+        {
+            _externalMovementLocked = locked;
+
+            if (locked)
+            {
+                MovementState =
+                    IsProne
+                        ? PlayerMovementState.Prone
+                        : IsCrouching
+                            ? PlayerMovementState.Crouching
+                            : PlayerMovementState.Idle;
+            }
+        }
+
         private void Update()
         {
             EnsureReferences();
@@ -137,6 +156,12 @@ namespace ROS.Game.Character
             if (_controller == null ||
                 _input == null)
             {
+                return;
+            }
+
+            if (_externalMovementLocked)
+            {
+                HandleExternalMovementLock();
                 return;
             }
 
@@ -156,7 +181,7 @@ namespace ROS.Game.Character
         private void HandleStance()
         {
             // Durante la recarga mantenemos la postura
-            // con la que comenzó:
+            // con la que comenzÃ³:
             // Standing o Crouch.
             if (IsReloading())
             {
@@ -314,6 +339,32 @@ namespace ROS.Game.Character
                 input,
                 speed
             );
+        }
+
+        private void HandleExternalMovementLock()
+        {
+            if (_controller.isGrounded &&
+                _velocity.y < 0f)
+            {
+                _velocity.y = groundedGravity;
+            }
+
+            _velocity.y +=
+                gravity *
+                Time.deltaTime;
+
+            _controller.Move(
+                Vector3.up *
+                _velocity.y *
+                Time.deltaTime
+            );
+
+            MovementState =
+                IsProne
+                    ? PlayerMovementState.Prone
+                    : IsCrouching
+                        ? PlayerMovementState.Crouching
+                        : PlayerMovementState.Idle;
         }
 
         private void HandleReloadMovementLock()
