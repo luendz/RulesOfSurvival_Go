@@ -9,6 +9,7 @@ namespace ROS.Game.Lobby
         IPointerUpHandler
     {
         [SerializeField] private Transform target;
+        [SerializeField] private float initialYaw = 180f;
         [SerializeField] private float degreesPerPixel = 0.28f;
         [SerializeField] private float smoothTime = 0.06f;
         [SerializeField] private float inertia = 0.88f;
@@ -29,8 +30,7 @@ namespace ROS.Game.Lobby
                 return;
             }
 
-            _currentYaw = target.eulerAngles.y;
-            _targetYaw = _currentYaw;
+            ResetRotation(initialYaw);
         }
 
         public void OnPointerDown(PointerEventData eventData)
