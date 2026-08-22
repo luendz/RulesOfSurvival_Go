@@ -199,7 +199,7 @@ namespace ROS.Game.Lobby
                 new Vector2(0f, 1f),
                 new Vector2(0f, 1f),
                 new Vector2(28f, -164f),
-                new Vector2(464f, 500f)
+                new Vector2(464f, 540f)
             );
 
             Image background = content.gameObject.AddComponent<Image>();
