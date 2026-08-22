@@ -15,12 +15,43 @@ namespace ROS.Game.Lobby
 
         private Material _material;
 
+        public float Exposure => exposure;
+        public float Contrast => contrast;
+        public float Saturation => saturation;
+        public float Vignette => vignette;
+        public float VignetteSoftness => vignetteSoftness;
+
         private static readonly int ExposureId = Shader.PropertyToID("_Exposure");
         private static readonly int ContrastId = Shader.PropertyToID("_Contrast");
         private static readonly int SaturationId = Shader.PropertyToID("_Saturation");
         private static readonly int VignetteId = Shader.PropertyToID("_Vignette");
         private static readonly int VignetteSoftnessId = Shader.PropertyToID("_VignetteSoftness");
         private static readonly int AspectId = Shader.PropertyToID("_Aspect");
+
+        public void SetExposure(float value)
+        {
+            exposure = Mathf.Clamp(value, -1f, 1f);
+        }
+
+        public void SetContrast(float value)
+        {
+            contrast = Mathf.Clamp(value, 0.5f, 1.5f);
+        }
+
+        public void SetSaturation(float value)
+        {
+            saturation = Mathf.Clamp(value, 0f, 2f);
+        }
+
+        public void SetVignette(float value)
+        {
+            vignette = Mathf.Clamp(value, 0f, 0.5f);
+        }
+
+        public void SetVignetteSoftness(float value)
+        {
+            vignetteSoftness = Mathf.Clamp(value, 0.2f, 1f);
+        }
 
         private void OnDisable()
         {
