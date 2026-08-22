@@ -595,8 +595,8 @@ namespace ROS.Game.Weapons
             out Vector3 hitNormal,
             out bool hitCharacter)
         {
-            hitPoint = origin + direction * definition.range;
-            hitNormal = -direction;
+            Vector3 fallbackPoint = origin + direction * definition.range;
+            Vector3 fallbackNormal = -direction;
 
             RaycastHit[] hits = Physics.RaycastAll(
                 origin,
@@ -613,6 +613,13 @@ namespace ROS.Game.Weapons
                 out hitNormal,
                 out hitCharacter
             );
+
+            if (!hasHit)
+            {
+                hitPoint = fallbackPoint;
+                hitNormal = fallbackNormal;
+                hitCharacter = false;
+            }
         }
 
         private void ProcessBallisticHit(
