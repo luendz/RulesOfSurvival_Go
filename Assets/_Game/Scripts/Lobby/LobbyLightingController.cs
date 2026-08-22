@@ -35,6 +35,12 @@ namespace ROS.Game.Lobby
         private Texture2D _shadowTexture;
         private Material _shadowMaterial;
 
+        public float AmbientIntensity => ambientIntensity;
+        public float KeyIntensity => keyIntensity;
+        public float FaceFillIntensity => faceFillIntensity;
+        public float CoolFillIntensity => coolFillIntensity;
+        public float RimIntensity => rimIntensity;
+
         private void Start()
         {
             ApplyLighting();
@@ -50,6 +56,66 @@ namespace ROS.Game.Lobby
             if (_shadowTexture != null)
             {
                 Destroy(_shadowTexture);
+            }
+        }
+
+        public void SetAmbientIntensity(float value)
+        {
+            ambientIntensity = Mathf.Clamp(value, 0f, 2f);
+            ConfigureAmbient();
+        }
+
+        public void SetKeyIntensity(float value)
+        {
+            keyIntensity = Mathf.Clamp(value, 0f, 4f);
+            Light key = FindLight("Lobby Key Light");
+            if (key != null)
+            {
+                key.intensity = keyIntensity;
+            }
+        }
+
+        public void SetFaceFillIntensity(float value)
+        {
+            faceFillIntensity = Mathf.Clamp(value, 0f, 8f);
+            Light face = FindLight("Lobby Face Fill");
+            if (face != null)
+            {
+                face.intensity = faceFillIntensity;
+            }
+        }
+
+        public void SetCoolFillIntensity(float value)
+        {
+            coolFillIntensity = Mathf.Clamp(value, 0f, 8f);
+
+            Light fill = FindLight("Lobby Fill Light");
+            if (fill != null)
+            {
+                fill.intensity = coolFillIntensity;
+            }
+
+            Light bodyFill = FindLight("Lobby Soft Body Fill");
+            if (bodyFill != null)
+            {
+                bodyFill.intensity = coolFillIntensity * 0.75f;
+            }
+        }
+
+        public void SetRimIntensity(float value)
+        {
+            rimIntensity = Mathf.Clamp(value, 0f, 8f);
+
+            Light rim = FindLight("Lobby Rim Light");
+            if (rim != null)
+            {
+                rim.intensity = rimIntensity;
+            }
+
+            Light shoulderRim = FindLight("Lobby Shoulder Rim");
+            if (shoulderRim != null)
+            {
+                shoulderRim.intensity = rimIntensity * 0.70f;
             }
         }
 
@@ -337,19 +403,38 @@ namespace ROS.Game.Lobby
 
         private static Light FindLight(string objectName)
         {
-            GameObject lightObject = GameObject.Find(objectName);
-            return lightObject != null ? lightObject.GetComponent<Light>() : null;
+            Light[] lights = Object.FindObjectsByType<Light>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+            foreach (Light light in lights)
+            {
+                if (light != null && light.name == objectName)
+                {
+                    return light;
+                }
+            }
+
+            return null;
         }
 
         private static GameObject FindLobbyCharacter()
         {
-            GameObject character = GameObject.Find("Lobby Character");
-            if (character != null)
+            GameObject[] objects = Object.FindObjectsByType<GameObject>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+            foreach (GameObject item in objects)
             {
-                return character;
+                if (item.name == "Lobby Character" || item.name == "Lobby Character Placeholder")
+                {
+                    return item;
+                }
             }
 
-            return GameObject.Find("Lobby Character Placeholder");
+            return null;
         }
     }
 }
