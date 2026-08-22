@@ -32,6 +32,9 @@ namespace ROS.Game.Animation
         [SerializeField, Min(0f)]
         private float movementCancelThreshold = 0.18f;
 
+        [SerializeField, Min(0f)]
+        private float combatInputGraceTime = 0.18f;
+
         public bool IsPlaying { get; private set; }
         public string CurrentGesture { get; private set; }
 
@@ -41,7 +44,7 @@ namespace ROS.Game.Animation
             {
                 EnsureReferences();
 
-                if (IsPlaying || animator == null || motor == null)
+                if (animator == null || motor == null)
                     return false;
 
                 if (health != null && !health.IsAlive)
@@ -50,7 +53,9 @@ namespace ROS.Game.Animation
                 if (!motor.IsGrounded || motor.IsCrouching || motor.IsProne)
                     return false;
 
-                if (motor.ExternalMovementLocked)
+                // El propio gesto bloquea el movimiento. Ese bloqueo no debe
+                // impedir cambiar directamente a otro gesto mientras reproduce.
+                if (motor.ExternalMovementLocked && !IsPlaying)
                     return false;
 
                 if (parachute != null && parachute.IsAirbornePhase)
@@ -75,7 +80,9 @@ namespace ROS.Game.Animation
 
         private int _gestureLayerIndex = -1;
         private float _ignoreIdleUntil;
+        private float _ignoreCombatInputUntil;
         private bool _warnedMissingLayer;
+        private int _weaponSlotBeforeGesture;
 
         private static readonly int GestureIdleHash =
             Animator.StringToHash(GestureIdleState);
@@ -156,7 +163,15 @@ namespace ROS.Game.Animation
                 return false;
             }
 
-            motor.SetExternalMovementLocked(true);
+            string previousGesture = CurrentGesture;
+            bool switchingGesture = IsPlaying;
+
+            if (!switchingGesture)
+            {
+                StoreAndHolsterWeapon();
+                motor.SetExternalMovementLocked(true);
+            }
+
             animator.SetLayerWeight(_gestureLayerIndex, 1f);
             animator.CrossFade(
                 stateHash,
@@ -172,6 +187,17 @@ namespace ROS.Game.Animation
 
             _ignoreIdleUntil =
                 Time.unscaledTime + Mathf.Max(0.08f, transitionDuration);
+
+            // El clic usado para confirmar el elemento sombreado del menú radial
+            // no debe convertirse inmediatamente en un disparo/cancelación.
+            _ignoreCombatInputUntil =
+                Time.unscaledTime + Mathf.Max(0.08f, combatInputGraceTime);
+
+            if (switchingGesture &&
+                !string.IsNullOrWhiteSpace(previousGesture))
+            {
+                GestureEnded?.Invoke(previousGesture);
+            }
 
             GestureStarted?.Invoke(CurrentGesture);
             return true;
@@ -202,6 +228,35 @@ namespace ROS.Game.Animation
             FinishGesture();
         }
 
+        private void StoreAndHolsterWeapon()
+        {
+            _weaponSlotBeforeGesture = 0;
+
+            if (equipment == null ||
+                !equipment.HasEquippedWeapon ||
+                equipment.EquippedSlot <= 0)
+            {
+                return;
+            }
+
+            _weaponSlotBeforeGesture = equipment.EquippedSlot;
+            equipment.HolsterCurrentWeapon();
+        }
+
+        private void RestoreWeapon()
+        {
+            if (equipment == null || _weaponSlotBeforeGesture <= 0)
+                return;
+
+            int slotToRestore = _weaponSlotBeforeGesture;
+            _weaponSlotBeforeGesture = 0;
+
+            if (equipment.HasWeaponInSlot(slotToRestore))
+            {
+                equipment.EquipSlot(slotToRestore);
+            }
+        }
+
         private bool CanContinueGesture()
         {
             if (health != null && !health.IsAlive)
@@ -216,12 +271,8 @@ namespace ROS.Game.Animation
             if (consumable != null && consumable.IsUsing)
                 return false;
 
-            if (equipment != null &&
-                (equipment.IsSwitchingWeapon ||
-                 equipment.CombatState == PlayerCombatState.Reloading))
-            {
+            if (equipment != null && equipment.IsSwitchingWeapon)
                 return false;
-            }
 
             return true;
         }
@@ -237,13 +288,19 @@ namespace ROS.Game.Animation
             if (input.Move.sqrMagnitude > thresholdSqr)
                 return true;
 
-            return input.JumpPressed ||
-                   input.CrouchPressed ||
-                   input.PronePressed ||
-                   input.ReloadPressed ||
-                   input.InteractPressed ||
-                   input.AimHeld ||
-                   input.FireHeld;
+            if (input.JumpPressed ||
+                input.CrouchPressed ||
+                input.PronePressed ||
+                input.ReloadPressed ||
+                input.InteractPressed)
+            {
+                return true;
+            }
+
+            if (Time.unscaledTime < _ignoreCombatInputUntil)
+                return false;
+
+            return input.AimHeld || input.FireHeld;
         }
 
         private void FinishGesture()
@@ -257,6 +314,8 @@ namespace ROS.Game.Animation
             {
                 motor.SetExternalMovementLocked(false);
             }
+
+            RestoreWeapon();
 
             if (!string.IsNullOrWhiteSpace(finishedGesture))
             {
