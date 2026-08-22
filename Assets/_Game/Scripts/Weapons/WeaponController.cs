@@ -19,13 +19,17 @@ namespace ROS.Game.Weapons
         [SerializeField] private PlayerMotor motor;
         [SerializeField] private WeaponEquipmentController equipment;
         [SerializeField] private PlayerAimController aimController;
+        [SerializeField] private WeaponMount weaponMount;
         [SerializeField] private Transform muzzle;
         [SerializeField] private UnityEngine.Camera aimCamera;
         [SerializeField] private WeaponEffects weaponEffects;
         [SerializeField] private WeaponRecoil weaponRecoil;
 
-        [Header("Raycast")]
+        [Header("Hit Detection")]
         [SerializeField] private LayerMask hitMask = ~0;
+        [SerializeField] private bool useBallisticTrajectory = true;
+        [Range(4, 64)]
+        [SerializeField] private int ballisticSegments = 18;
 
         [Header("Ammo")]
         [SerializeField] private int reserveAmmo = 120;
@@ -46,10 +50,20 @@ namespace ROS.Game.Weapons
         [SerializeField] private int debugLastShotProjectiles;
         [SerializeField] private int debugLastShotImpacts;
         [SerializeField] private int debugLastShotCharacterImpacts;
+        [SerializeField] private float debugLastTravelTime;
+        [SerializeField] private float debugLastEstimatedDrop;
 
-        // Fuente de munición del inventario (opcional; si es null usa reserva local)
-        private InventoryComponent       _ammoInventory;
-        private InventoryItemDefinition  _ammoItemDef;
+        private InventoryComponent _ammoInventory;
+        private InventoryItemDefinition _ammoItemDef;
+
+        private float _nextShotTime;
+        private bool _triggerLatch;
+        private int _burstShotsRemaining;
+        private Coroutine _reloadRoutine;
+        private float _spreadBloom;
+        private float _lastShotTime = -999f;
+        private bool _usesExternalShotDirection;
+        private Vector3 _externalShotDirection;
 
         public WeaponDefinition Definition => definition;
         public float DamageScale { get; set; } = 1f;
@@ -84,15 +98,11 @@ namespace ROS.Game.Weapons
                         ? definition.startingReserveAmmo
                         : 0
             );
-            AmmoInMagazine =
-                definition != null
-                    ? definition.magazineSize
-                    : 0;
 
-            CurrentFireMode =
-                definition != null
-                    ? definition.GetInitialFireMode()
-                    : WeaponFireMode.Single;
+            AmmoInMagazine = definition != null ? definition.magazineSize : 0;
+            CurrentFireMode = definition != null
+                ? definition.GetInitialFireMode()
+                : WeaponFireMode.Single;
 
             EnsureReferences();
             ApplyDefinitionToComponents();
@@ -101,30 +111,14 @@ namespace ROS.Game.Weapons
             FireModeChanged?.Invoke(CurrentFireMode);
         }
 
-        private float _nextShotTime;
-        private bool _triggerLatch;
-        private int _burstShotsRemaining;
-        private Coroutine _reloadRoutine;
-        private float _spreadBloom;
-        private float _lastShotTime = -999f;
-        private bool _usesExternalShotDirection;
-        private Vector3 _externalShotDirection;
-
-        /// <summary>
-        /// Conecta la reserva de munición de este arma al inventario del portador.
-        /// A partir de este punto la recarga consume ítems del inventario en vez de
-        /// la reserva interna del prefab.
-        /// </summary>
         public void SetAmmoSource(
-            InventoryComponent       inventory,
-            InventoryItemDefinition  ammoDef)
+            InventoryComponent inventory,
+            InventoryItemDefinition ammoDef)
         {
-            // En la primera conexión real, pasar el reserveAmmo del campo al inventario
-            // para que el jugador no pierda la munición que ya tenía en el arma.
             bool firstRealConnection = _ammoItemDef == null && ammoDef != null;
 
             _ammoInventory = inventory;
-            _ammoItemDef   = ammoDef;
+            _ammoItemDef = ammoDef;
 
             if (firstRealConnection && reserveAmmo > 0 && inventory != null)
             {
@@ -148,7 +142,6 @@ namespace ROS.Game.Weapons
             _triggerLatch = false;
             _burstShotsRemaining = 0;
             enabled = false;
-
             UpdateDebugValues();
         }
 
@@ -156,15 +149,10 @@ namespace ROS.Game.Weapons
         {
             EnsureReferences();
 
-            AmmoInMagazine =
-                definition != null
-                    ? definition.magazineSize
-                    : 0;
-
-            CurrentFireMode =
-                definition != null
-                    ? definition.GetInitialFireMode()
-                    : WeaponFireMode.Single;
+            AmmoInMagazine = definition != null ? definition.magazineSize : 0;
+            CurrentFireMode = definition != null
+                ? definition.GetInitialFireMode()
+                : WeaponFireMode.Single;
 
             ApplyDefinitionToComponents();
             UpdateDebugValues();
@@ -189,41 +177,23 @@ namespace ROS.Game.Weapons
             if (equipment == null)
                 equipment = GetComponentInParent<WeaponEquipmentController>();
 
+            if (weaponMount == null)
+                weaponMount = GetComponent<WeaponMount>();
+
             if (aimCamera == null)
                 aimCamera = UnityEngine.Camera.main;
 
+            if (muzzle == null && weaponMount != null)
+                muzzle = weaponMount.MuzzlePoint;
+
             if (muzzle == null)
-            {
-                Transform[] children = GetComponentsInChildren<Transform>(true);
-                foreach (Transform child in children)
-                {
-                    if (child != null && child.name == "MuzzlePoint")
-                    {
-                        muzzle = child;
-                        break;
-                    }
-                }
-            }
+                muzzle = FindChildRecursive(transform, "MuzzlePoint");
 
             if (weaponEffects == null)
-            {
                 weaponEffects = GetComponent<WeaponEffects>();
 
-                if (weaponEffects != null)
-                {
-                    weaponEffects.ConfigureDefinition(definition);
-                }
-            }
-
             if (weaponRecoil == null)
-            {
                 weaponRecoil = GetComponent<WeaponRecoil>();
-
-                if (weaponRecoil != null)
-                {
-                    weaponRecoil.ConfigureDefinition(definition);
-                }
-            }
 
             if (weaponEffects != null)
                 weaponEffects.EnsureRuntimeSetup();
@@ -232,14 +202,10 @@ namespace ROS.Game.Weapons
         private void ApplyDefinitionToComponents()
         {
             if (weaponRecoil != null)
-            {
                 weaponRecoil.ConfigureDefinition(definition);
-            }
 
             if (weaponEffects != null)
-            {
                 weaponEffects.ConfigureDefinition(definition);
-            }
         }
 
         private void Update()
@@ -252,9 +218,6 @@ namespace ROS.Game.Weapons
                 return;
             }
 
-            // Defensive ownership check: only the weapon currently equipped by
-            // WeaponEquipmentController may process reload/fire input. This also
-            // protects against an incorrectly-enabled holstered WeaponController.
             if (equipment != null && equipment.EquippedWeapon != this)
             {
                 _triggerLatch = false;
@@ -265,14 +228,10 @@ namespace ROS.Game.Weapons
             }
 
             if (input.FireModePressed)
-            {
                 CycleFireMode();
-            }
 
             if (input.ReloadPressed)
-            {
                 TryReload();
-            }
 
             RecoverSpreadBloom();
             HandleFire();
@@ -282,9 +241,7 @@ namespace ROS.Game.Weapons
         private void HandleFire()
         {
             if (IsReloading)
-            {
                 return;
-            }
 
             bool wantsFire = input.FireHeld;
 
@@ -301,14 +258,10 @@ namespace ROS.Game.Weapons
             }
 
             if (CurrentFireMode == WeaponFireMode.Single && _triggerLatch)
-            {
                 return;
-            }
 
             if (Time.time < _nextShotTime)
-            {
                 return;
-            }
 
             if (AmmoInMagazine <= 0)
             {
@@ -317,14 +270,10 @@ namespace ROS.Game.Weapons
             }
 
             FireOneShot();
-
-            _triggerLatch =
-                CurrentFireMode == WeaponFireMode.Single;
+            _triggerLatch = CurrentFireMode == WeaponFireMode.Single;
         }
 
-        private void HandleBurstFire(
-            bool wantsFire
-        )
+        private void HandleBurstFire(bool wantsFire)
         {
             if (!wantsFire)
             {
@@ -333,19 +282,16 @@ namespace ROS.Game.Weapons
             else if (!_triggerLatch && _burstShotsRemaining <= 0)
             {
                 _triggerLatch = true;
-                _burstShotsRemaining =
-                    Mathf.Min(
-                        Mathf.Max(1, definition.burstCount),
-                        AmmoInMagazine
-                    );
+                _burstShotsRemaining = Mathf.Min(
+                    Mathf.Max(1, definition.burstCount),
+                    AmmoInMagazine
+                );
             }
 
             if (_burstShotsRemaining <= 0 || Time.time < _nextShotTime)
             {
                 if (AmmoInMagazine <= 0 && wantsFire)
-                {
                     TryReload();
-                }
 
                 return;
             }
@@ -357,26 +303,15 @@ namespace ROS.Game.Weapons
         public void CycleFireMode()
         {
             if (definition == null || IsReloading)
-            {
                 return;
-            }
 
-            SetFireMode(
-                definition.GetNextFireMode(CurrentFireMode)
-            );
+            SetFireMode(definition.GetNextFireMode(CurrentFireMode));
         }
 
-        public bool SetFireMode(
-            WeaponFireMode mode
-        )
+        public bool SetFireMode(WeaponFireMode mode)
         {
-            if (
-                definition == null ||
-                !definition.SupportsFireMode(mode)
-            )
-            {
+            if (definition == null || !definition.SupportsFireMode(mode))
                 return false;
-            }
 
             CurrentFireMode = mode;
             _triggerLatch = false;
@@ -393,8 +328,7 @@ namespace ROS.Game.Weapons
                 definition == null ||
                 IsReloading ||
                 Time.time < _nextShotTime ||
-                (equipment != null &&
-                 equipment.EquippedWeapon != this))
+                (equipment != null && equipment.EquippedWeapon != this))
             {
                 return false;
             }
@@ -408,12 +342,17 @@ namespace ROS.Game.Weapons
             Vector3 origin = GetShotOrigin();
             Vector3 direction = worldPoint - origin;
             if (direction.sqrMagnitude <= 0.0001f)
-            {
                 return false;
-            }
 
             _usesExternalShotDirection = true;
-            _externalShotDirection = direction.normalized;
+            _externalShotDirection = ShouldUseBallistics()
+                ? WeaponBallistics.ApplyDropToAimDirection(
+                    origin,
+                    worldPoint,
+                    definition.muzzleVelocity,
+                    definition.gravityScale
+                )
+                : direction.normalized;
 
             try
             {
@@ -430,30 +369,20 @@ namespace ROS.Game.Weapons
         private void FireOneShot()
         {
             AmmoInMagazine--;
+            _nextShotTime = Time.time + 1f / definition.shotsPerSecond;
 
-            _nextShotTime =
-                Time.time +
-                1f / definition.shotsPerSecond;
-
-            Vector3 origin =
-                GetShotOrigin();
-
-            Vector3 baseDirection =
-                GetShotDirection(origin);
-
+            Vector3 origin = GetShotOrigin();
+            Vector3 baseDirection = GetShotDirection(origin);
             float currentSpread = ResolveCurrentSpread();
-            int projectileCount =
-                definition.GetProjectileCount();
+            int projectileCount = definition.GetProjectileCount();
 
             LastShotProjectileCount = projectileCount;
             LastShotImpactCount = 0;
             LastShotCharacterImpactCount = 0;
-            for (int projectileIndex = 0;
-                 projectileIndex < projectileCount;
-                 projectileIndex++)
+
+            for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
             {
-                Vector3 direction =
-                    ApplySpread(baseDirection, currentSpread);
+                Vector3 direction = ApplySpread(baseDirection, currentSpread);
 
                 ProcessHit(
                     origin,
@@ -465,27 +394,27 @@ namespace ROS.Game.Weapons
                 );
 
                 if (hasHit)
-                {
                     LastShotImpactCount++;
-                }
 
                 if (hitCharacter)
-                {
                     LastShotCharacterImpactCount++;
-                }
 
                 debugLastHitPoint = hitPoint;
                 debugLastHitNormal = hitNormal;
 
+                float traveledDistance = Vector3.Distance(origin, hitPoint);
+                debugLastTravelTime = WeaponBallistics.EstimateTravelTime(
+                    traveledDistance,
+                    definition.muzzleVelocity
+                );
+                debugLastEstimatedDrop = WeaponBallistics.EstimateDrop(
+                    traveledDistance,
+                    definition.muzzleVelocity,
+                    definition.gravityScale
+                );
+
                 if (drawShotDebug)
-                {
-                    DrawShotDebug(
-                        origin,
-                        hitPoint,
-                        hitNormal,
-                        hasHit
-                    );
-                }
+                    DrawShotDebug(origin, hitPoint, hitNormal, hasHit);
 
                 if (weaponEffects != null)
                 {
@@ -500,9 +429,7 @@ namespace ROS.Game.Weapons
             }
 
             if (weaponRecoil != null)
-            {
                 weaponRecoil.AddRecoil();
-            }
 
             _spreadBloom = Mathf.Min(
                 definition.maxSpreadBloom,
@@ -511,22 +438,20 @@ namespace ROS.Game.Weapons
             _lastShotTime = Time.time;
 
             UpdateDebugValues();
-
             AmmoChanged?.Invoke();
             Fired?.Invoke();
         }
 
         private Vector3 GetShotOrigin()
         {
+            if (weaponMount != null)
+                return weaponMount.ShotOrigin;
+
             if (muzzle != null)
-            {
                 return muzzle.position;
-            }
 
             if (aimCamera != null)
-            {
                 return aimCamera.transform.position;
-            }
 
             return transform.position;
         }
@@ -534,24 +459,19 @@ namespace ROS.Game.Weapons
         private Vector3 GetShotDirection(Vector3 origin)
         {
             if (_usesExternalShotDirection)
-            {
                 return _externalShotDirection;
-            }
 
             if (aimController != null)
-            {
                 return aimController.GetDirectionFrom(origin);
-            }
 
             if (aimCamera != null)
-            {
                 return aimCamera.transform.forward;
-            }
+
+            if (weaponMount != null)
+                return weaponMount.MechanicalForward;
 
             if (muzzle != null)
-            {
                 return muzzle.forward;
-            }
 
             return transform.forward;
         }
@@ -559,9 +479,7 @@ namespace ROS.Game.Weapons
         private float ResolveCurrentSpread()
         {
             if (definition == null)
-            {
                 return 0f;
-            }
 
             float spread = input != null && input.AimHeld
                 ? definition.adsSpreadDegrees
@@ -582,17 +500,11 @@ namespace ROS.Game.Weapons
                     float moveAmount = motor.MoveInput.magnitude;
 
                     if (input != null && input.SprintHeld && motor.MoveInput.y > 0.25f)
-                    {
                         spread *= definition.sprintSpreadMultiplier;
-                    }
                     else if (moveAmount > 0.65f)
-                    {
                         spread *= definition.runSpreadMultiplier;
-                    }
                     else if (moveAmount > 0.05f)
-                    {
                         spread *= definition.walkSpreadMultiplier;
-                    }
                 }
             }
 
@@ -603,15 +515,10 @@ namespace ROS.Game.Weapons
         private void RecoverSpreadBloom()
         {
             if (definition == null || _spreadBloom <= 0f)
-            {
                 return;
-            }
 
-            // Do not start recovering in the exact frame in which a shot was fired.
             if (Time.time <= _lastShotTime)
-            {
                 return;
-            }
 
             _spreadBloom = Mathf.MoveTowards(
                 _spreadBloom,
@@ -623,30 +530,30 @@ namespace ROS.Game.Weapons
         private Vector3 ApplySpread(Vector3 direction, float spreadDegrees)
         {
             if (spreadDegrees <= 0f)
-            {
                 return direction.normalized;
-            }
 
             float spreadRadius = Mathf.Tan(spreadDegrees * Mathf.Deg2Rad);
             Vector2 spread = UnityEngine.Random.insideUnitCircle * spreadRadius;
 
-            Vector3 orientationUp =
-                Mathf.Abs(Vector3.Dot(direction.normalized, Vector3.up)) >
-                0.98f
-                    ? Vector3.forward
-                    : Vector3.up;
-            Quaternion orientation = Quaternion.LookRotation(
-                direction,
-                orientationUp
-            );
+            Vector3 orientationUp = Mathf.Abs(
+                Vector3.Dot(direction.normalized, Vector3.up)
+            ) > 0.98f
+                ? Vector3.forward
+                : Vector3.up;
+
+            Quaternion orientation = Quaternion.LookRotation(direction, orientationUp);
             Vector3 right = orientation * Vector3.right;
             Vector3 up = orientation * Vector3.up;
 
-            return (
-                direction +
-                right * spread.x +
-                up * spread.y
-            ).normalized;
+            return (direction + right * spread.x + up * spread.y).normalized;
+        }
+
+        private bool ShouldUseBallistics()
+        {
+            return useBallisticTrajectory &&
+                   definition != null &&
+                   definition.gravityScale > 0f &&
+                   definition.muzzleVelocity > 1f;
         }
 
         private void ProcessHit(
@@ -657,29 +564,150 @@ namespace ROS.Game.Weapons
             out Vector3 hitNormal,
             out bool hitCharacter)
         {
-            hasHit = false;
-            hitCharacter = false;
-
-            hitPoint =
-                origin +
-                direction * definition.range;
-
-            hitNormal = -direction;
-
-            RaycastHit[] hits =
-                Physics.RaycastAll(
+            if (ShouldUseBallistics())
+            {
+                ProcessBallisticHit(
                     origin,
                     direction,
-                    definition.range,
+                    out hasHit,
+                    out hitPoint,
+                    out hitNormal,
+                    out hitCharacter
+                );
+                return;
+            }
+
+            ProcessLinearHit(
+                origin,
+                direction,
+                out hasHit,
+                out hitPoint,
+                out hitNormal,
+                out hitCharacter
+            );
+        }
+
+        private void ProcessLinearHit(
+            Vector3 origin,
+            Vector3 direction,
+            out bool hasHit,
+            out Vector3 hitPoint,
+            out Vector3 hitNormal,
+            out bool hitCharacter)
+        {
+            Vector3 fallbackPoint = origin + direction * definition.range;
+            Vector3 fallbackNormal = -direction;
+
+            RaycastHit[] hits = Physics.RaycastAll(
+                origin,
+                direction,
+                definition.range,
+                hitMask,
+                QueryTriggerInteraction.Collide
+            );
+
+            hasHit = TryResolveHits(
+                hits,
+                direction,
+                out hitPoint,
+                out hitNormal,
+                out hitCharacter
+            );
+
+            if (!hasHit)
+            {
+                hitPoint = fallbackPoint;
+                hitNormal = fallbackNormal;
+                hitCharacter = false;
+            }
+        }
+
+        private void ProcessBallisticHit(
+            Vector3 origin,
+            Vector3 direction,
+            out bool hasHit,
+            out Vector3 hitPoint,
+            out Vector3 hitNormal,
+            out bool hitCharacter)
+        {
+            hasHit = false;
+            hitCharacter = false;
+            hitPoint = origin;
+            hitNormal = -direction;
+
+            float velocity = Mathf.Max(1f, definition.muzzleVelocity);
+            float maxTime = definition.range / velocity;
+            int segments = Mathf.Clamp(ballisticSegments, 4, 64);
+            Vector3 initialVelocity = direction.normalized * velocity;
+            Vector3 previous = origin;
+
+            for (int i = 1; i <= segments; i++)
+            {
+                float t = maxTime * i / segments;
+                Vector3 current = WeaponBallistics.EvaluatePosition(
+                    origin,
+                    initialVelocity,
+                    definition.gravityScale,
+                    t
+                );
+
+                Vector3 segment = current - previous;
+                float segmentLength = segment.magnitude;
+                if (segmentLength <= 0.0001f)
+                    continue;
+
+                Vector3 segmentDirection = segment / segmentLength;
+
+                if (drawShotDebug)
+                {
+                    Debug.DrawLine(
+                        previous,
+                        current,
+                        Color.cyan,
+                        debugShotDuration
+                    );
+                }
+
+                RaycastHit[] hits = Physics.RaycastAll(
+                    previous,
+                    segmentDirection,
+                    segmentLength,
                     hitMask,
                     QueryTriggerInteraction.Collide
                 );
 
-            Array.Sort(
-                hits,
-                (a, b) =>
-                    a.distance.CompareTo(b.distance)
-            );
+                if (TryResolveHits(
+                    hits,
+                    segmentDirection,
+                    out hitPoint,
+                    out hitNormal,
+                    out hitCharacter))
+                {
+                    hasHit = true;
+                    return;
+                }
+
+                previous = current;
+                hitPoint = current;
+                hitNormal = -segmentDirection;
+            }
+        }
+
+        private bool TryResolveHits(
+            RaycastHit[] hits,
+            Vector3 direction,
+            out Vector3 hitPoint,
+            out Vector3 hitNormal,
+            out bool hitCharacter)
+        {
+            hitPoint = Vector3.zero;
+            hitNormal = -direction;
+            hitCharacter = false;
+
+            if (hits == null || hits.Length == 0)
+                return false;
+
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
             bool hasCharacterFallback = false;
             RaycastHit characterFallback = default;
@@ -688,21 +716,12 @@ namespace ROS.Game.Weapons
             foreach (RaycastHit hit in hits)
             {
                 if (hit.collider == null)
-                {
                     continue;
-                }
 
-                if (
-                    hit.collider.transform.root ==
-                    transform.root
-                )
-                {
+                if (hit.collider.transform.root == transform.root)
                     continue;
-                }
 
-                DamageHitbox hitbox =
-                    hit.collider.GetComponent<DamageHitbox>();
-
+                DamageHitbox hitbox = hit.collider.GetComponent<DamageHitbox>();
                 Health targetHealth = hitbox != null
                     ? hitbox.Owner
                     : hit.collider.GetComponentInParent<Health>();
@@ -711,18 +730,12 @@ namespace ROS.Game.Weapons
                 {
                     if (hitbox != null)
                     {
-                        ApplyFirearmDamage(
-                            targetHealth,
-                            hitbox.HitZone,
-                            hit,
-                            direction
-                        );
-
-                        hasHit = true;
+                        ApplyFirearmDamage(targetHealth, hitbox.HitZone, hit, direction);
+                        ApplyImpactForce(hit, direction);
                         hitCharacter = true;
                         hitPoint = hit.point;
                         hitNormal = hit.normal;
-                        return;
+                        return true;
                     }
 
                     if (!hasCharacterFallback)
@@ -736,9 +749,7 @@ namespace ROS.Game.Weapons
                 }
 
                 if (hit.collider.isTrigger)
-                {
                     continue;
-                }
 
                 if (hasCharacterFallback)
                 {
@@ -748,22 +759,18 @@ namespace ROS.Game.Weapons
                         characterFallback,
                         direction
                     );
-
-                    hasHit = true;
+                    ApplyImpactForce(characterFallback, direction);
                     hitCharacter = true;
                     hitPoint = characterFallback.point;
                     hitNormal = characterFallback.normal;
-                    return;
+                    return true;
                 }
 
-                hasHit = true;
                 hitPoint = hit.point;
                 hitNormal = hit.normal;
+                ApplyImpactForce(hit, direction);
 
-                IDamageable damageable =
-                    hit.collider
-                        .GetComponentInParent<IDamageable>();
-
+                IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
                 if (damageable != null)
                 {
                     damageable.ApplyDamage(
@@ -778,7 +785,7 @@ namespace ROS.Game.Weapons
                     );
                 }
 
-                return;
+                return true;
             }
 
             if (hasCharacterFallback)
@@ -789,12 +796,14 @@ namespace ROS.Game.Weapons
                     characterFallback,
                     direction
                 );
-
-                hasHit = true;
+                ApplyImpactForce(characterFallback, direction);
                 hitCharacter = true;
                 hitPoint = characterFallback.point;
                 hitNormal = characterFallback.normal;
+                return true;
             }
+
+            return false;
         }
 
         private void ApplyFirearmDamage(
@@ -804,9 +813,7 @@ namespace ROS.Game.Weapons
             Vector3 direction)
         {
             if (target == null)
-            {
                 return;
-            }
 
             bool wasAlive = target.IsAlive;
 
@@ -822,11 +829,23 @@ namespace ROS.Game.Weapons
             );
 
             if (wasAlive)
-            {
-                HitConfirmed?.Invoke(
-                    target.LastDamageResult
-                );
-            }
+                HitConfirmed?.Invoke(target.LastDamageResult);
+        }
+
+        private void ApplyImpactForce(RaycastHit hit, Vector3 direction)
+        {
+            if (definition == null || definition.impactForce <= 0f)
+                return;
+
+            Rigidbody body = hit.rigidbody;
+            if (body == null || body.isKinematic)
+                return;
+
+            body.AddForceAtPosition(
+                direction.normalized * definition.impactForce,
+                hit.point,
+                ForceMode.Impulse
+            );
         }
 
         private void DrawShotDebug(
@@ -835,62 +854,20 @@ namespace ROS.Game.Weapons
             Vector3 hitNormal,
             bool hasHit)
         {
-            Color shotColor =
-                hasHit
-                    ? Color.green
-                    : Color.red;
-
-            Debug.DrawLine(
-                origin,
-                hitPoint,
-                shotColor,
-                debugShotDuration
-            );
+            Color shotColor = hasHit ? Color.green : Color.red;
+            Debug.DrawLine(origin, hitPoint, shotColor, debugShotDuration);
 
             if (!hasHit)
-            {
                 return;
-            }
 
-            Vector3 right =
-                Vector3.right *
-                debugImpactSize;
+            Vector3 right = Vector3.right * debugImpactSize;
+            Vector3 up = Vector3.up * debugImpactSize;
+            Vector3 forward = Vector3.forward * debugImpactSize;
 
-            Vector3 up =
-                Vector3.up *
-                debugImpactSize;
-
-            Vector3 forward =
-                Vector3.forward *
-                debugImpactSize;
-
-            Debug.DrawLine(
-                hitPoint - right,
-                hitPoint + right,
-                Color.yellow,
-                debugShotDuration
-            );
-
-            Debug.DrawLine(
-                hitPoint - up,
-                hitPoint + up,
-                Color.yellow,
-                debugShotDuration
-            );
-
-            Debug.DrawLine(
-                hitPoint - forward,
-                hitPoint + forward,
-                Color.yellow,
-                debugShotDuration
-            );
-
-            Debug.DrawRay(
-                hitPoint,
-                hitNormal * 0.35f,
-                Color.cyan,
-                debugShotDuration
-            );
+            Debug.DrawLine(hitPoint - right, hitPoint + right, Color.yellow, debugShotDuration);
+            Debug.DrawLine(hitPoint - up, hitPoint + up, Color.yellow, debugShotDuration);
+            Debug.DrawLine(hitPoint - forward, hitPoint + forward, Color.yellow, debugShotDuration);
+            Debug.DrawRay(hitPoint, hitNormal * 0.35f, Color.cyan, debugShotDuration);
         }
 
         public void TryReload()
@@ -898,49 +875,32 @@ namespace ROS.Game.Weapons
             if (equipment != null && equipment.EquippedWeapon != this)
                 return;
 
-            if (
-                IsReloading ||
+            if (IsReloading ||
                 definition == null ||
                 AmmoInMagazine >= definition.magazineSize ||
-                ReserveAmmo <= 0
-            )
+                ReserveAmmo <= 0)
             {
                 return;
             }
 
             if (_reloadRoutine != null)
-            {
                 StopCoroutine(_reloadRoutine);
-            }
 
             _burstShotsRemaining = 0;
-
-            _reloadRoutine =
-                StartCoroutine(
-                    ReloadRoutine()
-                );
+            _reloadRoutine = StartCoroutine(ReloadRoutine());
         }
 
         private IEnumerator ReloadRoutine()
         {
             IsReloading = true;
-            ActiveReloadDuration =
-                definition.GetReloadDuration(
-                    AmmoInMagazine <= 0
-                );
-
+            ActiveReloadDuration = definition.GetReloadDuration(AmmoInMagazine <= 0);
             UpdateDebugValues();
 
-            yield return new WaitForSeconds(
-                ActiveReloadDuration
-            );
+            yield return new WaitForSeconds(ActiveReloadDuration);
 
-            int needed =
-                definition.magazineSize -
-                AmmoInMagazine;
-
-            int available = ReserveAmmo; // usa inventario si está conectado
-            int amount    = Mathf.Min(needed, available);
+            int needed = definition.magazineSize - AmmoInMagazine;
+            int available = ReserveAmmo;
+            int amount = Mathf.Min(needed, available);
 
             AmmoInMagazine += amount;
 
@@ -952,37 +912,35 @@ namespace ROS.Game.Weapons
             IsReloading = false;
             ActiveReloadDuration = 0f;
             _reloadRoutine = null;
-
             UpdateDebugValues();
-
             AmmoChanged?.Invoke();
         }
 
         private void UpdateDebugValues()
         {
-            debugAmmoInMagazine =
-                AmmoInMagazine;
+            debugAmmoInMagazine = AmmoInMagazine;
+            debugReserveAmmo = ReserveAmmo;
+            debugIsReloading = IsReloading;
+            debugCurrentSpread = definition != null ? ResolveCurrentSpread() : 0f;
+            debugSpreadBloom = _spreadBloom;
+            debugLastShotProjectiles = LastShotProjectileCount;
+            debugLastShotImpacts = LastShotImpactCount;
+            debugLastShotCharacterImpacts = LastShotCharacterImpactCount;
+        }
 
-            debugReserveAmmo =
-                reserveAmmo;
+        private static Transform FindChildRecursive(Transform root, string childName)
+        {
+            if (root == null)
+                return null;
 
-            debugIsReloading =
-                IsReloading;
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            foreach (Transform child in children)
+            {
+                if (child != null && child.name == childName)
+                    return child;
+            }
 
-            debugCurrentSpread =
-                definition != null ? ResolveCurrentSpread() : 0f;
-
-            debugSpreadBloom =
-                _spreadBloom;
-
-            debugLastShotProjectiles =
-                LastShotProjectileCount;
-
-            debugLastShotImpacts =
-                LastShotImpactCount;
-
-            debugLastShotCharacterImpacts =
-                LastShotCharacterImpactCount;
+            return null;
         }
     }
 }

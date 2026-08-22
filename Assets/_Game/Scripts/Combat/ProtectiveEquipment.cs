@@ -123,9 +123,12 @@ namespace ROS.Game.Combat
             float availableDurability =
                 useHelmet ? helmetDurability : vestDurability;
 
+            float effectiveReduction = GetReduction(level) *
+                (1f - Mathf.Clamp01(damage.ArmorPenetration));
+
             float absorbed = Mathf.Min(
                 availableDurability,
-                remaining * GetReduction(level)
+                remaining * effectiveReduction
             );
 
             remaining -= absorbed;
@@ -181,8 +184,7 @@ namespace ROS.Game.Combat
             }
         }
 
-        public static float GetHelmetDurability(
-            ProtectionLevel level)
+        public static float GetHelmetDurability(ProtectionLevel level)
         {
             switch (level)
             {
@@ -198,8 +200,7 @@ namespace ROS.Game.Combat
             }
         }
 
-        public static float GetVestDurability(
-            ProtectionLevel level)
+        public static float GetVestDurability(ProtectionLevel level)
         {
             switch (level)
             {

@@ -81,8 +81,9 @@ namespace ROS.Game.Combat
 
             LastDamage = damage;
 
-            float multiplier =
-                DamageRules.GetHitZoneMultiplier(
+            float multiplier = damage.HitZoneMultiplierOverride > 0f
+                ? damage.HitZoneMultiplierOverride
+                : DamageRules.GetHitZoneMultiplier(
                     damage.Type,
                     damage.HitZone
                 );
@@ -107,9 +108,12 @@ namespace ROS.Game.Combat
             if (_currentArmor > 0f &&
                 DamageRules.CanProtectionReduce(damage.Type))
             {
+                float effectiveAbsorption = armorAbsorption *
+                    (1f - Mathf.Clamp01(damage.ArmorPenetration));
+
                 float shieldAbsorbed = Mathf.Min(
                     _currentArmor,
-                    incoming * armorAbsorption
+                    incoming * effectiveAbsorption
                 );
 
                 _currentArmor -= shieldAbsorbed;

@@ -15,4 +15,5 @@ namespace ROS.Game.Core
     public enum DamageType { Generic, Firearm, Explosion, Fall, SafeZone }
     public enum HitZone { None, Head, Torso, Arm, Leg }
     public enum ProtectionLevel { None, Level1, Level2, Level3 }
+    public enum ImpactSurfaceType { Default, Flesh, Dirt, Concrete, Metal, Wood, Glass, Vehicle }
 }
