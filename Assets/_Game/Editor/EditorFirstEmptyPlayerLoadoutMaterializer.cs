@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace ROS.Game.EditorTools
 {
@@ -60,6 +61,8 @@ namespace ROS.Game.EditorTools
             PlayerInputReader player = FindMainPlayer(scene);
             bool sceneChanged = player != null &&
                                 ClearPlayerState(player.gameObject, false);
+
+            sceneChanged |= ClearHudWeaponSlots(scene);
 
             if (sceneChanged)
             {
@@ -208,6 +211,69 @@ namespace ROS.Game.EditorTools
                         continue;
 
                     Object.DestroyImmediate(weapon.gameObject);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool ClearHudWeaponSlots(Scene scene)
+        {
+            GameObject presentationRoot =
+                EditorFirstBattleRoyaleSceneMaterializer.FindPresentationRoot(scene);
+
+            Transform weaponsRoot = presentationRoot != null
+                ? presentationRoot.transform.Find(
+                    "01_RUNTIME_UI/HUD_ROS_EDITABLE/Canvas/Weapons"
+                )
+                : null;
+
+            if (weaponsRoot == null)
+                return false;
+
+            bool changed = false;
+
+            for (int slot = 1; slot <= PlayerWeaponSlotRules.SlotCount; slot++)
+            {
+                Transform root = weaponsRoot.Find("WeaponSlot_" + slot);
+                if (root == null)
+                    continue;
+
+                Text ammo = root.Find("Ammo")?.GetComponent<Text>();
+                if (ammo != null && !string.IsNullOrEmpty(ammo.text))
+                {
+                    ammo.text = string.Empty;
+                    changed = true;
+                }
+
+                Transform legacyName = root.Find("WeaponName");
+                if (legacyName != null && legacyName.gameObject.activeSelf)
+                {
+                    legacyName.gameObject.SetActive(false);
+                    changed = true;
+                }
+
+                Image icon = root.Find("Icon")?.GetComponent<Image>();
+                if (icon != null)
+                {
+                    if (icon.sprite != null)
+                    {
+                        icon.sprite = null;
+                        changed = true;
+                    }
+
+                    if (icon.enabled)
+                    {
+                        icon.enabled = false;
+                        changed = true;
+                    }
+                }
+
+                Transform fireMode = root.Find("FireModePanel");
+                if (fireMode != null && fireMode.gameObject.activeSelf)
+                {
+                    fireMode.gameObject.SetActive(false);
                     changed = true;
                 }
             }
