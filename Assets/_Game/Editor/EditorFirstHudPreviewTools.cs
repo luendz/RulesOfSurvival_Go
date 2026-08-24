@@ -35,15 +35,15 @@ namespace ROS.Game.EditorTools
                 return;
             }
 
-            SetHierarchyActive(canvas.Find("MatchStatePanel"), true);
             SetHierarchyActive(canvas.Find("KillFeedRoot"), true);
             SetHierarchyActive(canvas.Find("DamageDirectionRoot"), true);
-            SetHierarchyActive(canvas.Find("EquipmentStatusRoot"), true);
-            SetHierarchyActive(canvas.Find("QuickConsumeRoot"), true);
             SetHierarchyActive(canvas.Find("CombatFeedbackRoot"), true);
             SetHierarchyActive(canvas.Find("ConsumableProgressBar"), true);
             SetHierarchyActive(canvas.Find("NearbyObjectIndicator"), true);
             SetHierarchyActive(canvas.Find("DeathLootPanelROS"), true);
+
+            Transform quickConsume = FindQuickConsumeRoot(canvas);
+            SetHierarchyActive(quickConsume, true);
 
             SetPreviewAlpha(canvas, "DamageArrow_Front", 0.9f);
             SetPreviewAlpha(canvas, "DamageArrow_Right", 0.9f);
@@ -54,16 +54,11 @@ namespace ROS.Game.EditorTools
             SetPreviewAlpha(canvas, "DamageFeedback_Back", 0.72f);
             SetPreviewAlpha(canvas, "DamageFeedback_Left", 0.72f);
 
-            SetText(canvas, "MatchStateTitle", "RUTA DEL AVIÓN");
-            SetText(canvas, "MatchStateDetail", "[F / ESPACIO] SALTAR");
             SetText(canvas, "KillFeedRow_0", "TU  ▶  Bot_01");
             SetText(canvas, "KillFeedRow_1", "Bot_04  ▶  Bot_07");
             SetText(canvas, "KillFeedRow_2", "Bot_02  ▶  Bot_09");
             SetText(canvas, "KillFeedRow_3", "Bot_06  ▶  Bot_03");
             SetText(canvas, "KillFeedRow_4", "Bot_08  ▶  Bot_10");
-            SetText(canvas, "HelmetStatus", "CASCO L3");
-            SetText(canvas, "VestStatus", "CHALECO L3");
-            SetText(canvas, "BackpackStatus", "MOCHILA L3");
             SetText(canvas, "ConsumableProgressLabel", "Usando botiquín…");
             SetText(canvas, "HeadshotLabel", "HEADSHOT");
 
@@ -78,8 +73,8 @@ namespace ROS.Game.EditorTools
             SceneView.RepaintAll();
 
             Debug.Log(
-                "[HUD Preview] Todos los elementos del HUD estan visibles para editar. " +
-                "Cuando termines usa: Rules Of Survival > Editor First > HUD Preview > Restore Runtime Start State."
+                "[HUD Preview] Elementos editables del HUD visibles. " +
+                "QuickConsume usa exclusivamente Vitals/Meds/QuickConsumeRoot."
             );
         }
 
@@ -96,12 +91,12 @@ namespace ROS.Game.EditorTools
                 return;
             }
 
-            // Elementos presentes siempre, pero con contenido dinamico oculto.
             SetActive(canvas.Find("KillFeedRoot"), true);
             SetActive(canvas.Find("DamageDirectionRoot"), true);
-            SetActive(canvas.Find("EquipmentStatusRoot"), true);
-            SetActive(canvas.Find("QuickConsumeRoot"), true);
             SetActive(canvas.Find("CombatFeedbackRoot"), true);
+
+            Transform quickConsume = FindQuickConsumeRoot(canvas);
+            SetActive(quickConsume, true);
 
             SetChildrenActive(canvas.Find("KillFeedRoot"), false);
             SetQuickConsumeSlots(canvas, false);
@@ -118,21 +113,14 @@ namespace ROS.Game.EditorTools
             SetPreviewAlpha(canvas, "DamageFeedback_Back", 0f);
             SetPreviewAlpha(canvas, "DamageFeedback_Left", 0f);
 
-            // Elementos que deben comenzar completamente ocultos.
-            SetActive(canvas.Find("MatchStatePanel"), false);
             SetActive(canvas.Find("ConsumableProgressBar"), false);
             SetActive(canvas.Find("NearbyObjectIndicator"), false);
             SetActive(canvas.Find("DeathLootPanelROS"), false);
             ConfigureWeaponFireModePreview(canvas, false);
 
-            SetText(canvas, "MatchStateTitle", string.Empty);
-            SetText(canvas, "MatchStateDetail", string.Empty);
             for (int i = 0; i < 5; i++)
                 SetText(canvas, "KillFeedRow_" + i, string.Empty);
 
-            SetText(canvas, "HelmetStatus", "CASCO —");
-            SetText(canvas, "VestStatus", "CHALECO —");
-            SetText(canvas, "BackpackStatus", "MOCHILA —");
             SetText(canvas, "ConsumableProgressLabel", string.Empty);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -141,8 +129,7 @@ namespace ROS.Game.EditorTools
             SceneView.RepaintAll();
 
             Debug.Log(
-                "[HUD Preview] Estado runtime restaurado y escena 08 guardada. " +
-                "Los elementos transitorios siguen existiendo fisicamente en Hierarchy."
+                "[HUD Preview] Estado runtime restaurado y escena 08 guardada."
             );
         }
 
@@ -195,12 +182,19 @@ namespace ROS.Game.EditorTools
 
         private static void ConfigureQuickConsumePreview(Transform canvas)
         {
+            Transform quickConsume = FindQuickConsumeRoot(canvas);
+            if (quickConsume == null)
+                return;
+
             string[] names = { "BOTIQUÍN", "VENDAJE", "BEBIDA" };
             string[] counts = { "2", "5", "3" };
 
             for (int i = 0; i < 3; i++)
             {
-                Transform slot = FindRecursive(canvas, "QuickConsumeSlot_" + i);
+                Transform slot = FindRecursive(
+                    quickConsume,
+                    "QuickConsumeSlot_" + i
+                );
                 if (slot == null)
                     continue;
 
@@ -210,6 +204,13 @@ namespace ROS.Game.EditorTools
                 if (name != null) name.text = names[i];
                 if (count != null) count.text = counts[i];
             }
+        }
+
+        private static Transform FindQuickConsumeRoot(Transform canvas)
+        {
+            Transform vitals = canvas != null ? canvas.Find("Vitals") : null;
+            Transform meds = vitals != null ? vitals.Find("Meds") : null;
+            return meds != null ? meds.Find("QuickConsumeRoot") : null;
         }
 
         private static void ConfigureDeathLootPreview(Transform canvas)
@@ -284,9 +285,16 @@ namespace ROS.Game.EditorTools
 
         private static void SetQuickConsumeSlots(Transform canvas, bool active)
         {
+            Transform quickConsume = FindQuickConsumeRoot(canvas);
+            if (quickConsume == null)
+                return;
+
             for (int i = 0; i < 3; i++)
             {
-                Transform slot = FindRecursive(canvas, "QuickConsumeSlot_" + i);
+                Transform slot = FindRecursive(
+                    quickConsume,
+                    "QuickConsumeSlot_" + i
+                );
                 SetActive(slot, active);
             }
         }
