@@ -12,11 +12,10 @@ namespace ROS.Game.Weapons
 
     /// <summary>
     /// Offsets por arma y referencias físicas normalizadas para disparo, apuntado e IK.
-    /// Las referencias vacías se descubren automáticamente dentro del prefab del arma.
     ///
-    /// Convención de espalda del personaje:
-    /// Back01 = lado derecho.
-    /// Back02 = lado izquierdo.
+    /// Los offsets de espalda corresponden exclusivamente al hijo Visual_*.
+    /// Weapon_Back_01 / Weapon_Back_02 y el root lógico del arma (Arma_*/PF_Weapon_*)
+    /// permanecen neutrales en el socket.
     /// </summary>
     public sealed class WeaponMount : MonoBehaviour
     {
@@ -24,17 +23,20 @@ namespace ROS.Game.Weapons
         [SerializeField] private Vector3 handLocalPosition = Vector3.zero;
         [SerializeField] private Vector3 handLocalEulerAngles = Vector3.zero;
 
-        [Header("Back 01 - Right Side")]
+        [Header("Back 01 - Visual_* / Right Side")]
         [SerializeField] private Vector3 back01LocalPosition =
             new Vector3(0.01f, 0.08f, -0.036f);
         [SerializeField] private Vector3 back01LocalEulerAngles =
             new Vector3(-180f, -180f, 50f);
 
-        [Header("Back 02 - Left Side")]
+        [Header("Back 02 - Visual_* / Left Side")]
         [SerializeField] private Vector3 back02LocalPosition =
             new Vector3(-0.03f, 0.133f, -0.035f);
         [SerializeField] private Vector3 back02LocalEulerAngles =
             new Vector3(-180f, -180f, 120f);
+
+        [SerializeField] private Vector3 backVisualScale =
+            new Vector3(40f, 40f, 40f);
 
         [Header("Hip")]
         [SerializeField] private Vector3 hipLocalPosition = new Vector3(0.18f, -0.05f, 0f);
@@ -53,6 +55,12 @@ namespace ROS.Game.Weapons
         [SerializeField] private Transform leftHandIKTarget;
         [Tooltip("Expulsión de casquillos. Fallback: ShellEjectionPoint.")]
         [SerializeField] private Transform shellEjectionPoint;
+
+        private Transform _visualRoot;
+        private bool _visualDefaultCached;
+        private Vector3 _visualDefaultPosition;
+        private Quaternion _visualDefaultRotation;
+        private Vector3 _visualDefaultScale;
 
         public Transform MuzzlePoint => Resolve(ref muzzlePoint, "MuzzlePoint", transform, transform);
         public Transform AimPoint => Resolve(ref aimPoint, "AimPoint", transform, MuzzlePoint);
@@ -80,21 +88,33 @@ namespace ROS.Game.Weapons
             }
         }
 
+        private void Awake()
+        {
+            CacheVisualDefault();
+        }
+
         public void Apply(WeaponMountPoint mountPoint)
         {
+            CacheVisualDefault();
+
             switch (mountPoint)
             {
                 case WeaponMountPoint.RightHand:
-                    ApplyLocalTransform(handLocalPosition, handLocalEulerAngles);
+                    RestoreVisualDefault();
+                    ApplyRootLocalTransform(handLocalPosition, handLocalEulerAngles);
                     break;
+
                 case WeaponMountPoint.Back01:
-                    ApplyLocalTransform(back01LocalPosition, back01LocalEulerAngles);
+                    ApplyBackVisual(back01LocalPosition, back01LocalEulerAngles);
                     break;
+
                 case WeaponMountPoint.Back02:
-                    ApplyLocalTransform(back02LocalPosition, back02LocalEulerAngles);
+                    ApplyBackVisual(back02LocalPosition, back02LocalEulerAngles);
                     break;
+
                 case WeaponMountPoint.Hip:
-                    ApplyLocalTransform(hipLocalPosition, hipLocalEulerAngles);
+                    RestoreVisualDefault();
+                    ApplyRootLocalTransform(hipLocalPosition, hipLocalEulerAngles);
                     break;
             }
         }
@@ -105,10 +125,78 @@ namespace ROS.Game.Weapons
                    FindChildRecursive(transform, "AimPoint") != null;
         }
 
-        private void ApplyLocalTransform(Vector3 localPosition, Vector3 localEulerAngles)
+        private void ApplyBackVisual(Vector3 localPosition, Vector3 localEulerAngles)
+        {
+            // Root lógico del arma neutral dentro de Weapon_Back_01 / Weapon_Back_02.
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
+
+            Transform visual = ResolveVisualRoot();
+            if (visual == null)
+                return;
+
+            visual.localPosition = localPosition;
+            visual.localRotation = Quaternion.Euler(localEulerAngles);
+            visual.localScale = backVisualScale;
+        }
+
+        private void ApplyRootLocalTransform(Vector3 localPosition, Vector3 localEulerAngles)
         {
             transform.localPosition = localPosition;
             transform.localRotation = Quaternion.Euler(localEulerAngles);
+            transform.localScale = Vector3.one;
+        }
+
+        private void CacheVisualDefault()
+        {
+            if (_visualDefaultCached)
+                return;
+
+            Transform visual = ResolveVisualRoot();
+            if (visual == null)
+                return;
+
+            _visualDefaultPosition = visual.localPosition;
+            _visualDefaultRotation = visual.localRotation;
+            _visualDefaultScale = visual.localScale;
+            _visualDefaultCached = true;
+        }
+
+        private void RestoreVisualDefault()
+        {
+            if (!_visualDefaultCached)
+                CacheVisualDefault();
+
+            Transform visual = ResolveVisualRoot();
+            if (visual == null || !_visualDefaultCached)
+                return;
+
+            visual.localPosition = _visualDefaultPosition;
+            visual.localRotation = _visualDefaultRotation;
+            visual.localScale = _visualDefaultScale;
+        }
+
+        private Transform ResolveVisualRoot()
+        {
+            if (_visualRoot != null)
+                return _visualRoot;
+
+            Transform[] children = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null || child == transform)
+                    continue;
+
+                if (child.name.StartsWith("Visual_", System.StringComparison.Ordinal))
+                {
+                    _visualRoot = child;
+                    return _visualRoot;
+                }
+            }
+
+            return null;
         }
 
         private static Transform Resolve(
