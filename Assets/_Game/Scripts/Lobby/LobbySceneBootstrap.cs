@@ -23,6 +23,12 @@ namespace ROS.Game.Lobby
         [SerializeField] private int gold = 1250;
         [SerializeField] private int diamonds = 300;
 
+        [Header("HUD editable")]
+        [Tooltip("HUD persistente creado desde el Editor. Si existe, no se reconstruye al entrar a Play.")]
+        [SerializeField] private LobbyHudView authoredHud;
+        [Tooltip("Mantiene compatibilidad con escenas antiguas que todavía no tienen el HUD materializado.")]
+        [SerializeField] private bool buildHudAtRuntimeIfMissing = true;
+
         private Font _font;
         private Canvas _canvas;
         private LobbyNavigationController _navigation;
@@ -42,9 +48,6 @@ namespace ROS.Game.Lobby
         private readonly Color _primaryColor =
             new Color(0.92f, 0.56f, 0.08f, 1f);
 
-        private readonly Color _accentColor =
-            new Color(0.22f, 0.66f, 0.9f, 1f);
-
         private void Awake()
         {
             if (_built)
@@ -63,7 +66,21 @@ namespace ROS.Game.Lobby
             BuildEnvironment();
             SpawnCharacter();
             BuildCamera();
-            BuildUi();
+
+            if (!TryUseAuthoredHud())
+            {
+                if (buildHudAtRuntimeIfMissing)
+                {
+                    BuildUi();
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        "El lobby no tiene un HUD editable asignado. " +
+                        "Selecciona LobbyRoot y usa 'Crear / localizar HUD editable'."
+                    );
+                }
+            }
         }
 
         private void OnDestroy()
@@ -71,6 +88,121 @@ namespace ROS.Game.Lobby
             if (_navigation != null)
             {
                 _navigation.MenuChanged -= HandleMenuChanged;
+            }
+        }
+
+        public LobbyHudView CreateEditableHud()
+        {
+            if (Application.isPlaying)
+            {
+                Debug.LogWarning("El HUD editable debe crearse fuera de Play Mode.");
+                return null;
+            }
+
+            LobbyHudView existing = ResolveAuthoredHud();
+            if (existing != null)
+            {
+                existing.CaptureReferences();
+                authoredHud = existing;
+                return existing;
+            }
+
+            Canvas existingCanvas = FindLobbyCanvas();
+            if (existingCanvas != null)
+            {
+                authoredHud = existingCanvas.GetComponent<LobbyHudView>();
+                if (authoredHud == null)
+                {
+                    authoredHud = existingCanvas.gameObject.AddComponent<LobbyHudView>();
+                }
+
+                authoredHud.CaptureReferences();
+                return authoredHud;
+            }
+
+            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            BuildUi();
+
+            if (_navigation != null)
+            {
+                _navigation.MenuChanged -= HandleMenuChanged;
+            }
+
+            return authoredHud;
+        }
+
+        private bool TryUseAuthoredHud()
+        {
+            LobbyHudView hud = ResolveAuthoredHud();
+            if (hud == null || hud.Canvas == null)
+            {
+                return false;
+            }
+
+            EnsureEventSystem();
+            EnsureNavigation();
+
+            _canvas = hud.Canvas;
+            _modeText = hud.ModeText;
+            _rotator = hud.CharacterRotator;
+
+            if (_rotator != null)
+            {
+                _rotator.Configure(_character != null ? _character.transform : null);
+            }
+
+            hud.ApplyRuntimeData(
+                playerName,
+                playerLevel,
+                gold,
+                diamonds,
+                mapName,
+                _selectedMode
+            );
+            hud.BindRuntime(_navigation, SelectMode, StartBattleRoyale);
+
+            _navigation.MenuChanged -= HandleMenuChanged;
+            _navigation.MenuChanged += HandleMenuChanged;
+            _navigation.CloseAll();
+            HandleMenuChanged(LobbyMenuId.None);
+            return true;
+        }
+
+        private LobbyHudView ResolveAuthoredHud()
+        {
+            if (authoredHud != null)
+            {
+                return authoredHud;
+            }
+
+            authoredHud = FindFirstObjectByType<LobbyHudView>(FindObjectsInactive.Include);
+            return authoredHud;
+        }
+
+        private static Canvas FindLobbyCanvas()
+        {
+            Canvas[] canvases = FindObjectsByType<Canvas>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+            foreach (Canvas candidate in canvases)
+            {
+                if (candidate != null && candidate.name == "Lobby Canvas")
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private void EnsureNavigation()
+        {
+            _navigation = GetComponent<LobbyNavigationController>();
+            if (_navigation == null)
+            {
+                _navigation = gameObject.AddComponent<LobbyNavigationController>();
             }
         }
 
@@ -144,7 +276,7 @@ namespace ROS.Game.Lobby
             }
         }
 
-        private void CreateFillLight(
+        private static void CreateFillLight(
             string objectName,
             Vector3 position,
             Color color,
@@ -163,10 +295,7 @@ namespace ROS.Game.Lobby
             light.shadows = LightShadows.None;
         }
 
-        private Material CreateRuntimeMaterial(
-            Color color,
-            float smoothness
-        )
+        private static Material CreateRuntimeMaterial(Color color, float smoothness)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null)
@@ -279,10 +408,7 @@ namespace ROS.Game.Lobby
             }
         }
 
-        private static void NormalizeCharacter(
-            Transform root,
-            float desiredHeight
-        )
+        private static void NormalizeCharacter(Transform root, float desiredHeight)
         {
             Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length == 0)
@@ -336,11 +462,7 @@ namespace ROS.Game.Lobby
 
             canvasObject.AddComponent<GraphicRaycaster>();
 
-            _navigation = GetComponent<LobbyNavigationController>();
-            if (_navigation == null)
-            {
-                _navigation = gameObject.AddComponent<LobbyNavigationController>();
-            }
+            EnsureNavigation();
 
             CreateCharacterDragArea(canvasObject.transform);
             CreateTopCenterTitle(canvasObject.transform);
@@ -350,6 +472,10 @@ namespace ROS.Game.Lobby
             CreateBottomRight(canvasObject.transform);
             CreateMenuPanels(canvasObject.transform);
 
+            authoredHud = canvasObject.AddComponent<LobbyHudView>();
+            authoredHud.CaptureReferences();
+
+            _navigation.MenuChanged -= HandleMenuChanged;
             _navigation.MenuChanged += HandleMenuChanged;
             HandleMenuChanged(LobbyMenuId.None);
         }
@@ -537,14 +663,7 @@ namespace ROS.Game.Lobby
                 false
             );
 
-            string[] names =
-            {
-                "PERSONAJE",
-                "INVENTARIO",
-                "ARMAS",
-                "TIENDA"
-            };
-
+            string[] names = { "PERSONAJE", "INVENTARIO", "ARMAS", "TIENDA" };
             LobbyMenuId[] menus =
             {
                 LobbyMenuId.Character,
@@ -628,52 +747,45 @@ namespace ROS.Game.Lobby
             CreateMenuPanel(
                 LobbyMenuId.Character,
                 "PERSONAJE",
-                "Vista 3D del personaje. La estructura queda preparada para conectar ropa, skins, casco, mochila y equipamiento sin mezclar esa lógica con la navegación.",
+                "Vista 3D del personaje. Preparado para ropa, skins, casco, mochila y equipamiento.",
                 out _
             );
-
             CreateMenuPanel(
                 LobbyMenuId.Inventory,
                 "INVENTARIO",
-                "Panel preparado para mostrar objetos, consumibles, equipamiento y la carga persistente del jugador.",
+                "Panel preparado para objetos, consumibles, equipamiento y carga persistente.",
                 out _
             );
-
             CreateMenuPanel(
                 LobbyMenuId.Weapons,
                 "ARMAS",
-                "Panel preparado para selección de arma, accesorios, skin y vista de detalle. La cámara se acerca automáticamente al abrirlo.",
+                "Panel preparado para arma, accesorios, skin y vista de detalle.",
                 out _
             );
-
             CreateMenuPanel(
                 LobbyMenuId.Store,
                 "TIENDA",
-                "Cascarón de tienda listo para conectar catálogo, moneda, compras y cosméticos.",
+                "Cascarón de tienda listo para catálogo, moneda, compras y cosméticos.",
                 out _
             );
-
             CreateMenuPanel(
                 LobbyMenuId.Events,
                 "EVENTOS",
                 "Cascarón de eventos temporales, recompensas y novedades del lobby.",
                 out _
             );
-
             CreateMenuPanel(
                 LobbyMenuId.Missions,
                 "MISIONES",
                 "Cascarón para misiones diarias, semanales y progreso de objetivos.",
                 out _
             );
-
             CreateMenuPanel(
                 LobbyMenuId.Friends,
                 "AMIGOS / EQUIPO",
-                "Preparado para lista de amigos, invitaciones, estado del grupo y composición Solo / Duo / Squad.",
+                "Preparado para amigos, invitaciones y composición Solo / Duo / Squad.",
                 out _
             );
-
             CreateMenuPanel(
                 LobbyMenuId.Settings,
                 "AJUSTES",
@@ -684,7 +796,7 @@ namespace ROS.Game.Lobby
             GameObject modePanel = CreateMenuPanel(
                 LobbyMenuId.PlayMode,
                 "MODO DE JUEGO",
-                "Selecciona el tamaño del equipo. Por ahora todos los modos reutilizan la escena Battle Royale local existente.",
+                "Selecciona el tamaño del equipo.",
                 out RectTransform modeCard
             );
 
@@ -812,7 +924,7 @@ namespace ROS.Game.Lobby
                 _modeText.text = mode.ToString().ToUpperInvariant();
             }
 
-            _navigation.CloseAll();
+            _navigation?.CloseAll();
         }
 
         private void StartBattleRoyale()
