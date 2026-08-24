@@ -5,6 +5,7 @@ using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
+using ROS.Game.Loot;
 using ROS.Game.Parachute;
 using ROS.Game.Teams;
 using ROS.Game.UI;
@@ -45,8 +46,7 @@ namespace ROS.Game.AI
         private void Start()
         {
             // En Editor First las referencias quedan serializadas en la escena.
-            // Los bots NO se crean aquí: esperan a que el jugador pulse
-            // INICIAR PARTIDA BR y MatchStartController emita SequenceStarted.
+            // Los bots esperan a SequenceStarted para existir en el BR.
             Subscribe();
         }
 
@@ -125,7 +125,9 @@ namespace ROS.Game.AI
             {
                 GameObject botObject = Instantiate(sourcePlayer);
                 botObject.name = $"Bot_BattleRoyale_{i + 1:00}";
+
                 ConfigureBotOnlyComponents(botObject);
+                ClearStartingLoadout(botObject);
 
                 ParachuteController parachute = EnsureParachute(botObject);
                 if (parachute == null)
@@ -162,7 +164,6 @@ namespace ROS.Game.AI
                 }
 
                 BotHealthBar.Attach(botObject);
-                ApplyBotDamageScale(botObject, 0.20f);
 
                 if (botObject.GetComponent<CharacterDeathDissolver>() == null)
                     botObject.AddComponent<CharacterDeathDissolver>();
@@ -173,17 +174,14 @@ namespace ROS.Game.AI
                     elimination = botObject.AddComponent<PlayerEliminationController>();
                 elimination.Bind(matchManager);
 
-                InventoryComponent inventory =
-                    botObject.GetComponent<InventoryComponent>();
-                FillBotInventory(inventory, i);
-
                 _bots.Add(bot);
             }
 
             PlayerDamageRuntimeSetup.ConfigureExistingPlayers();
 
             Debug.Log(
-                $"[BattleRoyaleBotDirector] Bots BR activados: {_bots.Count}/{safeCount}.",
+                $"[BattleRoyaleBotDirector] Bots BR activados: {_bots.Count}/{safeCount}. " +
+                "Todos comienzan sin armas ni inventario inicial y deben saquear el mapa.",
                 this
             );
         }
@@ -234,10 +232,18 @@ namespace ROS.Game.AI
             if (input != null)
                 input.EnableExternalControl();
 
+            // El bot recoge loot directamente desde su IA. El PlayerInteractor
+            // humano queda desactivado para que no dependa de la tecla F.
             PlayerInteractor interactor =
                 botObject.GetComponent<PlayerInteractor>();
             if (interactor != null)
                 interactor.enabled = false;
+
+            if (botObject.GetComponent<PlayerLootEquipment>() == null)
+                botObject.AddComponent<PlayerLootEquipment>();
+
+            if (botObject.GetComponent<WeaponAmmoConnector>() == null)
+                botObject.AddComponent<WeaponAmmoConnector>();
 
             DisableAll<CombatFeedbackPresenter>(botObject);
             DisableAll<NearbyLootPresenter>(botObject);
@@ -245,6 +251,76 @@ namespace ROS.Game.AI
             DisableAll<VitalsDebugTester>(botObject);
             DisableAll<UnityEngine.Camera>(botObject);
             DisableAll<AudioListener>(botObject);
+        }
+
+        private static void ClearStartingLoadout(GameObject botObject)
+        {
+            if (botObject == null)
+                return;
+
+            // Ningún bot recibe munición, curas o armadura gratis al aparecer.
+            InventoryComponent inventory =
+                botObject.GetComponent<InventoryComponent>();
+            if (inventory != null)
+            {
+                List<InventoryStack> snapshot =
+                    new List<InventoryStack>();
+
+                foreach (InventoryStack stack in inventory.Stacks)
+                {
+                    if (stack == null || stack.item == null || stack.amount <= 0)
+                        continue;
+
+                    snapshot.Add(new InventoryStack
+                    {
+                        item = stack.item,
+                        amount = stack.amount
+                    });
+                }
+
+                for (int i = 0; i < snapshot.Count; i++)
+                    inventory.Remove(snapshot[i].item, snapshot[i].amount);
+            }
+
+            WeaponEquipmentController equipment =
+                botObject.GetComponent<WeaponEquipmentController>();
+
+            HashSet<GameObject> inheritedWeapons = new HashSet<GameObject>();
+            if (equipment != null)
+            {
+                for (int slot = 1; slot <= 3; slot++)
+                {
+                    WeaponController weapon = equipment.GetWeaponForSlot(slot);
+                    if (weapon != null)
+                        inheritedWeapons.Add(weapon.gameObject);
+
+                    equipment.SetWeaponInSlot(slot, null, false);
+                }
+            }
+
+            // También limpia cualquier WeaponController heredado que no estuviera
+            // registrado en los slots del jugador fuente.
+            WeaponController[] allWeapons =
+                botObject.GetComponentsInChildren<WeaponController>(true);
+            for (int i = 0; i < allWeapons.Length; i++)
+            {
+                if (allWeapons[i] != null)
+                    inheritedWeapons.Add(allWeapons[i].gameObject);
+            }
+
+            foreach (GameObject weaponObject in inheritedWeapons)
+            {
+                if (weaponObject != null)
+                    Destroy(weaponObject);
+            }
+
+            ProtectiveEquipment protection =
+                botObject.GetComponent<ProtectiveEquipment>();
+            if (protection != null)
+            {
+                protection.EquipHelmet(ProtectionLevel.None);
+                protection.EquipVest(ProtectionLevel.None);
+            }
         }
 
         private void PrepareBotsForFlight()
@@ -308,56 +384,6 @@ namespace ROS.Game.AI
             {
                 if (components[i] != null)
                     components[i].enabled = false;
-            }
-        }
-
-        private static void ApplyBotDamageScale(GameObject botObject, float scale)
-        {
-            WeaponController[] weapons =
-                botObject.GetComponentsInChildren<WeaponController>(true);
-
-            for (int i = 0; i < weapons.Length; i++)
-            {
-                if (weapons[i] != null)
-                    weapons[i].DamageScale = scale;
-            }
-        }
-
-        private static void FillBotInventory(
-            InventoryComponent inventory,
-            int botIndex
-        )
-        {
-            if (inventory == null)
-                return;
-
-            InventoryItemDefinition[] allDefinitions =
-                Resources.FindObjectsOfTypeAll<InventoryItemDefinition>();
-
-            System.Random rng = new System.Random(7919 * botIndex + 1337);
-
-            ItemType[] wanted =
-            {
-                ItemType.Ammo,
-                ItemType.Healing,
-                ItemType.Armor,
-                ItemType.Helmet,
-            };
-
-            foreach (ItemType target in wanted)
-            {
-                foreach (InventoryItemDefinition definition in allDefinitions)
-                {
-                    if (definition == null || definition.itemType != target)
-                        continue;
-
-                    int amount = target == ItemType.Ammo
-                        ? rng.Next(20, 61)
-                        : 1;
-
-                    inventory.Add(definition, amount);
-                    break;
-                }
             }
         }
 
