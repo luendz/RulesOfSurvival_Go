@@ -46,6 +46,27 @@ namespace ROS.Game.UI
                 EnterMenuInputState();
         }
 
+        private void LateUpdate()
+        {
+            // En un build pueden habilitarse otros componentes del jugador despues
+            // del Awake/OnEnable del menu. PlayerInputReader vuelve a aplicar su
+            // estado de cursor al habilitarse; por eso, mientras este menu siga
+            // visible, el menu es la autoridad del cursor y del bloqueo de gameplay.
+            if (!MatchRequested &&
+                IsVisible &&
+                viewRoot != null &&
+                viewRoot.activeInHierarchy)
+            {
+                MaintainMenuInputState();
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus && !MatchRequested && IsVisible)
+                EnterMenuInputState();
+        }
+
         public void Configure(
             MatchStartController startSequence,
             PlayerInputReader playerInput,
@@ -129,6 +150,20 @@ namespace ROS.Game.UI
             Cursor.visible = true;
         }
 
+        private void MaintainMenuInputState()
+        {
+            ResolveRuntimeReferences();
+
+            if (input != null && !input.UiBlocked)
+                input.SetUiBlocked(true);
+
+            if (Cursor.lockState != CursorLockMode.None)
+                Cursor.lockState = CursorLockMode.None;
+
+            if (!Cursor.visible)
+                Cursor.visible = true;
+        }
+
         private void ExitMenuInputState()
         {
             if (input != null)
@@ -143,11 +178,22 @@ namespace ROS.Game.UI
             if (sequence == null)
                 sequence = FindFirstObjectByType<MatchStartController>(FindObjectsInactive.Include);
 
-            if (input == null)
-                input = FindLocalPlayerInput();
-
             if (playerCamera == null)
                 playerCamera = FindFirstObjectByType<ThirdPersonCamera>(FindObjectsInactive.Include);
+
+            // La camara del jugador es la referencia mas fiable en escenas que
+            // vienen del Lobby o contienen mas de un PlayerInputReader.
+            if (playerCamera != null && playerCamera.Target != null)
+            {
+                PlayerInputReader cameraInput =
+                    playerCamera.Target.GetComponent<PlayerInputReader>();
+
+                if (cameraInput != null && !cameraInput.UsesExternalControl)
+                    input = cameraInput;
+            }
+
+            if (input == null || input.UsesExternalControl)
+                input = FindLocalPlayerInput();
         }
 
         private static PlayerInputReader FindLocalPlayerInput()
@@ -161,14 +207,29 @@ namespace ROS.Game.UI
             for (int i = 0; i < readers.Length; i++)
             {
                 PlayerInputReader reader = readers[i];
-                if (reader == null || !reader.gameObject.scene.IsValid())
+                if (reader == null ||
+                    !reader.gameObject.scene.IsValid() ||
+                    reader.UsesExternalControl)
+                {
                     continue;
+                }
 
                 if (reader.enabled && reader.gameObject.activeInHierarchy)
                     return reader;
             }
 
-            return readers.Length > 0 ? readers[0] : null;
+            for (int i = 0; i < readers.Length; i++)
+            {
+                PlayerInputReader reader = readers[i];
+                if (reader != null &&
+                    reader.gameObject.scene.IsValid() &&
+                    !reader.UsesExternalControl)
+                {
+                    return reader;
+                }
+            }
+
+            return null;
         }
 
         private void EnsureEditableView()
