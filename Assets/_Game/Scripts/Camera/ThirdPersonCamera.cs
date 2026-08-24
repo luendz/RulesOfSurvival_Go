@@ -277,12 +277,30 @@ namespace ROS.Game.CameraSystem
             if (input.ShoulderSwitchPressed)
                 _leftShoulder = !_leftShoulder;
 
-            float targetShoulderX = _leftShoulder ? leftShoulderX : rightShoulderX;
+            bool effectiveLeftShoulder = IsEffectiveLeftShoulder();
+            float targetShoulderX = effectiveLeftShoulder
+                ? leftShoulderX
+                : rightShoulderX;
+
             _currentShoulderX = Mathf.Lerp(
                 _currentShoulderX,
                 targetShoulderX,
                 shoulderSwitchSpeed * Time.deltaTime
             );
+        }
+
+        private bool IsEffectiveLeftShoulder()
+        {
+            if (leanController != null)
+            {
+                if (leanController.State == PlayerLeanState.Left)
+                    return true;
+
+                if (leanController.State == PlayerLeanState.Right)
+                    return false;
+            }
+
+            return _leftShoulder;
         }
 
         private void HandleAim()
@@ -353,7 +371,8 @@ namespace ROS.Game.CameraSystem
 
             Vector3 pivot = target.position + pivotOffset;
 
-            float shoulderSign = _leftShoulder ? -1f : 1f;
+            bool effectiveLeftShoulder = IsEffectiveLeftShoulder();
+            float shoulderSign = effectiveLeftShoulder ? -1f : 1f;
             float effectiveShoulderX = _currentShoulderX;
 
             if (IsAimActive())
