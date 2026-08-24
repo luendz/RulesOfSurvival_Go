@@ -22,10 +22,12 @@ MonoBehaviour:
   pickupMode: 2
   protectionLevel: 2
   backpackCapacity: 0
+  ammoType: 5
+  consumableDefinition: {fileID: 0}
   weaponDefinition: {fileID: 0}
   weaponPrefab: {fileID: 0}
   preferredWeaponSlot: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f2ef3e686f0653440b8c65a86e251644, type: 3}
   worldModel: {fileID: 919132149155446097, guid: 2a9415a43ae25004f9bfa721551453ba, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}
   worldEulerAngles: {x: 0, y: 0, z: 0}

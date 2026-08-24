@@ -15,12 +15,19 @@ MonoBehaviour:
   itemId: backpack_1
   displayName: Mochila Nivel 1
   itemType: 5
+  dataConfidence: 1
   maxStack: 1
   weight: 1
   rarity: 0
   pickupMode: 2
+  protectionLevel: 0
   backpackCapacity: 140
-  icon: {fileID: 0}
+  ammoType: 5
+  consumableDefinition: {fileID: 0}
+  weaponDefinition: {fileID: 0}
+  weaponPrefab: {fileID: 0}
+  preferredWeaponSlot: 0
+  icon: {fileID: 21300000, guid: 6abf9ca4bc2341b45b83ed4863bb9254, type: 3}
   worldModel: {fileID: 919132149155446097, guid: ae94379443d40a84cac142ebf0b914d4, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}
   worldEulerAngles: {x: 0, y: 0, z: 180}
