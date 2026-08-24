@@ -1,5 +1,6 @@
 using ROS.Game.Combat;
 using ROS.Game.Core;
+using ROS.Game.Input;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using UnityEngine;
@@ -7,57 +8,93 @@ using UnityEngine.UI;
 
 namespace ROS.Game.UI
 {
-    /// <summary>
-    /// Muestra en el HUD el nivel de casco, chaleco y mochila equipados.
-    /// Se ancla en la esquina inferior derecha junto a la barra de vida.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class EquipmentStatusPresenter : MonoBehaviour
     {
-        private ProtectiveEquipment  _protection;
-        private PlayerLootEquipment  _loot;
+        [SerializeField] private ProtectiveEquipment protection;
+        [SerializeField] private PlayerLootEquipment loot;
+        [SerializeField] private Text helmetLabel;
+        [SerializeField] private Text vestLabel;
+        [SerializeField] private Text backpackLabel;
 
-        private GameObject _root;
-        private Text _helmetLabel;
-        private Text _vestLabel;
-        private Text _backpackLabel;
-
-        // ---------------------------------------------------------------
-
-        public void Bind(PlayerLootEquipment loot, ProtectiveEquipment protection)
+        private void Awake()
         {
-            _loot       = loot;
-            _protection = protection;
+            ResolvePhysicalView();
+            ResolveGameplayReferences();
+        }
 
-            if (_protection != null) _protection.Changed     += Refresh;
-            if (_loot       != null) _loot.EquipmentChanged  += Refresh;
-
-            BuildUI();
+        private void OnEnable()
+        {
+            ResolveGameplayReferences();
+            Subscribe();
             Refresh();
         }
 
-        private void OnDestroy()
+        public void Bind(PlayerLootEquipment lootEquipment, ProtectiveEquipment protectiveEquipment)
         {
-            if (_protection != null) _protection.Changed    -= Refresh;
-            if (_loot       != null) _loot.EquipmentChanged -= Refresh;
-
-            if (_root != null) Destroy(_root);
+            Unsubscribe();
+            loot = lootEquipment;
+            protection = protectiveEquipment;
+            ResolvePhysicalView();
+            Subscribe();
+            Refresh();
         }
 
-        // ---------------------------------------------------------------
+        private void ResolveGameplayReferences()
+        {
+            PlayerInputReader input = FindFirstObjectByType<PlayerInputReader>();
+            if (input == null) return;
+
+            if (protection == null)
+                protection = input.GetComponent<ProtectiveEquipment>();
+            if (loot == null)
+                loot = input.GetComponent<PlayerLootEquipment>();
+        }
+
+        private void ResolvePhysicalView()
+        {
+            helmetLabel ??= FindNamed<Text>("HelmetStatus");
+            vestLabel ??= FindNamed<Text>("VestStatus");
+            backpackLabel ??= FindNamed<Text>("BackpackStatus");
+        }
+
+        private void Subscribe()
+        {
+            if (protection != null)
+            {
+                protection.Changed -= Refresh;
+                protection.Changed += Refresh;
+            }
+
+            if (loot != null)
+            {
+                loot.EquipmentChanged -= Refresh;
+                loot.EquipmentChanged += Refresh;
+            }
+        }
+
+        private void Unsubscribe()
+        {
+            if (protection != null)
+                protection.Changed -= Refresh;
+            if (loot != null)
+                loot.EquipmentChanged -= Refresh;
+        }
 
         private void Refresh()
         {
-            if (_protection != null)
+            if (protection != null)
             {
-                _helmetLabel.text = LevelText("CASCO",   _protection.HelmetLevel);
-                _vestLabel.text   = LevelText("CHALECO", _protection.VestLevel);
+                if (helmetLabel != null)
+                    helmetLabel.text = LevelText("CASCO", protection.HelmetLevel);
+                if (vestLabel != null)
+                    vestLabel.text = LevelText("CHALECO", protection.VestLevel);
             }
 
-            if (_loot != null)
+            if (loot != null && backpackLabel != null)
             {
-                InventoryItemDefinition bp = _loot.BackpackItem;
-                _backpackLabel.text = bp != null && bp.backpackCapacity > 0f
+                InventoryItemDefinition bp = loot.BackpackItem;
+                backpackLabel.text = bp != null && bp.backpackCapacity > 0f
                     ? $"MOCHILA L{BackpackLevel(bp.backpackCapacity)}"
                     : "MOCHILA —";
             }
@@ -67,67 +104,28 @@ namespace ROS.Game.UI
         {
             if (level == ProtectionLevel.None) return $"{name} —";
             int lv = level == ProtectionLevel.Level1 ? 1
-                   : level == ProtectionLevel.Level2 ? 2
-                   : 3;
+                : level == ProtectionLevel.Level2 ? 2 : 3;
             return $"{name} L{lv}";
         }
 
-        private static int BackpackLevel(float cap)
+        private static int BackpackLevel(float capacity)
         {
-            if (cap >= 150f) return 3;
-            if (cap >= 100f) return 2;
+            if (capacity >= 150f) return 3;
+            if (capacity >= 100f) return 2;
             return 1;
         }
 
-        // ---------------------------------------------------------------
-
-        private void BuildUI()
+        private T FindNamed<T>(string objectName) where T : Component
         {
-            _root = new GameObject("EquipmentStatusCanvas");
-
-            Canvas canvas = _root.AddComponent<Canvas>();
-            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 10;
-
-            CanvasScaler scaler = _root.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-
-            // Contenedor: esquina inferior derecha
-            GameObject container = new GameObject("Container");
-            container.transform.SetParent(_root.transform, false);
-            RectTransform cr = container.AddComponent<RectTransform>();
-            cr.anchorMin        = new Vector2(1f, 0f);
-            cr.anchorMax        = new Vector2(1f, 0f);
-            cr.pivot            = new Vector2(1f, 0f);
-            cr.anchoredPosition = new Vector2(-18f, 18f);
-            cr.sizeDelta        = new Vector2(160f, 56f);
-
-            _helmetLabel   = MakeLabel(container.transform, 0, "CASCO —");
-            _vestLabel     = MakeLabel(container.transform, 1, "CHALECO —");
-            _backpackLabel = MakeLabel(container.transform, 2, "MOCHILA —");
+            T[] all = GetComponentsInChildren<T>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i].name == objectName) return all[i];
+            return null;
         }
 
-        private static Text MakeLabel(Transform parent, int row, string defaultText)
+        private void OnDisable()
         {
-            GameObject go = new GameObject($"Label_{row}");
-            go.transform.SetParent(parent, false);
-
-            Text txt = go.AddComponent<Text>();
-            txt.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize  = 13;
-            txt.color     = new Color(0.85f, 0.85f, 0.85f, 0.9f);
-            txt.alignment = TextAnchor.MiddleRight;
-            txt.text      = defaultText;
-
-            RectTransform rt = go.GetComponent<RectTransform>();
-            rt.anchorMin        = new Vector2(0f, 1f);
-            rt.anchorMax        = new Vector2(1f, 1f);
-            rt.pivot            = new Vector2(0.5f, 1f);
-            rt.sizeDelta        = new Vector2(0f, 18f);
-            rt.anchoredPosition = new Vector2(0f, -row * 18f);
-
-            return txt;
+            Unsubscribe();
         }
     }
 }
