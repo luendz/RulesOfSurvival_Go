@@ -61,7 +61,11 @@ namespace ROS.Game.EditorTools
 
                 bool firstVisualMigration = root.Find("Icon") == null;
                 changed |= EnsureIcon(root);
-                changed |= ConfigureSlotTextLayout(root);
+
+                // La redistribucion automatica solo ocurre la primera vez.
+                // Despues, cualquier cambio manual de RectTransform queda intacto.
+                if (firstVisualMigration)
+                    changed |= ConfigureSlotTextLayout(root);
 
                 if (slot <= 2)
                     changed |= EnsureFireModePanel(root);
