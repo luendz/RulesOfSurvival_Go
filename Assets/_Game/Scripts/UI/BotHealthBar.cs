@@ -7,72 +7,146 @@ namespace ROS.Game.UI
     [DisallowMultipleComponent]
     public sealed class BotHealthBar : MonoBehaviour
     {
-        private const float VerticalOffset = 2.5f;
-        private const float BarWidth       = 1.1f;
-        private const float BarHeight      = 0.12f;
+        private const string ResourcePath = "EditorFirst/BotHealthBar";
 
-        private Health    _health;
-        private Transform _root;         // GameObject raíz independiente (no hijo del bot)
-        private Transform _fillTransform;
-        private RawImage  _fillImage;
-        private Camera    _cam;
+        [Header("Editable View")]
+        [SerializeField] private RectTransform fillRect;
+        [SerializeField] private Graphic fillGraphic;
+        [SerializeField] private float verticalOffset = 2.5f;
 
-        public static void Attach(GameObject botRoot)
+        private Health _health;
+        private Transform _target;
+        private Camera _cam;
+        private bool _subscribed;
+
+        public static BotHealthBar Attach(GameObject botRoot)
         {
-            botRoot.AddComponent<BotHealthBar>();
+            if (botRoot == null)
+                return null;
+
+            GameObject prefab = Resources.Load<GameObject>(ResourcePath);
+            if (prefab == null)
+            {
+                Debug.LogError(
+                    "No existe el prefab editable EditorFirst/BotHealthBar. " +
+                    "Abre el proyecto en Unity para materializar los assets editor-first."
+                );
+                return null;
+            }
+
+            GameObject instance = Instantiate(prefab);
+            BotHealthBar bar = instance.GetComponent<BotHealthBar>();
+            if (bar == null)
+            {
+                Debug.LogError("El prefab BotHealthBar no contiene el componente BotHealthBar.");
+                Destroy(instance);
+                return null;
+            }
+
+            bar.Bind(botRoot);
+            return bar;
         }
 
         private void Awake()
         {
-            _health = GetComponent<Health>();
-            _cam    = Camera.main;
-            BuildCanvas();
+            ResolveViewReferences();
+            _cam = Camera.main;
+        }
+
+        public void Bind(GameObject botRoot)
+        {
+            Unsubscribe();
+
+            _target = botRoot != null ? botRoot.transform : null;
+            _health = botRoot != null ? botRoot.GetComponent<Health>() : null;
+            gameObject.name = botRoot != null
+                ? botRoot.name + "_HealthBar"
+                : "BotHealthBar";
+
+            ResolveViewReferences();
+            Subscribe();
             Refresh();
         }
 
         private void OnEnable()
         {
-            if (_health != null)
-            {
-                _health.HealthChanged += OnHealthChanged;
-                _health.Died          += OnDied;
-            }
+            Subscribe();
         }
 
         private void OnDisable()
         {
-            if (_health != null)
-            {
-                _health.HealthChanged -= OnHealthChanged;
-                _health.Died          -= OnDied;
-            }
+            Unsubscribe();
         }
 
         private void OnDestroy()
         {
-            // Garantiza que el canvas raíz se destruya si el componente es eliminado
-            DestroyCanvas();
+            Unsubscribe();
         }
 
         private void LateUpdate()
         {
-            if (_root == null) return;
-
-            // Si el bot ya no existe o está muerto, ocultar
-            if (_health == null || !_health.IsAlive)
+            if (_target == null || _health == null || !_health.IsAlive)
             {
                 ForceDestroy();
                 return;
             }
 
-            // Seguir la posición del bot (canvas es raíz independiente)
-            _root.position = transform.position + Vector3.up * VerticalOffset;
+            transform.position = _target.position + Vector3.up * verticalOffset;
 
-            if (_cam == null) _cam = Camera.main;
-            if (_cam != null) _root.rotation = _cam.transform.rotation;
+            if (_cam == null)
+                _cam = Camera.main;
+            if (_cam != null)
+                transform.rotation = _cam.transform.rotation;
         }
 
-        private void OnHealthChanged(float current, float max) => Refresh();
+        private void ResolveViewReferences()
+        {
+            if (fillRect == null)
+            {
+                Transform fill = FindChild("Fill");
+                if (fill != null)
+                    fillRect = fill as RectTransform;
+            }
+
+            if (fillGraphic == null && fillRect != null)
+                fillGraphic = fillRect.GetComponent<Graphic>();
+        }
+
+        private Transform FindChild(string childName)
+        {
+            Transform[] all = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].name == childName)
+                    return all[i];
+            }
+            return null;
+        }
+
+        private void Subscribe()
+        {
+            if (_subscribed || _health == null)
+                return;
+
+            _health.HealthChanged += OnHealthChanged;
+            _health.Died += OnDied;
+            _subscribed = true;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_subscribed || _health == null)
+                return;
+
+            _health.HealthChanged -= OnHealthChanged;
+            _health.Died -= OnDied;
+            _subscribed = false;
+        }
+
+        private void OnHealthChanged(float current, float max)
+        {
+            Refresh();
+        }
 
         private void OnDied(DamageInfo _)
         {
@@ -81,81 +155,32 @@ namespace ROS.Game.UI
 
         public void ForceDestroy()
         {
-            DestroyCanvas();
-            enabled = false;
-        }
+            if (this == null || gameObject == null)
+                return;
 
-        private void DestroyCanvas()
-        {
-            if (_root != null)
-            {
-                _root.gameObject.SetActive(false); // ocultado síncrono
-                Destroy(_root.gameObject);         // limpieza diferida
-                _root = null;
-            }
+            gameObject.SetActive(false);
+            Destroy(gameObject);
         }
 
         private void Refresh()
         {
-            if (_fillTransform == null || _health == null) return;
+            if (fillRect == null || _health == null)
+                return;
 
             float t = _health.MaxHealth > 0f
                 ? Mathf.Clamp01(_health.CurrentHealth / _health.MaxHealth)
                 : 0f;
 
-            Vector3 s = _fillTransform.localScale;
-            s.x = Mathf.Max(0f, t);
-            _fillTransform.localScale = s;
+            Vector3 scale = fillRect.localScale;
+            scale.x = Mathf.Max(0f, t);
+            fillRect.localScale = scale;
 
-            if (_fillImage != null)
+            if (fillGraphic != null)
             {
-                _fillImage.color = t > 0.5f
+                fillGraphic.color = t > 0.5f
                     ? Color.Lerp(Color.yellow, Color.green, (t - 0.5f) * 2f)
                     : Color.Lerp(Color.red, Color.yellow, t * 2f);
             }
-        }
-
-        private void BuildCanvas()
-        {
-            // Canvas raíz: NO es hijo del bot para que su ciclo de vida sea
-            // completamente independiente del bot y sus componentes.
-            GameObject canvasObj = new GameObject("BotHealthBarCanvas");
-            canvasObj.transform.position =
-                transform.position + Vector3.up * VerticalOffset;
-            _root = canvasObj.transform;
-
-            Canvas canvas = canvasObj.AddComponent<Canvas>();
-            canvas.renderMode   = RenderMode.WorldSpace;
-            canvas.sortingOrder = 10;
-
-            RectTransform cr = canvasObj.GetComponent<RectTransform>();
-            cr.sizeDelta = new Vector2(BarWidth, BarHeight);
-
-            // Fondo oscuro
-            GameObject bgObj  = new GameObject("BG");
-            bgObj.transform.SetParent(canvasObj.transform, false);
-            RawImage bg       = bgObj.AddComponent<RawImage>();
-            bg.texture        = Texture2D.whiteTexture;
-            bg.color          = new Color(0.1f, 0.1f, 0.1f, 0.9f);
-            RectTransform bgr = bgObj.GetComponent<RectTransform>();
-            bgr.anchorMin     = Vector2.zero;
-            bgr.anchorMax     = Vector2.one;
-            bgr.offsetMin     = Vector2.zero;
-            bgr.offsetMax     = Vector2.zero;
-
-            // Relleno: pivot izquierdo, localScale.x controla el ancho visible
-            GameObject fillObj  = new GameObject("Fill");
-            fillObj.transform.SetParent(canvasObj.transform, false);
-            _fillImage            = fillObj.AddComponent<RawImage>();
-            _fillImage.texture    = Texture2D.whiteTexture;
-            _fillImage.color      = Color.green;
-            RectTransform fr      = fillObj.GetComponent<RectTransform>();
-            fr.pivot              = new Vector2(0f, 0.5f);
-            fr.anchorMin          = Vector2.zero;
-            fr.anchorMax          = Vector2.one;
-            fr.offsetMin          = Vector2.zero;
-            fr.offsetMax          = Vector2.zero;
-            _fillTransform        = fillObj.transform;
         }
     }
 }
