@@ -2,60 +2,54 @@ using System.Collections;
 using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Inventory;
+using ROS.Game.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace ROS.Game.Gameplay
 {
-    /// <summary>
-    /// Permite al jugador usar consumibles del inventario pulsando F (vendaje/botiquín).
-    /// Muestra una barra de progreso en pantalla durante el uso.
-    /// Se cancela si recibe daño (configurable en ConsumableDefinition).
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class ConsumableController : MonoBehaviour
     {
-        private Health             _health;
+        private Health _health;
         private InventoryComponent _inventory;
 
-        public  bool                  IsUsing => _isUsing;
-        private bool                  _isUsing;
-        private bool                  _damagedDuringUse;
-        private Coroutine             _useRoutine;
-        private ConsumableDefinition  _activeDef;
+        public bool IsUsing => _isUsing;
+        private bool _isUsing;
+        private bool _damagedDuringUse;
+        private Coroutine _useRoutine;
+        private ConsumableDefinition _activeDef;
         private InventoryItemDefinition _activeItem;
-        private ConsumableDefinition  _defaultHealDef;
+        private ConsumableDefinition _defaultHealDef;
 
-        // UI
-        private GameObject _barRoot;
-        private Transform  _fill;
-        private Text       _label;
-
-        // ---------------------------------------------------------------
+        [Header("Physical HUD References")]
+        [SerializeField] private GameObject barRoot;
+        [SerializeField] private RectTransform fill;
+        [SerializeField] private Text label;
 
         private void Awake()
         {
-            _health    = GetComponent<Health>();
+            _health = GetComponent<Health>();
             _inventory = GetComponent<InventoryComponent>();
-            BuildUI();
+            ResolvePhysicalHud();
+            SetBarVisible(false);
         }
 
         private void OnEnable()
         {
             if (_health != null) _health.Damaged += OnDamaged;
-            if (_health != null) _health.Died    += OnDied;
+            if (_health != null) _health.Died += OnDied;
         }
 
         private void OnDisable()
         {
             if (_health != null) _health.Damaged -= OnDamaged;
-            if (_health != null) _health.Died    -= OnDied;
+            if (_health != null) _health.Died -= OnDied;
         }
 
         private void OnDestroy()
         {
-            if (_barRoot != null) Destroy(_barRoot);
             if (_defaultHealDef != null) Destroy(_defaultHealDef);
         }
 
@@ -73,8 +67,6 @@ namespace ROS.Game.Gameplay
             }
         }
 
-        // ---------------------------------------------------------------
-
         private void TryUseFirstHealing()
         {
             if (_inventory == null) return;
@@ -85,7 +77,6 @@ namespace ROS.Game.Gameplay
                 if (stack.item == null || stack.amount <= 0) continue;
                 if (stack.item.itemType != ItemType.Healing) continue;
 
-                // Si el ítem no tiene ConsumableDefinition asignado, usar valores por defecto
                 ConsumableDefinition def = stack.item.consumableDefinition
                     ?? GetDefaultHealDef();
 
@@ -105,24 +96,28 @@ namespace ROS.Game.Gameplay
         private ConsumableDefinition GetDefaultHealDef()
         {
             if (_defaultHealDef != null) return _defaultHealDef;
+
             _defaultHealDef = ScriptableObject.CreateInstance<ConsumableDefinition>();
-            _defaultHealDef.healAmount   = 75f;
-            _defaultHealDef.useDuration  = 3f;
+            _defaultHealDef.healAmount = 75f;
+            _defaultHealDef.useDuration = 3f;
             _defaultHealDef.cancelOnDamage = true;
             _defaultHealDef.cancelOnMove = false;
+            _defaultHealDef.hideFlags = HideFlags.DontSave;
             return _defaultHealDef;
         }
 
         private void BeginUse(InventoryItemDefinition item, ConsumableDefinition def)
         {
-            _activeDef        = def;
-            _activeItem       = item;
-            _isUsing          = true;
+            _activeDef = def;
+            _activeItem = item;
+            _isUsing = true;
             _damagedDuringUse = false;
 
-            if (_label != null)
-                _label.text = $"Usando {item.displayName}…";
+            ResolvePhysicalHud();
+            if (label != null)
+                label.text = $"Usando {item.displayName}…";
 
+            SetFill(0f);
             SetBarVisible(true);
             _useRoutine = StartCoroutine(UseRoutine());
         }
@@ -134,15 +129,16 @@ namespace ROS.Game.Gameplay
                 StopCoroutine(_useRoutine);
                 _useRoutine = null;
             }
-            _isUsing    = false;
-            _activeDef  = null;
+
+            _isUsing = false;
+            _activeDef = null;
             _activeItem = null;
             SetBarVisible(false);
         }
 
         private IEnumerator UseRoutine()
         {
-            float elapsed  = 0f;
+            float elapsed = 0f;
             float duration = Mathf.Max(0.1f, _activeDef.useDuration);
             Vector3 startPos = transform.position;
 
@@ -176,8 +172,8 @@ namespace ROS.Game.Gameplay
             if (_inventory != null && _activeItem != null)
                 _inventory.Remove(_activeItem, 1);
 
-            _isUsing    = false;
-            _activeDef  = null;
+            _isUsing = false;
+            _activeDef = null;
             _activeItem = null;
             SetBarVisible(false);
         }
@@ -188,87 +184,72 @@ namespace ROS.Game.Gameplay
 
             if (_activeDef.healAmount > 0f)
             {
-                float max   = _health.MaxHealth;
+                float max = _health.MaxHealth;
                 float limit = _activeDef.respectMaxFraction
                     ? max * _activeDef.maxHealthFraction
                     : max;
-                float toHeal = Mathf.Min(_activeDef.healAmount, limit - _health.CurrentHealth);
+                float toHeal = Mathf.Min(
+                    _activeDef.healAmount,
+                    limit - _health.CurrentHealth
+                );
                 if (toHeal > 0f) _health.Heal(toHeal);
             }
         }
 
         private void OnDamaged(DamageResult _) => _damagedDuringUse = true;
-        private void OnDied(DamageInfo _) { if (_isUsing) CancelUse(); }
 
-        // ---------------------------------------------------------------  UI
-
-        private void BuildUI()
+        private void OnDied(DamageInfo _)
         {
-            _barRoot = new GameObject("ConsumableProgressBar");
+            if (_isUsing) CancelUse();
+        }
 
-            Canvas canvas = _barRoot.AddComponent<Canvas>();
-            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 25;
+        private void ResolvePhysicalHud()
+        {
+            if (barRoot != null && fill != null && label != null)
+                return;
 
-            CanvasScaler scaler = _barRoot.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode      = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            GameObject hud = GameObject.Find("ROS_HUD_Runtime");
+            if (hud == null)
+            {
+                RulesOfSurvivalHUD rosHud =
+                    FindFirstObjectByType<RulesOfSurvivalHUD>();
+                hud = rosHud != null ? rosHud.gameObject : null;
+            }
 
-            // Contenedor: centrado horizontalmente, 18 % desde abajo
-            GameObject container = new GameObject("Container");
-            container.transform.SetParent(_barRoot.transform, false);
-            RectTransform cr = container.AddComponent<RectTransform>();
-            cr.anchorMin       = new Vector2(0.5f, 0.18f);
-            cr.anchorMax       = new Vector2(0.5f, 0.18f);
-            cr.sizeDelta       = new Vector2(320f, 22f);
-            cr.anchoredPosition = Vector2.zero;
+            if (hud == null)
+                return;
 
-            // Fondo
-            GameObject bg = new GameObject("BG");
-            bg.transform.SetParent(container.transform, false);
-            Image bgImg = bg.AddComponent<Image>();
-            bgImg.color = new Color(0.08f, 0.08f, 0.08f, 0.85f);
-            RectTransform bgr = bg.GetComponent<RectTransform>();
-            bgr.anchorMin = Vector2.zero; bgr.anchorMax = Vector2.one;
-            bgr.offsetMin = bgr.offsetMax = Vector2.zero;
-
-            // Relleno
-            GameObject fillObj = new GameObject("Fill");
-            fillObj.transform.SetParent(container.transform, false);
-            Image fillImg = fillObj.AddComponent<Image>();
-            fillImg.color = new Color(0.25f, 0.92f, 0.35f, 1f);
-            RectTransform fr = fillObj.GetComponent<RectTransform>();
-            fr.pivot    = new Vector2(0f, 0.5f);
-            fr.anchorMin = Vector2.zero; fr.anchorMax = Vector2.one;
-            fr.offsetMin = fr.offsetMax = Vector2.zero;
-            _fill = fillObj.transform;
-
-            // Etiqueta
-            GameObject labelObj = new GameObject("Label");
-            labelObj.transform.SetParent(container.transform, false);
-            _label = labelObj.AddComponent<Text>();
-            _label.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _label.fontSize  = 13;
-            _label.color     = Color.white;
-            _label.alignment = TextAnchor.MiddleCenter;
-            RectTransform lr = labelObj.GetComponent<RectTransform>();
-            lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
-            lr.offsetMin = lr.offsetMax = Vector2.zero;
-
-            SetBarVisible(false);
+            Transform[] all = hud.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                Transform current = all[i];
+                if (barRoot == null && current.name == "ConsumableProgressBar")
+                    barRoot = current.gameObject;
+                else if (fill == null && current.name == "ConsumableProgressFill")
+                    fill = current as RectTransform;
+                else if (label == null && current.name == "ConsumableProgressLabel")
+                    label = current.GetComponent<Text>();
+            }
         }
 
         private void SetBarVisible(bool visible)
         {
-            if (_barRoot != null) _barRoot.SetActive(visible);
+            ResolvePhysicalHud();
+            if (barRoot != null && barRoot.activeSelf != visible)
+                barRoot.SetActive(visible);
         }
 
         private void SetFill(float t)
         {
-            if (_fill == null) return;
-            Vector3 s = _fill.localScale;
-            s.x = Mathf.Clamp01(t);
-            _fill.localScale = s;
+            if (fill == null)
+            {
+                ResolvePhysicalHud();
+                if (fill == null) return;
+            }
+
+            Vector3 scale = fill.localScale;
+            scale.x = Mathf.Clamp01(t);
+            fill.localScale = scale;
         }
     }
 }
