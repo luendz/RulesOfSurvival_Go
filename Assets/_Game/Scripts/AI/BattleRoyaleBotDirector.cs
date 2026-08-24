@@ -19,112 +19,173 @@ namespace ROS.Game.AI
     {
         public const int DefaultBotCount = 10;
 
+        [Header("Battle Royale References")]
+        [SerializeField] private GameObject sourcePlayer;
+        [SerializeField] private AirplaneController airplane;
+        [SerializeField] private BattleRoyaleManager matchManager;
+        [SerializeField] private GameObject parachutePrefab;
+        [SerializeField] private MatchStartController sequence;
+
+        [Header("Bots")]
+        [Min(0)]
+        [SerializeField] private int botCount = DefaultBotCount;
+
         private readonly List<BattleRoyaleBotController> _bots =
             new List<BattleRoyaleBotController>();
 
-        private GameObject _sourcePlayer;
-        private AirplaneController _airplane;
-        private BattleRoyaleManager _matchManager;
-        private GameObject _parachutePrefab;
-        private MatchStartController _sequence;
-        private int _botCount;
+        private bool _spawned;
 
         public IReadOnlyList<BattleRoyaleBotController> Bots => _bots;
 
+        private void OnEnable()
+        {
+            Subscribe();
+        }
+
+        private void Start()
+        {
+            // En Editor First las referencias quedan serializadas en la escena.
+            // Los bots NO se crean aquí: esperan a que el jugador pulse
+            // INICIAR PARTIDA BR y MatchStartController emita SequenceStarted.
+            Subscribe();
+        }
+
         public void Configure(
-            GameObject sourcePlayer,
-            AirplaneController airplane,
-            BattleRoyaleManager matchManager,
-            GameObject parachutePrefab,
-            MatchStartController sequence,
-            int botCount = DefaultBotCount
+            GameObject source,
+            AirplaneController flight,
+            BattleRoyaleManager manager,
+            GameObject parachute,
+            MatchStartController startSequence,
+            int count = DefaultBotCount
         )
         {
-            _sourcePlayer = sourcePlayer;
-            _airplane = airplane;
-            _matchManager = matchManager;
-            _parachutePrefab = parachutePrefab;
-            _sequence = sequence;
-            _botCount = Mathf.Max(0, botCount);
+            Unsubscribe();
+            sourcePlayer = source;
+            airplane = flight;
+            matchManager = manager;
+            parachutePrefab = parachute;
+            sequence = startSequence;
+            botCount = Mathf.Max(0, count);
+            Subscribe();
+        }
 
-            if (_sourcePlayer == null ||
-                _airplane == null ||
-                _matchManager == null ||
-                _sequence == null)
-            {
-                Debug.LogError(
-                    "No se pudieron crear los bots: faltan referencias.",
-                    this
-                );
+        private void Subscribe()
+        {
+            if (sequence == null)
                 return;
+
+            sequence.SequenceStarted -= HandleBattleRoyaleStarted;
+            sequence.SequenceStarted += HandleBattleRoyaleStarted;
+        }
+
+        private void Unsubscribe()
+        {
+            if (sequence != null)
+                sequence.SequenceStarted -= HandleBattleRoyaleStarted;
+        }
+
+        private void HandleBattleRoyaleStarted()
+        {
+            if (!ValidateReferences())
+                return;
+
+            if (!_spawned)
+            {
+                SpawnBots();
+                _spawned = true;
             }
 
-            SpawnBots();
             PrepareBotsForFlight();
+        }
 
-            _sequence.SequenceStarted -= PrepareBotsForFlight;
-            _sequence.SequenceStarted += PrepareBotsForFlight;
+        private bool ValidateReferences()
+        {
+            if (sourcePlayer != null &&
+                airplane != null &&
+                matchManager != null &&
+                sequence != null)
+            {
+                return true;
+            }
+
+            Debug.LogError(
+                "[BattleRoyaleBotDirector] No se pudieron activar los bots: " +
+                "faltan Source Player, Airplane, BattleRoyaleManager o MatchStartController.",
+                this
+            );
+            return false;
         }
 
         private void SpawnBots()
         {
-            for (int i = 0; i < _botCount; i++)
+            _bots.Clear();
+
+            int safeCount = Mathf.Max(0, botCount);
+            for (int i = 0; i < safeCount; i++)
             {
-                GameObject botObject = Instantiate(_sourcePlayer);
+                GameObject botObject = Instantiate(sourcePlayer);
                 botObject.name = $"Bot_BattleRoyale_{i + 1:00}";
                 ConfigureBotOnlyComponents(botObject);
 
-                ParachuteController parachute =
-                    EnsureParachute(botObject);
+                ParachuteController parachute = EnsureParachute(botObject);
                 if (parachute == null)
                 {
                     Destroy(botObject);
                     continue;
                 }
 
-                TeamComponent team =
-                    botObject.GetComponent<TeamComponent>();
+                TeamComponent team = botObject.GetComponent<TeamComponent>();
                 if (team == null)
-                {
                     team = botObject.AddComponent<TeamComponent>();
-                }
+
                 team.Assign(i + 1, 0);
 
                 BattleRoyaleBotController bot =
-                    botObject.AddComponent<BattleRoyaleBotController>();
+                    botObject.GetComponent<BattleRoyaleBotController>();
+                if (bot == null)
+                    bot = botObject.AddComponent<BattleRoyaleBotController>();
+
                 bot.Configure(
                     i,
-                    _airplane,
-                    _matchManager,
-                    CalculateLandingTarget(i, _botCount),
+                    airplane,
+                    matchManager,
+                    CalculateLandingTarget(i, safeCount),
                     CalculateJumpProgress(i),
-                    _matchManager != null ? _matchManager.SafeZone : null
+                    matchManager != null ? matchManager.SafeZone : null
                 );
 
                 Health health = botObject.GetComponent<Health>();
                 if (health != null)
                 {
                     health.OverrideMaxHealth(200f);
-                    _matchManager.RegisterPlayer(health);
+                    matchManager.RegisterPlayer(health);
                 }
 
                 BotHealthBar.Attach(botObject);
                 ApplyBotDamageScale(botObject, 0.20f);
-                botObject.AddComponent<CharacterDeathDissolver>();
 
-                // Loot al morir
-                PlayerEliminationController elim =
-                    botObject.GetComponent<PlayerEliminationController>()
-                    ?? botObject.AddComponent<PlayerEliminationController>();
-                elim.Bind(_matchManager);
+                if (botObject.GetComponent<CharacterDeathDissolver>() == null)
+                    botObject.AddComponent<CharacterDeathDissolver>();
 
-                InventoryComponent inv = botObject.GetComponent<InventoryComponent>();
-                FillBotInventory(inv, i);
+                PlayerEliminationController elimination =
+                    botObject.GetComponent<PlayerEliminationController>();
+                if (elimination == null)
+                    elimination = botObject.AddComponent<PlayerEliminationController>();
+                elimination.Bind(matchManager);
+
+                InventoryComponent inventory =
+                    botObject.GetComponent<InventoryComponent>();
+                FillBotInventory(inventory, i);
 
                 _bots.Add(bot);
             }
 
             PlayerDamageRuntimeSetup.ConfigureExistingPlayers();
+
+            Debug.Log(
+                $"[BattleRoyaleBotDirector] Bots BR activados: {_bots.Count}/{safeCount}.",
+                this
+            );
         }
 
         private ParachuteController EnsureParachute(GameObject botObject)
@@ -132,17 +193,16 @@ namespace ROS.Game.AI
             ParachuteController parachute =
                 botObject.GetComponent<ParachuteController>();
             if (parachute == null)
-            {
                 parachute = botObject.AddComponent<ParachuteController>();
-            }
 
             Transform visual = botObject.transform.Find(
                 "BattleRoyaleParachuteVisual"
             );
-            if (visual == null && _parachutePrefab != null)
+
+            if (visual == null && parachutePrefab != null)
             {
                 GameObject visualObject = Instantiate(
-                    _parachutePrefab,
+                    parachutePrefab,
                     botObject.transform
                 );
                 visualObject.name = "BattleRoyaleParachuteVisual";
@@ -172,16 +232,12 @@ namespace ROS.Game.AI
             PlayerInputReader input =
                 botObject.GetComponent<PlayerInputReader>();
             if (input != null)
-            {
                 input.EnableExternalControl();
-            }
 
             PlayerInteractor interactor =
                 botObject.GetComponent<PlayerInteractor>();
             if (interactor != null)
-            {
                 interactor.enabled = false;
-            }
 
             DisableAll<CombatFeedbackPresenter>(botObject);
             DisableAll<NearbyLootPresenter>(botObject);
@@ -193,18 +249,14 @@ namespace ROS.Game.AI
 
         private void PrepareBotsForFlight()
         {
-            if (_airplane == null)
-            {
+            if (airplane == null)
                 return;
-            }
 
             for (int i = 0; i < _bots.Count; i++)
             {
                 BattleRoyaleBotController bot = _bots[i];
                 if (bot == null)
-                {
                     continue;
-                }
 
                 int column = i % 5;
                 int row = i / 5;
@@ -213,17 +265,15 @@ namespace ROS.Game.AI
                     0f,
                     (row - 1.5f) * 0.68f
                 );
+
                 bot.PrepareForFlight(
-                    _airplane.PassengerAnchor,
+                    airplane.PassengerAnchor,
                     passengerOffset
                 );
             }
         }
 
-        private static Vector3 CalculateLandingTarget(
-            int index,
-            int count
-        )
+        private static Vector3 CalculateLandingTarget(int index, int count)
         {
             float safeCount = Mathf.Max(1, count);
             float angle = index / safeCount * Mathf.PI * 2f +
@@ -233,6 +283,7 @@ namespace ROS.Game.AI
                 1f
             );
             float radius = Mathf.Lerp(20f, 76f, radiusDistribution);
+
             return new Vector3(
                 Mathf.Cos(angle) * radius,
                 0f,
@@ -256,9 +307,7 @@ namespace ROS.Game.AI
             for (int i = 0; i < components.Length; i++)
             {
                 if (components[i] != null)
-                {
                     components[i].enabled = false;
-                }
             }
         }
 
@@ -266,6 +315,7 @@ namespace ROS.Game.AI
         {
             WeaponController[] weapons =
                 botObject.GetComponentsInChildren<WeaponController>(true);
+
             for (int i = 0; i < weapons.Length; i++)
             {
                 if (weapons[i] != null)
@@ -273,17 +323,20 @@ namespace ROS.Game.AI
             }
         }
 
-        private static void FillBotInventory(InventoryComponent inv, int botIndex)
+        private static void FillBotInventory(
+            InventoryComponent inventory,
+            int botIndex
+        )
         {
-            if (inv == null) return;
+            if (inventory == null)
+                return;
 
-            InventoryItemDefinition[] allDefs =
+            InventoryItemDefinition[] allDefinitions =
                 Resources.FindObjectsOfTypeAll<InventoryItemDefinition>();
 
             System.Random rng = new System.Random(7919 * botIndex + 1337);
 
-            // Un ítem de cada categoría relevante
-            ItemType[] wanted = new ItemType[]
+            ItemType[] wanted =
             {
                 ItemType.Ammo,
                 ItemType.Healing,
@@ -293,26 +346,29 @@ namespace ROS.Game.AI
 
             foreach (ItemType target in wanted)
             {
-                foreach (InventoryItemDefinition def in allDefs)
+                foreach (InventoryItemDefinition definition in allDefinitions)
                 {
-                    if (def == null || def.itemType != target) continue;
+                    if (definition == null || definition.itemType != target)
+                        continue;
 
                     int amount = target == ItemType.Ammo
                         ? rng.Next(20, 61)
                         : 1;
 
-                    inv.Add(def, amount);
+                    inventory.Add(definition, amount);
                     break;
                 }
             }
         }
 
+        private void OnDisable()
+        {
+            Unsubscribe();
+        }
+
         private void OnDestroy()
         {
-            if (_sequence != null)
-            {
-                _sequence.SequenceStarted -= PrepareBotsForFlight;
-            }
+            Unsubscribe();
         }
     }
 }
