@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
+using ROS.Game.Input;
 using UnityEngine;
 using UnityEngine.UI;
 
