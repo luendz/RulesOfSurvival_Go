@@ -169,12 +169,10 @@ namespace ROS.Game.UI
             {
                 view.Ammo.text = weapon != null
                     ? $"{weapon.AmmoInMagazine}/{weapon.ReserveAmmo}"
-                    : "--/--";
+                    : string.Empty;
                 view.Ammo.color = color;
             }
 
-            // En la referencia ROS el cuadro de modo de tiro vive fuera de
-            // Primary 1/2 y solo aparece junto al arma que esta en la mano.
             bool showFireMode =
                 slot <= 2 &&
                 active &&
@@ -201,6 +199,13 @@ namespace ROS.Game.UI
             if (view.Ammo == null)
                 return;
 
+            if (item == null)
+            {
+                view.Ammo.text = string.Empty;
+                view.Ammo.color = color;
+                return;
+            }
+
             if (slot == (int)PlayerWeaponSlot.Melee)
             {
                 view.Ammo.text = "∞";
@@ -208,9 +213,7 @@ namespace ROS.Game.UI
                 return;
             }
 
-            view.Ammo.text = item != null
-                ? GetInventoryCount(item).ToString()
-                : "--";
+            view.Ammo.text = GetInventoryCount(item).ToString();
             view.Ammo.color = color;
         }
 
