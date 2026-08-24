@@ -80,6 +80,17 @@ namespace ROS.Game.Inventory
         [Header("UI")]
         public Sprite icon;
 
+        [Header("Nearby Loot UI")]
+        [Tooltip(
+            "Segunda línea del cuadro NearbyLoot. Si está vacía, se deriva del tipo de objeto."
+        )]
+        public string nearbySecondaryText;
+
+        [Tooltip(
+            "Icono secundario. Para munición representa un arma compatible con ese tipo de bala."
+        )]
+        public Sprite nearbySecondaryIcon;
+
         [Header("World Visual")]
         public GameObject worldModel;
 
