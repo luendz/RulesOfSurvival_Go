@@ -28,8 +28,18 @@ namespace ROS.Game.UI
 
         private void Awake()
         {
+            ResolveRuntimeReferences();
             EnsureEditableView();
             HookButtons();
+            Subscribe();
+        }
+
+        private void OnEnable()
+        {
+            ResolveRuntimeReferences();
+            EnsureEditableView();
+            HookButtons();
+            Subscribe();
         }
 
         public void Configure(
@@ -42,6 +52,7 @@ namespace ROS.Game.UI
             sequence = startSequence;
             input = playerInput;
             playerCamera = cameraController;
+            ResolveRuntimeReferences();
             Subscribe();
 
             EnsureEditableView();
@@ -58,8 +69,19 @@ namespace ROS.Game.UI
 
         public bool StartMatch()
         {
+            ResolveRuntimeReferences();
+
             if (MatchRequested || sequence == null)
+            {
+                if (sequence == null)
+                {
+                    Debug.LogError(
+                        "[BattleRoyaleStartMenu] No se encontro MatchStartController en la escena.",
+                        this
+                    );
+                }
                 return false;
+            }
 
             MatchRequested = true;
 
@@ -83,6 +105,8 @@ namespace ROS.Game.UI
 
         public void StartFreeroam()
         {
+            ResolveRuntimeReferences();
+
             if (MatchRequested)
                 return;
 
@@ -96,24 +120,67 @@ namespace ROS.Game.UI
             }
         }
 
+        private void ResolveRuntimeReferences()
+        {
+            if (sequence == null)
+                sequence = FindFirstObjectByType<MatchStartController>(FindObjectsInactive.Include);
+
+            if (input == null)
+                input = FindLocalPlayerInput();
+
+            if (playerCamera == null)
+                playerCamera = FindFirstObjectByType<ThirdPersonCamera>(FindObjectsInactive.Include);
+        }
+
+        private static PlayerInputReader FindLocalPlayerInput()
+        {
+            PlayerInputReader[] readers =
+                FindObjectsByType<PlayerInputReader>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None
+                );
+
+            for (int i = 0; i < readers.Length; i++)
+            {
+                PlayerInputReader reader = readers[i];
+                if (reader == null || !reader.gameObject.scene.IsValid())
+                    continue;
+
+                if (reader.enabled && reader.gameObject.activeInHierarchy)
+                    return reader;
+            }
+
+            return readers.Length > 0 ? readers[0] : null;
+        }
+
         private void EnsureEditableView()
         {
             if (viewRoot == null)
             {
-                GameObject prefab = Resources.Load<GameObject>(ViewResourcePath);
-                if (prefab != null)
+                // Si el controlador esta colocado directamente en el Canvas fisico
+                // Editor First, ese mismo objeto ES la vista y no debe clonarse.
+                if (GetComponent<Canvas>() != null &&
+                    FindNamed<Button>(transform, "StartMatchButton") != null)
                 {
-                    viewRoot = Instantiate(prefab, transform, false);
-                    viewRoot.name = "BattleRoyaleStartMenuView";
+                    viewRoot = gameObject;
                 }
                 else
                 {
-                    Debug.LogError(
-                        "No existe el prefab editable EditorFirst/BattleRoyaleStartMenuView. " +
-                        "Abre el proyecto en Unity para materializar los assets editor-first.",
-                        this
-                    );
-                    return;
+                    GameObject prefab = Resources.Load<GameObject>(ViewResourcePath);
+                    if (prefab != null)
+                    {
+                        viewRoot = Instantiate(prefab, transform, false);
+                        viewRoot.name = "BattleRoyaleStartMenuView";
+                    }
+                    else
+                    {
+                        Debug.LogError(
+                            "No existe el prefab editable EditorFirst/BattleRoyaleStartMenuView. " +
+                            "Abre el proyecto en Unity para materializar los assets editor-first.",
+                            this
+                        );
+                        return;
+                    }
                 }
             }
 
@@ -161,6 +228,9 @@ namespace ROS.Game.UI
         private static T FindNamed<T>(Transform root, string objectName)
             where T : Component
         {
+            if (root == null)
+                return null;
+
             T[] all = root.GetComponentsInChildren<T>(true);
             for (int i = 0; i < all.Length; i++)
             {
