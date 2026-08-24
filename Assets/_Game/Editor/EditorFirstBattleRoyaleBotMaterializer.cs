@@ -2,6 +2,7 @@ using ROS.Game.AI;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Input;
 using ROS.Game.Parachute;
+using ROS.Game.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
