@@ -74,6 +74,8 @@ namespace ROS.Game.EditorTools
             RepairFunctionalComponents();
             EditorFirstStartMenuSceneRepair.RepairFunctionalSceneMenu();
             EditorFirstHudAndPlayerMaterializer.Materialize();
+            EditorFirstConsumableHudMaterializer.Materialize();
+            EditorFirstMainPlayerRuntimeSupportMaterializer.Materialize();
             EnsureInBuildSettings();
 
             AssetDatabase.SaveAssets();
