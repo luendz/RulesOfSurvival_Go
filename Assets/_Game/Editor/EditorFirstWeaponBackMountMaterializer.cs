@@ -19,7 +19,7 @@ namespace ROS.Game.EditorTools
         private static readonly Vector3 LegacyBack02Euler =
             new Vector3(0f, 0f, -35f);
 
-        // Convención física del personaje:
+        // Estos valores se aplican exclusivamente al hijo Visual_* del arma.
         // Back01 = lado derecho.
         private static readonly Vector3 RightBackPosition =
             new Vector3(0.01f, 0.08f, -0.036f);
@@ -31,6 +31,9 @@ namespace ROS.Game.EditorTools
             new Vector3(-0.03f, 0.133f, -0.035f);
         private static readonly Vector3 LeftBackEuler =
             new Vector3(-180f, -180f, 120f);
+
+        private static readonly Vector3 BackVisualScale =
+            new Vector3(40f, 40f, 40f);
 
         static EditorFirstWeaponBackMountMaterializer()
         {
@@ -86,7 +89,7 @@ namespace ROS.Game.EditorTools
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
                 Debug.Log(
-                    "[Editor First] Montajes de espalda actualizados en " +
+                    "[Editor First] Offsets de espalda de Visual_* actualizados en " +
                     changedPrefabs + " prefabs. Back01=derecha, Back02=izquierda."
                 );
             }
@@ -106,6 +109,8 @@ namespace ROS.Game.EditorTools
                 serialized.FindProperty("back02LocalPosition");
             SerializedProperty back02Euler =
                 serialized.FindProperty("back02LocalEulerAngles");
+            SerializedProperty visualScale =
+                serialized.FindProperty("backVisualScale");
 
             bool changed = false;
 
@@ -134,6 +139,14 @@ namespace ROS.Game.EditorTools
                 Approximately(back02Euler.vector3Value, LegacyBack02Euler))
             {
                 back02Euler.vector3Value = LeftBackEuler;
+                changed = true;
+            }
+
+            if (visualScale != null &&
+                (Approximately(visualScale.vector3Value, Vector3.zero) ||
+                 Approximately(visualScale.vector3Value, Vector3.one)))
+            {
+                visualScale.vector3Value = BackVisualScale;
                 changed = true;
             }
 
