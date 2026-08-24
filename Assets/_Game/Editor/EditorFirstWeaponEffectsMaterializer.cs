@@ -22,8 +22,8 @@ namespace ROS.Game.EditorTools
                 return;
 
             EditorFirstPresentationBuilder.EnsureMaterialized();
-            Material tracerMaterial = EnsureTracerMaterial();
-            if (tracerMaterial == null)
+            Material defaultTracerMaterial = EnsureTracerMaterial();
+            if (defaultTracerMaterial == null)
                 return;
 
             string[] prefabGuids = AssetDatabase.FindAssets(
@@ -37,16 +37,23 @@ namespace ROS.Game.EditorTools
                 GameObject root = PrefabUtility.LoadPrefabContents(path);
                 bool changed = false;
 
-                WeaponEffects[] effects = root.GetComponentsInChildren<WeaponEffects>(true);
+                WeaponEffects[] effects =
+                    root.GetComponentsInChildren<WeaponEffects>(true);
+
                 for (int e = 0; e < effects.Length; e++)
                 {
                     WeaponEffects effect = effects[e];
-                    if (effect == null || PrefabUtility.IsPartOfPrefabInstance(effect.gameObject))
+                    if (effect == null ||
+                        PrefabUtility.IsPartOfPrefabInstance(effect.gameObject))
+                    {
                         continue;
+                    }
 
                     SerializedObject serialized = new SerializedObject(effect);
-                    SerializedProperty tracerProperty = serialized.FindProperty("tracer");
-                    SerializedProperty materialProperty = serialized.FindProperty("tracerMaterial");
+                    SerializedProperty tracerProperty =
+                        serialized.FindProperty("tracer");
+                    SerializedProperty materialProperty =
+                        serialized.FindProperty("tracerMaterial");
 
                     LineRenderer tracer = tracerProperty != null
                         ? tracerProperty.objectReferenceValue as LineRenderer
@@ -60,44 +67,72 @@ namespace ROS.Game.EditorTools
                             tracer = existing.GetComponent<LineRenderer>();
                     }
 
+                    bool createdTracer = false;
+                    bool tracerChanged = false;
+
                     if (tracer == null)
                     {
                         GameObject tracerObject = new GameObject("Tracer");
                         tracerObject.transform.SetParent(effect.transform, false);
                         tracer = tracerObject.AddComponent<LineRenderer>();
+                        createdTracer = true;
+                        tracerChanged = true;
                         changed = true;
                     }
                     else if (tracer.gameObject.name == "RuntimeTracer")
                     {
                         tracer.gameObject.name = "Tracer";
+                        tracerChanged = true;
                         changed = true;
                     }
 
-                    tracer.useWorldSpace = true;
-                    tracer.positionCount = 2;
-                    tracer.startWidth = 0.012f;
-                    tracer.endWidth = 0.0024f;
-                    tracer.numCapVertices = 2;
-                    tracer.shadowCastingMode =
-                        UnityEngine.Rendering.ShadowCastingMode.Off;
-                    tracer.receiveShadows = false;
-                    tracer.sharedMaterial = tracerMaterial;
-                    tracer.enabled = false;
-                    EditorUtility.SetDirty(tracer);
+                    Material configuredMaterial = materialProperty != null
+                        ? materialProperty.objectReferenceValue as Material
+                        : null;
+
+                    if (createdTracer)
+                    {
+                        tracer.useWorldSpace = true;
+                        tracer.positionCount = 2;
+                        tracer.startWidth = 0.012f;
+                        tracer.endWidth = 0.0024f;
+                        tracer.numCapVertices = 2;
+                        tracer.shadowCastingMode =
+                            UnityEngine.Rendering.ShadowCastingMode.Off;
+                        tracer.receiveShadows = false;
+                        tracer.enabled = false;
+                        tracer.sharedMaterial = configuredMaterial != null
+                            ? configuredMaterial
+                            : defaultTracerMaterial;
+                    }
+                    else if (tracer.sharedMaterial == null)
+                    {
+                        tracer.sharedMaterial = configuredMaterial != null
+                            ? configuredMaterial
+                            : defaultTracerMaterial;
+                        tracerChanged = true;
+                        changed = true;
+                    }
 
                     if (tracerProperty != null &&
-                        tracerProperty.objectReferenceValue != tracer)
+                        tracerProperty.objectReferenceValue == null)
                     {
                         tracerProperty.objectReferenceValue = tracer;
                         changed = true;
                     }
 
                     if (materialProperty != null &&
-                        materialProperty.objectReferenceValue != tracerMaterial)
+                        materialProperty.objectReferenceValue == null)
                     {
-                        materialProperty.objectReferenceValue = tracerMaterial;
+                        materialProperty.objectReferenceValue =
+                            tracer.sharedMaterial != null
+                                ? tracer.sharedMaterial
+                                : defaultTracerMaterial;
                         changed = true;
                     }
+
+                    if (tracerChanged)
+                        EditorUtility.SetDirty(tracer);
 
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                 }
@@ -113,7 +148,8 @@ namespace ROS.Game.EditorTools
 
         private static Material EnsureTracerMaterial()
         {
-            Material existing = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
+            Material existing =
+                AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
             if (existing != null)
                 return existing;
 
