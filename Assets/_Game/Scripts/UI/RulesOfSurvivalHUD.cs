@@ -4,15 +4,15 @@ using ROS.Game.Combat;
 using ROS.Game.Interaction;
 using ROS.Game.Weapons;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace ROS.Game.UI
 {
     /// <summary>
     /// Controlador del HUD de Rules of Survival.
-    /// La jerarquia visual vive en un prefab editable; este componente solo
-    /// enlaza referencias y actualiza datos en tiempo de ejecucion.
+    /// La jerarquia visual vive fisicamente en la escena/prefab editable; este
+    /// componente solo enlaza referencias y actualiza datos en runtime.
+    /// Nunca instancia ni construye el HUD por codigo.
     /// </summary>
     [DefaultExecutionOrder(500)]
     public sealed class RulesOfSurvivalHUD : MonoBehaviour
@@ -55,31 +55,6 @@ namespace ROS.Game.UI
 
         [SerializeField] private WeaponSlotView[] weaponSlots = new WeaponSlotView[3];
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (SceneManager.GetActiveScene().name != "07_BattleRoyaleTest")
-                return;
-
-            if (FindFirstObjectByType<RulesOfSurvivalHUD>() != null)
-                return;
-
-            GameObject prefab = Resources.Load<GameObject>(
-                "EditorFirst/ROS_HUD_Editable"
-            );
-
-            if (prefab == null)
-            {
-                Debug.LogError(
-                    "No existe el prefab editable EditorFirst/ROS_HUD_Editable. " +
-                    "Abre el proyecto en Unity para que EditorFirstPresentationBuilder lo materialice."
-                );
-                return;
-            }
-
-            Instantiate(prefab);
-        }
-
         private void Awake()
         {
             BindViewFromHierarchy();
@@ -100,9 +75,8 @@ namespace ROS.Game.UI
         }
 
         /// <summary>
-        /// Reenlaza las referencias a partir de nombres estables del prefab.
-        /// Se puede ejecutar desde el Editor despues de mover o reemplazar
-        /// elementos, siempre que se mantengan estos nombres funcionales.
+        /// Reenlaza las referencias a partir de nombres estables del HUD fisico.
+        /// No crea ningun objeto si falta una referencia.
         /// </summary>
         [ContextMenu("Rebind Editable HUD")]
         public void BindViewFromHierarchy()
