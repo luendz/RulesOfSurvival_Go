@@ -4570,6 +4570,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1670864090752243736, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
   m_PrefabInstance: {fileID: 2016612332}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &931843078 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6178379935284424678, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 931843075}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6b8063042989df44888b62a8b3a8a3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponController
 --- !u!114 &931843079
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9132,6 +9143,14 @@ PrefabInstance:
       propertyPath: aimCamera
       value: 
       objectReference: {fileID: 851681085}
+    - target: {fileID: 7000000000000000001, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: sidearmSlot
+      value: 
+      objectReference: {fileID: 931843078}
+    - target: {fileID: 7000000000000000001, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: primarySlot2
+      value: 
+      objectReference: {fileID: 931843078}
     - target: {fileID: 9184807692070804161, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -10778,7 +10797,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 140, y: -8}
+  m_AnchoredPosition: {x: 236.8, y: 53.7}
   m_SizeDelta: {x: 55, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &779814709284094214
@@ -13131,8 +13150,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -20}
-  m_SizeDelta: {x: 250, y: 5}
+  m_AnchoredPosition: {x: 31.050005, y: -20}
+  m_SizeDelta: {x: 312.1, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &2178682400614091042
 RectTransform:
@@ -17793,7 +17812,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 84}
+  m_AnchoredPosition: {x: 0, y: 115}
   m_SizeDelta: {x: 420, y: 32}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &5213470420943791998
