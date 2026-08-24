@@ -8,6 +8,7 @@ namespace ROS.Game.EditorTools
     /// <summary>
     /// Limpia del Canvas principal los bloques que ya no forman parte del HUD.
     /// Conserva exclusivamente el QuickConsumeRoot ubicado en Vitals/Meds.
+    /// NearbyLoot sustituye a NearbyObjectIndicator.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorFirstHudHierarchyCleanup
@@ -64,6 +65,7 @@ namespace ROS.Game.EditorTools
             changed |= DestroyDirectChild(canvas, "EquipmentStatusRoot");
             changed |= DestroyDirectChild(canvas, "MatchStatePanel");
             changed |= DestroyDirectChild(canvas, "InteractionHint");
+            changed |= DestroyDirectChild(canvas, "NearbyObjectIndicator");
 
             Transform vitals = canvas.Find("Vitals");
             Transform meds = vitals != null ? vitals.Find("Meds") : null;
@@ -83,9 +85,6 @@ namespace ROS.Game.EditorTools
             }
             else if (canvasQuickConsume != null && meds != null)
             {
-                // Salvaguarda para escenas antiguas: si todavía no existe el
-                // QuickConsumeRoot dentro de Meds, reutiliza el existente en vez
-                // de destruir la única vista funcional.
                 canvasQuickConsume.SetParent(meds, false);
                 nestedQuickConsume = canvasQuickConsume;
                 changed = true;
@@ -105,8 +104,8 @@ namespace ROS.Game.EditorTools
                 AssetDatabase.SaveAssets();
 
                 Debug.Log(
-                    "[Editor First] HUD limpio: EquipmentStatusRoot, MatchStatePanel e " +
-                    "InteractionHint eliminados. QuickConsumeRoot se conserva solo en Vitals/Meds."
+                    "[Editor First] HUD limpio: bloques obsoletos y NearbyObjectIndicator " +
+                    "eliminados. NearbyLoot queda como lista única de loot."
                 );
             }
 
