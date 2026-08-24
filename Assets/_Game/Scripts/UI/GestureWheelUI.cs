@@ -612,15 +612,15 @@ namespace ROS.Game.UI
                 canvasObject.transform
             );
             _hintRoot.anchorMin =
-                new Vector2(1f, 0f);
+                new Vector2(0.5f, 0f);
             _hintRoot.anchorMax =
-                new Vector2(1f, 0f);
+                new Vector2(0.5f, 0f);
             _hintRoot.pivot =
-                new Vector2(1f, 0f);
+                new Vector2(0f, 0f);
             _hintRoot.sizeDelta =
                 new Vector2(180f, 48f);
             _hintRoot.anchoredPosition =
-                new Vector2(-36f, 34f);
+                new Vector2(245f, 34f);
 
             Image hintImage =
                 _hintRoot.gameObject.AddComponent<Image>();
