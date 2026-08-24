@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using ROS.Game.Combat;
 using ROS.Game.Weapons;
 using UnityEngine;
@@ -22,8 +23,22 @@ namespace ROS.Game.UI
             new Color(1f, 0.06f, 0.04f, 1f);
         private static readonly Color CriticalOutlineColor = Color.black;
 
-        private WeaponController[] _weapons;
+        private readonly HashSet<WeaponController> _subscribedWeapons =
+            new HashSet<WeaponController>();
+
+        private WeaponEquipmentController _equipment;
         private GameObject _damageNumberPrefab;
+
+        private void Awake()
+        {
+            _equipment = GetComponent<WeaponEquipmentController>();
+        }
+
+        private void OnEnable()
+        {
+            BindEquipment();
+            RefreshWeaponSubscriptions();
+        }
 
         private void Start()
         {
@@ -37,24 +52,125 @@ namespace ROS.Game.UI
                 );
             }
 
-            _weapons = GetComponentsInChildren<WeaponController>(true);
-            foreach (WeaponController weapon in _weapons)
+            BindEquipment();
+            RefreshWeaponSubscriptions();
+        }
+
+        private void BindEquipment()
+        {
+            if (_equipment == null)
+                _equipment = GetComponent<WeaponEquipmentController>();
+
+            if (_equipment == null)
+                return;
+
+            // Evita suscripciones duplicadas si OnEnable/Start se ejecutan en la
+            // misma carga o el componente se vuelve a habilitar.
+            _equipment.SlotChanged -= HandleSlotChanged;
+            _equipment.SlotChanged += HandleSlotChanged;
+        }
+
+        private void HandleSlotChanged(int slot, WeaponController weapon)
+        {
+            // El evento se dispara justo cuando un arma recogida entra en uno
+            // de los slots. La registramos inmediatamente para HitConfirmed.
+            if (weapon != null)
+                SubscribeWeapon(weapon);
+
+            // También limpia suscripciones de armas que hayan sido sustituidas
+            // o retiradas del equipamiento.
+            RefreshWeaponSubscriptions();
+        }
+
+        private void RefreshWeaponSubscriptions()
+        {
+            HashSet<WeaponController> current = new HashSet<WeaponController>();
+
+            if (_equipment != null)
             {
-                if (weapon != null)
-                    weapon.HitConfirmed += OnHit;
+                for (int slot = 1; slot <= 3; slot++)
+                {
+                    WeaponController weapon = _equipment.GetWeaponForSlot(slot);
+                    if (weapon == null)
+                        continue;
+
+                    current.Add(weapon);
+                    SubscribeWeapon(weapon);
+                }
             }
+            else
+            {
+                // Compatibilidad con escenas antiguas sin WeaponEquipmentController.
+                WeaponController[] weapons =
+                    GetComponentsInChildren<WeaponController>(true);
+
+                for (int i = 0; i < weapons.Length; i++)
+                {
+                    WeaponController weapon = weapons[i];
+                    if (weapon == null)
+                        continue;
+
+                    current.Add(weapon);
+                    SubscribeWeapon(weapon);
+                }
+            }
+
+            if (_subscribedWeapons.Count == 0)
+                return;
+
+            List<WeaponController> stale = new List<WeaponController>();
+            foreach (WeaponController weapon in _subscribedWeapons)
+            {
+                if (weapon == null || !current.Contains(weapon))
+                    stale.Add(weapon);
+            }
+
+            for (int i = 0; i < stale.Count; i++)
+                UnsubscribeWeapon(stale[i]);
+        }
+
+        private void SubscribeWeapon(WeaponController weapon)
+        {
+            if (weapon == null || _subscribedWeapons.Contains(weapon))
+                return;
+
+            weapon.HitConfirmed += OnHit;
+            _subscribedWeapons.Add(weapon);
+        }
+
+        private void UnsubscribeWeapon(WeaponController weapon)
+        {
+            if (weapon != null)
+                weapon.HitConfirmed -= OnHit;
+
+            _subscribedWeapons.Remove(weapon);
+        }
+
+        private void UnbindAll()
+        {
+            if (_equipment != null)
+                _equipment.SlotChanged -= HandleSlotChanged;
+
+            if (_subscribedWeapons.Count == 0)
+                return;
+
+            List<WeaponController> snapshot =
+                new List<WeaponController>(_subscribedWeapons);
+
+            for (int i = 0; i < snapshot.Count; i++)
+                UnsubscribeWeapon(snapshot[i]);
+
+            _subscribedWeapons.Clear();
+        }
+
+        private void OnDisable()
+        {
+            UnbindAll();
         }
 
         private void OnDestroy()
         {
-            if (_weapons == null)
-                return;
-
-            foreach (WeaponController weapon in _weapons)
-            {
-                if (weapon != null)
-                    weapon.HitConfirmed -= OnHit;
-            }
+            UnbindAll();
         }
 
         private void OnHit(DamageResult result)
