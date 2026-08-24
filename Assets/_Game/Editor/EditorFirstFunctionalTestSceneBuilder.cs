@@ -82,6 +82,11 @@ namespace ROS.Game.EditorTools
             EditorFirstRosWeaponSlotVisualMaterializer.Materialize();
             EditorFirstRosWeaponSlotSerializedRepair.Repair();
             EditorFirstEmptyPlayerLoadoutMaterializer.Materialize();
+
+            // Siempre al final: elimina bloques obsoletos que puedan venir de
+            // escenas/prefabs antiguos y conserva el QuickConsumeRoot de Vitals/Meds.
+            EditorFirstHudHierarchyCleanup.Cleanup();
+
             EnsureInBuildSettings();
 
             AssetDatabase.SaveAssets();
