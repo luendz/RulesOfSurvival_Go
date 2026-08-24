@@ -70,7 +70,11 @@ namespace ROS.Game.Inventory
         )]
         public GameObject weaponPrefab;
 
-        [Range(0, 3)]
+        [Tooltip(
+            "0 = automático. 1-2 = principales, 3 = pistola, 4 = melee, 5 = arrojable. " +
+            "La categoría real del arma siempre tiene prioridad sobre este valor."
+        )]
+        [Range(0, 5)]
         public int preferredWeaponSlot;
 
         [Header("UI")]
@@ -95,9 +99,9 @@ namespace ROS.Game.Inventory
 
         public bool IsEquippable =>
             itemType == ItemType.Weapon ||
+            itemType == ItemType.Throwable ||
             itemType == ItemType.Armor ||
             itemType == ItemType.Helmet ||
             itemType == ItemType.Backpack;
-
     }
 }
