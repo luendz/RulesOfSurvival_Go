@@ -83,6 +83,10 @@ namespace ROS.Game.EditorTools
             EditorFirstRosWeaponSlotSerializedRepair.Repair();
             EditorFirstEmptyPlayerLoadoutMaterializer.Materialize();
 
+            // NearbyLoot es la única lista de objetos cercanos y contenido de
+            // cajas de muerte. También elimina NearbyObjectIndicator.
+            EditorFirstLootViewsMaterializer.MaterializeFunctionalScene();
+
             // Siempre al final: elimina bloques obsoletos que puedan venir de
             // escenas/prefabs antiguos y conserva el QuickConsumeRoot de Vitals/Meds.
             EditorFirstHudHierarchyCleanup.Cleanup();
