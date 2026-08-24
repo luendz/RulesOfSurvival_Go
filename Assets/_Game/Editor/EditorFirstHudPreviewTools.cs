@@ -70,6 +70,7 @@ namespace ROS.Game.EditorTools
             ConfigureQuickConsumePreview(canvas);
             ConfigureDeathLootPreview(canvas);
             ConfigureNearbyPreview(canvas);
+            ConfigureWeaponFireModePreview(canvas, true);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Selection.activeGameObject = hud.gameObject;
@@ -122,6 +123,7 @@ namespace ROS.Game.EditorTools
             SetActive(canvas.Find("ConsumableProgressBar"), false);
             SetActive(canvas.Find("NearbyObjectIndicator"), false);
             SetActive(canvas.Find("DeathLootPanelROS"), false);
+            ConfigureWeaponFireModePreview(canvas, false);
 
             SetText(canvas, "MatchStateTitle", string.Empty);
             SetText(canvas, "MatchStateDetail", string.Empty);
@@ -249,6 +251,35 @@ namespace ROS.Game.EditorTools
             Text text = root.Find("Text")?.GetComponent<Text>();
             if (text != null)
                 text.text = "OBJETO CERCANO";
+        }
+
+        private static void ConfigureWeaponFireModePreview(
+            Transform canvas,
+            bool visible
+        )
+        {
+            Transform weapons = canvas.Find("Weapons");
+            if (weapons == null)
+                return;
+
+            for (int slot = 1; slot <= 2; slot++)
+            {
+                Transform panel = weapons.Find(
+                    $"WeaponSlot_{slot}/FireModePanel"
+                );
+                if (panel == null)
+                    continue;
+
+                panel.gameObject.SetActive(visible);
+
+                if (!visible)
+                    continue;
+
+                Text key = panel.Find("Key")?.GetComponent<Text>();
+                Text mode = panel.Find("Mode")?.GetComponent<Text>();
+                if (key != null) key.text = "B";
+                if (mode != null) mode.text = slot == 1 ? "AUTO" : "BURST";
+            }
         }
 
         private static void SetQuickConsumeSlots(Transform canvas, bool active)
