@@ -1,3 +1,4 @@
+using ROS.Game.Core;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using ROS.Game.Weapons;
@@ -21,8 +22,12 @@ namespace ROS.Game.UI
         {
             public Image Background;
             public Text Slot;
-            public Text Name;
+            public Text LegacyName;
             public Text Ammo;
+            public Image Icon;
+            public RectTransform FireModeRoot;
+            public Text FireModeKey;
+            public Text FireModeText;
         }
 
         private static readonly Color Normal =
@@ -89,12 +94,21 @@ namespace ROS.Game.UI
                 if (root == null)
                     continue;
 
+                Transform fireMode = root.Find("FireModePanel");
                 _slots[slot - 1] = new SlotView
                 {
                     Background = root.GetComponent<Image>(),
                     Slot = FindNamed<Text>(root, "Slot"),
-                    Name = FindNamed<Text>(root, "WeaponName"),
-                    Ammo = FindNamed<Text>(root, "Ammo")
+                    LegacyName = FindNamed<Text>(root, "WeaponName"),
+                    Ammo = FindNamed<Text>(root, "Ammo"),
+                    Icon = FindNamed<Image>(root, "Icon"),
+                    FireModeRoot = fireMode as RectTransform,
+                    FireModeKey = fireMode != null
+                        ? FindNamed<Text>(fireMode, "Key")
+                        : null,
+                    FireModeText = fireMode != null
+                        ? FindNamed<Text>(fireMode, "Mode")
+                        : null
                 };
             }
         }
@@ -124,63 +138,32 @@ namespace ROS.Game.UI
                 view.Slot.color = textColor;
             }
 
+            if (view.LegacyName != null)
+                view.LegacyName.gameObject.SetActive(false);
+
             if (slot <= 3)
             {
-                RefreshFirearmSlot(slot, view, textColor);
+                RefreshFirearmSlot(slot, view, textColor, active);
                 return;
             }
 
-            InventoryItemDefinition item =
-                lootEquipment != null ? lootEquipment.GetWeaponItem(slot) : null;
-
-            if (slot == 4)
-            {
-                if (view.Name != null)
-                {
-                    view.Name.text = item != null
-                        ? item.displayName.ToUpperInvariant()
-                        : "FIST";
-                    view.Name.color = textColor;
-                }
-                if (view.Ammo != null)
-                {
-                    view.Ammo.text = "∞";
-                    view.Ammo.color = textColor;
-                }
-                return;
-            }
-
-            if (view.Name != null)
-            {
-                view.Name.text = item != null
-                    ? item.displayName.ToUpperInvariant()
-                    : "THROWABLE";
-                view.Name.color = textColor;
-            }
-            if (view.Ammo != null)
-            {
-                view.Ammo.text = item != null
-                    ? GetInventoryCount(item).ToString()
-                    : "--";
-                view.Ammo.color = textColor;
-            }
+            RefreshAuxiliarySlot(slot, view, textColor);
+            SetFireModeVisible(view, false, null);
         }
 
-        private void RefreshFirearmSlot(int slot, SlotView view, Color color)
+        private void RefreshFirearmSlot(
+            int slot,
+            SlotView view,
+            Color color,
+            bool active
+        )
         {
             WeaponController weapon =
                 weapons != null ? weapons.GetWeaponForSlot(slot) : null;
+            InventoryItemDefinition item =
+                lootEquipment != null ? lootEquipment.GetWeaponItem(slot) : null;
 
-            string emptyName = slot == 3 ? "PISTOL" : "EMPTY";
-            if (view.Name != null)
-            {
-                view.Name.text = weapon != null
-                    ? (weapon.Definition != null
-                        ? weapon.Definition.displayName.ToUpperInvariant()
-                        : weapon.name.ToUpperInvariant())
-                    : emptyName;
-                view.Name.color = color;
-            }
+            SetIcon(view, item != null ? item.icon : null, color);
 
             if (view.Ammo != null)
             {
@@ -189,6 +172,98 @@ namespace ROS.Game.UI
                     : "--/--";
                 view.Ammo.color = color;
             }
+
+            // En la referencia ROS el cuadro de modo de tiro vive fuera de
+            // Primary 1/2 y solo aparece junto al arma que esta en la mano.
+            bool showFireMode =
+                slot <= 2 &&
+                active &&
+                weapon != null;
+
+            SetFireModeVisible(
+                view,
+                showFireMode,
+                weapon
+            );
+        }
+
+        private void RefreshAuxiliarySlot(
+            int slot,
+            SlotView view,
+            Color color
+        )
+        {
+            InventoryItemDefinition item =
+                lootEquipment != null ? lootEquipment.GetWeaponItem(slot) : null;
+
+            SetIcon(view, item != null ? item.icon : null, color);
+
+            if (view.Ammo == null)
+                return;
+
+            if (slot == (int)PlayerWeaponSlot.Melee)
+            {
+                view.Ammo.text = "∞";
+                view.Ammo.color = color;
+                return;
+            }
+
+            view.Ammo.text = item != null
+                ? GetInventoryCount(item).ToString()
+                : "--";
+            view.Ammo.color = color;
+        }
+
+        private static void SetIcon(
+            SlotView view,
+            Sprite sprite,
+            Color textColor
+        )
+        {
+            if (view.Icon == null)
+                return;
+
+            view.Icon.sprite = sprite;
+            view.Icon.enabled = sprite != null;
+            view.Icon.preserveAspect = true;
+            view.Icon.color = sprite != null
+                ? Color.white
+                : textColor;
+        }
+
+        private static void SetFireModeVisible(
+            SlotView view,
+            bool visible,
+            WeaponController weapon
+        )
+        {
+            if (view.FireModeRoot == null)
+                return;
+
+            view.FireModeRoot.gameObject.SetActive(visible);
+            if (!visible)
+                return;
+
+            if (view.FireModeKey != null)
+                view.FireModeKey.text = "B";
+
+            if (view.FireModeText != null)
+            {
+                view.FireModeText.text = weapon != null
+                    ? ToRosFireModeText(weapon.CurrentFireMode)
+                    : string.Empty;
+            }
+        }
+
+        private static string ToRosFireModeText(WeaponFireMode mode)
+        {
+            return mode switch
+            {
+                WeaponFireMode.Auto => "AUTO",
+                WeaponFireMode.Burst => "BURST",
+                WeaponFireMode.Single => "SINGLE",
+                _ => mode.ToString().ToUpperInvariant()
+            };
         }
 
         private bool IsActive(int slot)
