@@ -13,6 +13,10 @@ namespace ROS.Game.Weapons
     /// <summary>
     /// Offsets por arma y referencias físicas normalizadas para disparo, apuntado e IK.
     /// Las referencias vacías se descubren automáticamente dentro del prefab del arma.
+    ///
+    /// Convención de espalda del personaje:
+    /// Back01 = lado derecho.
+    /// Back02 = lado izquierdo.
     /// </summary>
     public sealed class WeaponMount : MonoBehaviour
     {
@@ -20,13 +24,17 @@ namespace ROS.Game.Weapons
         [SerializeField] private Vector3 handLocalPosition = Vector3.zero;
         [SerializeField] private Vector3 handLocalEulerAngles = Vector3.zero;
 
-        [Header("Back 01")]
-        [SerializeField] private Vector3 back01LocalPosition = new Vector3(0.18f, 0.05f, -0.12f);
-        [SerializeField] private Vector3 back01LocalEulerAngles = new Vector3(0f, 0f, 35f);
+        [Header("Back 01 - Right Side")]
+        [SerializeField] private Vector3 back01LocalPosition =
+            new Vector3(0.01f, 0.08f, -0.036f);
+        [SerializeField] private Vector3 back01LocalEulerAngles =
+            new Vector3(-180f, -180f, 50f);
 
-        [Header("Back 02")]
-        [SerializeField] private Vector3 back02LocalPosition = new Vector3(-0.18f, 0.05f, -0.12f);
-        [SerializeField] private Vector3 back02LocalEulerAngles = new Vector3(0f, 0f, -35f);
+        [Header("Back 02 - Left Side")]
+        [SerializeField] private Vector3 back02LocalPosition =
+            new Vector3(-0.03f, 0.133f, -0.035f);
+        [SerializeField] private Vector3 back02LocalEulerAngles =
+            new Vector3(-180f, -180f, 120f);
 
         [Header("Hip")]
         [SerializeField] private Vector3 hipLocalPosition = new Vector3(0.18f, -0.05f, 0f);
