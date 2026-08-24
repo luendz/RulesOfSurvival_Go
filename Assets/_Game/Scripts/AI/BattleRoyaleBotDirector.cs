@@ -247,6 +247,7 @@ namespace ROS.Game.AI
 
             DisableAll<CombatFeedbackPresenter>(botObject);
             DisableAll<NearbyLootPresenter>(botObject);
+            DisableAll<DamageNumberSpawner>(botObject);
             DisableAll<DamageDebugControls>(botObject);
             DisableAll<VitalsDebugTester>(botObject);
             DisableAll<UnityEngine.Camera>(botObject);
