@@ -9,18 +9,12 @@ using UnityEngine.UI;
 namespace ROS.Game.UI
 {
     /// <summary>
-    /// Presenta una retícula distinta según la familia del arma equipada por
-    /// el jugador local. Las armas normales usan una retícula '+' dinámica
-    /// cuyo gap responde al CurrentSpread. Las escopetas usan '( )'.
-    /// Este componente también suprime retículas heredadas para evitar dobles
-    /// mirillas en pantalla.
+    /// Controla una reticula fisica incluida dentro del prefab editable del HUD.
+    /// No crea ningun elemento visual en tiempo de ejecucion.
     /// </summary>
     [DefaultExecutionOrder(850)]
     public sealed class WeaponCrosshairPresenter : MonoBehaviour
     {
-        private const string SceneName = "07_BattleRoyaleTest";
-        private const string HudRootName = "ROS_HUD_Runtime";
-
         [Header("Normal Reticle")]
         [SerializeField] private float normalArmLength = 8f;
         [SerializeField] private float normalThickness = 2f;
@@ -34,35 +28,42 @@ namespace ROS.Game.UI
         [SerializeField] private float shotgunMaxHalfGap = 34f;
         [SerializeField] private float spreadForMaxGap = 7f;
 
+        [Header("Editable View")]
+        [SerializeField] private RectTransform root;
+        [SerializeField] private RectTransform normalRoot;
+        [SerializeField] private RectTransform normalLeft;
+        [SerializeField] private RectTransform normalRight;
+        [SerializeField] private RectTransform normalUp;
+        [SerializeField] private RectTransform normalDown;
+        [SerializeField] private Text shotgunLeft;
+        [SerializeField] private Text shotgunRight;
+
         private readonly HashSet<GameObject> _suppressedCrosshairs =
             new HashSet<GameObject>();
 
         private PlayerInputReader _localInput;
         private WeaponEquipmentController _equipment;
-        private RectTransform _root;
-
-        private RectTransform _normalRoot;
-        private RectTransform _normalLeft;
-        private RectTransform _normalRight;
-        private RectTransform _normalUp;
-        private RectTransform _normalDown;
         private float _currentNormalGap;
-
-        private Text _shotgunLeft;
-        private Text _shotgunRight;
         private float _nextResolveTime;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
+        private void Awake()
         {
-            if (SceneManager.GetActiveScene().name != SceneName)
-                return;
+            BindViewFromHierarchy();
+            _currentNormalGap = Mathf.Max(0f, normalMinGap);
+            ApplyNormalGap(_currentNormalGap);
+        }
 
-            if (FindFirstObjectByType<WeaponCrosshairPresenter>() != null)
-                return;
-
-            new GameObject("ROS_WeaponCrosshair")
-                .AddComponent<WeaponCrosshairPresenter>();
+        [ContextMenu("Rebind Weapon Crosshair")]
+        public void BindViewFromHierarchy()
+        {
+            root = FindNamed<RectTransform>("WeaponCrosshair");
+            normalRoot = FindNamed<RectTransform>("NormalCrosshairRoot");
+            normalLeft = FindNamed<RectTransform>("NormalLeft");
+            normalRight = FindNamed<RectTransform>("NormalRight");
+            normalUp = FindNamed<RectTransform>("NormalUp");
+            normalDown = FindNamed<RectTransform>("NormalDown");
+            shotgunLeft = FindNamed<Text>("ShotgunLeft");
+            shotgunRight = FindNamed<Text>("ShotgunRight");
         }
 
         private void Update()
@@ -71,7 +72,8 @@ namespace ROS.Game.UI
             {
                 _nextResolveTime = Time.unscaledTime + 0.15f;
                 ResolveLocalEquipment();
-                EnsureVisuals();
+                if (root == null)
+                    BindViewFromHierarchy();
             }
 
             RefreshCrosshair();
@@ -131,152 +133,50 @@ namespace ROS.Game.UI
             }
         }
 
-        private void EnsureVisuals()
-        {
-            if (_root != null)
-                return;
-
-            GameObject hud = GameObject.Find(HudRootName);
-            if (hud == null)
-                return;
-
-            Transform canvas = hud.transform.Find("Canvas");
-            if (canvas == null)
-                return;
-
-            GameObject rootObject = new GameObject("WeaponCrosshair");
-            rootObject.transform.SetParent(canvas, false);
-            rootObject.transform.SetAsLastSibling();
-
-            _root = rootObject.AddComponent<RectTransform>();
-            _root.anchorMin = new Vector2(0.5f, 0.5f);
-            _root.anchorMax = new Vector2(0.5f, 0.5f);
-            _root.pivot = new Vector2(0.5f, 0.5f);
-            _root.anchoredPosition = Vector2.zero;
-            _root.sizeDelta = new Vector2(140f, 140f);
-
-            BuildNormalCrosshair();
-
-            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-
-            _shotgunLeft = CreateText(
-                "ShotgunLeft",
-                _root,
-                "(",
-                font,
-                28
-            );
-
-            _shotgunRight = CreateText(
-                "ShotgunRight",
-                _root,
-                ")",
-                font,
-                28
-            );
-        }
-
-        private void BuildNormalCrosshair()
-        {
-            GameObject normalObject = new GameObject("NormalCrosshairRoot");
-            normalObject.transform.SetParent(_root, false);
-
-            _normalRoot = normalObject.AddComponent<RectTransform>();
-            _normalRoot.anchorMin = new Vector2(0.5f, 0.5f);
-            _normalRoot.anchorMax = new Vector2(0.5f, 0.5f);
-            _normalRoot.pivot = new Vector2(0.5f, 0.5f);
-            _normalRoot.anchoredPosition = Vector2.zero;
-            _normalRoot.sizeDelta = Vector2.zero;
-
-            _normalLeft = CreateArm(
-                "NormalLeft",
-                _normalRoot,
-                new Vector2(normalArmLength, normalThickness)
-            );
-
-            _normalRight = CreateArm(
-                "NormalRight",
-                _normalRoot,
-                new Vector2(normalArmLength, normalThickness)
-            );
-
-            _normalUp = CreateArm(
-                "NormalUp",
-                _normalRoot,
-                new Vector2(normalThickness, normalArmLength)
-            );
-
-            _normalDown = CreateArm(
-                "NormalDown",
-                _normalRoot,
-                new Vector2(normalThickness, normalArmLength)
-            );
-
-            _currentNormalGap = Mathf.Max(0f, normalMinGap);
-            ApplyNormalGap(_currentNormalGap);
-        }
-
         private void RefreshCrosshair()
         {
-            if (_root == null)
+            if (root == null)
                 return;
 
             WeaponController weapon =
-                _equipment != null
-                    ? _equipment.EquippedWeapon
-                    : null;
+                _equipment != null ? _equipment.EquippedWeapon : null;
 
             bool hasWeapon = weapon != null && weapon.Definition != null;
-            _root.gameObject.SetActive(hasWeapon);
-
+            root.gameObject.SetActive(hasWeapon);
             if (!hasWeapon)
                 return;
 
-            bool isShotgun =
-                weapon.Definition.family == WeaponFamily.Shotgun;
+            bool isShotgun = weapon.Definition.family == WeaponFamily.Shotgun;
 
-            if (_normalRoot != null)
-                _normalRoot.gameObject.SetActive(!isShotgun);
-
-            if (_shotgunLeft != null)
-                _shotgunLeft.gameObject.SetActive(isShotgun);
-
-            if (_shotgunRight != null)
-                _shotgunRight.gameObject.SetActive(isShotgun);
+            if (normalRoot != null)
+                normalRoot.gameObject.SetActive(!isShotgun);
+            if (shotgunLeft != null)
+                shotgunLeft.gameObject.SetActive(isShotgun);
+            if (shotgunRight != null)
+                shotgunRight.gameObject.SetActive(isShotgun);
 
             if (isShotgun)
-            {
                 UpdateShotgunCrosshair(weapon);
-                return;
-            }
-
-            UpdateNormalCrosshair(weapon);
+            else
+                UpdateNormalCrosshair(weapon);
         }
 
         private void UpdateNormalCrosshair(WeaponController weapon)
         {
-            if (weapon == null || _normalRoot == null)
+            if (weapon == null || normalRoot == null)
                 return;
 
             float targetGap = Mathf.Clamp(
-                normalMinGap +
-                Mathf.Max(0f, weapon.CurrentSpread) *
-                normalPixelsPerSpreadDegree,
+                normalMinGap + Mathf.Max(0f, weapon.CurrentSpread) * normalPixelsPerSpreadDegree,
                 normalMinGap,
                 normalMaxGap
             );
 
             float interpolation = 1f - Mathf.Exp(
-                -Mathf.Max(0.01f, normalSmoothSpeed) *
-                Time.unscaledDeltaTime
+                -Mathf.Max(0.01f, normalSmoothSpeed) * Time.unscaledDeltaTime
             );
 
-            _currentNormalGap = Mathf.Lerp(
-                _currentNormalGap,
-                targetGap,
-                interpolation
-            );
-
+            _currentNormalGap = Mathf.Lerp(_currentNormalGap, targetGap, interpolation);
             ApplyNormalGap(_currentNormalGap);
         }
 
@@ -285,17 +185,14 @@ namespace ROS.Game.UI
             float halfArm = normalArmLength * 0.5f;
             float offset = gap + halfArm;
 
-            if (_normalLeft != null)
-                _normalLeft.anchoredPosition = new Vector2(-offset, 0f);
-
-            if (_normalRight != null)
-                _normalRight.anchoredPosition = new Vector2(offset, 0f);
-
-            if (_normalUp != null)
-                _normalUp.anchoredPosition = new Vector2(0f, offset);
-
-            if (_normalDown != null)
-                _normalDown.anchoredPosition = new Vector2(0f, -offset);
+            if (normalLeft != null)
+                normalLeft.anchoredPosition = new Vector2(-offset, 0f);
+            if (normalRight != null)
+                normalRight.anchoredPosition = new Vector2(offset, 0f);
+            if (normalUp != null)
+                normalUp.anchoredPosition = new Vector2(0f, offset);
+            if (normalDown != null)
+                normalDown.anchoredPosition = new Vector2(0f, -offset);
         }
 
         private void UpdateShotgunCrosshair(WeaponController weapon)
@@ -312,12 +209,17 @@ namespace ROS.Game.UI
                 normalizedSpread
             );
 
-            SetAnchoredX(_shotgunLeft.rectTransform, -halfGap);
-            SetAnchoredX(_shotgunRight.rectTransform, halfGap);
+            if (shotgunLeft != null)
+                SetAnchoredX(shotgunLeft.rectTransform, -halfGap);
+            if (shotgunRight != null)
+                SetAnchoredX(shotgunRight.rectTransform, halfGap);
         }
 
         private void SuppressCompetingCrosshairs()
         {
+            if (root == null)
+                return;
+
             Scene activeScene = SceneManager.GetActiveScene();
             Graphic[] graphics = Resources.FindObjectsOfTypeAll<Graphic>();
 
@@ -326,20 +228,15 @@ namespace ROS.Game.UI
                 Graphic graphic = graphics[i];
                 if (graphic == null ||
                     graphic.gameObject.scene != activeScene ||
-                    IsOwnedCrosshairGraphic(graphic))
+                    graphic.transform.IsChildOf(root))
                 {
                     continue;
                 }
 
-                bool looksLikeCrosshair =
-                    ContainsCrosshairNameInHierarchy(graphic.transform);
-
+                bool looksLikeCrosshair = ContainsCrosshairNameInHierarchy(graphic.transform);
                 if (graphic is Text text)
                 {
-                    string value = text.text != null
-                        ? text.text.Trim()
-                        : string.Empty;
-
+                    string value = text.text != null ? text.text.Trim() : string.Empty;
                     looksLikeCrosshair |= value == "+";
                 }
 
@@ -351,36 +248,21 @@ namespace ROS.Game.UI
             }
         }
 
-        private bool IsOwnedCrosshairGraphic(Graphic graphic)
-        {
-            return _root != null &&
-                   graphic.transform.IsChildOf(_root);
-        }
-
-        private static bool ContainsCrosshairNameInHierarchy(
-            Transform transformToCheck)
+        private static bool ContainsCrosshairNameInHierarchy(Transform transformToCheck)
         {
             Transform current = transformToCheck;
-
             while (current != null)
             {
-                if (ContainsCrosshairName(current.gameObject.name))
-                    return true;
-
+                string name = current.gameObject.name;
+                if (!string.IsNullOrEmpty(name))
+                {
+                    string normalized = name.ToLowerInvariant();
+                    if (normalized.Contains("crosshair") || normalized.Contains("reticle"))
+                        return true;
+                }
                 current = current.parent;
             }
-
             return false;
-        }
-
-        private static bool ContainsCrosshairName(string objectName)
-        {
-            if (string.IsNullOrEmpty(objectName))
-                return false;
-
-            string normalized = objectName.ToLowerInvariant();
-            return normalized.Contains("crosshair") ||
-                   normalized.Contains("reticle");
         }
 
         private void RestoreSuppressedCrosshairs()
@@ -390,26 +272,20 @@ namespace ROS.Game.UI
                 if (suppressed != null)
                     suppressed.SetActive(true);
             }
-
             _suppressedCrosshairs.Clear();
         }
 
         private static PlayerInputReader FindLocalPlayerInput()
         {
-            PlayerInputReader[] inputs =
-                Resources.FindObjectsOfTypeAll<PlayerInputReader>();
-
+            PlayerInputReader[] inputs = Resources.FindObjectsOfTypeAll<PlayerInputReader>();
             Scene activeScene = SceneManager.GetActiveScene();
             PlayerInputReader fallback = null;
 
             for (int i = 0; i < inputs.Length; i++)
             {
                 PlayerInputReader candidate = inputs[i];
-                if (!IsValidLocalInput(candidate) ||
-                    candidate.gameObject.scene != activeScene)
-                {
+                if (!IsValidLocalInput(candidate) || candidate.gameObject.scene != activeScene)
                     continue;
-                }
 
                 if (candidate.gameObject.name == "Player_Prototype" ||
                     candidate.gameObject.name.StartsWith("Player_"))
@@ -417,11 +293,8 @@ namespace ROS.Game.UI
                     return candidate;
                 }
 
-                if (fallback == null &&
-                    !candidate.gameObject.name.StartsWith("Bot_"))
-                {
+                if (fallback == null && !candidate.gameObject.name.StartsWith("Bot_"))
                     fallback = candidate;
-                }
             }
 
             return fallback;
@@ -435,57 +308,15 @@ namespace ROS.Game.UI
                    !input.UsesExternalControl;
         }
 
-        private static RectTransform CreateArm(
-            string name,
-            Transform parent,
-            Vector2 size)
+        private T FindNamed<T>(string objectName) where T : Component
         {
-            GameObject go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-
-            RectTransform rect = go.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = Vector2.zero;
-
-            Image image = go.AddComponent<Image>();
-            image.color = new Color(1f, 1f, 1f, 0.94f);
-            image.raycastTarget = false;
-
-            return rect;
-        }
-
-        private static Text CreateText(
-            string name,
-            Transform parent,
-            string value,
-            Font font,
-            int fontSize)
-        {
-            GameObject go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-
-            RectTransform rect = go.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(42f, 58f);
-            rect.anchoredPosition = Vector2.zero;
-
-            Text text = go.AddComponent<Text>();
-            text.font = font;
-            text.text = value;
-            text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Normal;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = new Color(1f, 1f, 1f, 0.98f);
-            text.raycastTarget = false;
-            text.horizontalOverflow = HorizontalWrapMode.Overflow;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
-
-            return text;
+            T[] all = GetComponentsInChildren<T>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].name == objectName)
+                    return all[i];
+            }
+            return null;
         }
 
         private static void SetAnchoredX(RectTransform rect, float x)
