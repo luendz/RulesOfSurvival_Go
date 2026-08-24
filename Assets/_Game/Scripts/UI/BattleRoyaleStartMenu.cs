@@ -32,6 +32,7 @@ namespace ROS.Game.UI
             EnsureEditableView();
             HookButtons();
             Subscribe();
+            EnterMenuInputState();
         }
 
         private void OnEnable()
@@ -40,6 +41,9 @@ namespace ROS.Game.UI
             EnsureEditableView();
             HookButtons();
             Subscribe();
+
+            if (!MatchRequested && IsVisible)
+                EnterMenuInputState();
         }
 
         public void Configure(
@@ -59,9 +63,7 @@ namespace ROS.Game.UI
             HookButtons();
             MatchRequested = false;
             SetVisible(true);
-
-            if (input != null)
-                input.SetUiBlocked(true);
+            EnterMenuInputState();
 
             if (LobbySession.ConsumeLaunchRequest())
                 StartMatch();
@@ -85,14 +87,12 @@ namespace ROS.Game.UI
 
             MatchRequested = true;
 
-            if (input != null)
-                input.SetUiBlocked(false);
+            ExitMenuInputState();
 
             if (!sequence.BeginSequence())
             {
                 MatchRequested = false;
-                if (input != null)
-                    input.SetUiBlocked(true);
+                EnterMenuInputState();
                 return false;
             }
 
@@ -111,13 +111,31 @@ namespace ROS.Game.UI
                 return;
 
             MatchRequested = true;
+            ExitMenuInputState();
             SetVisible(false);
 
             if (input != null)
-            {
-                input.SetUiBlocked(false);
                 input.transform.position = freeroamSpawnPoint;
-            }
+        }
+
+        private void EnterMenuInputState()
+        {
+            ResolveRuntimeReferences();
+
+            if (input != null)
+                input.SetUiBlocked(true);
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        private void ExitMenuInputState()
+        {
+            if (input != null)
+                input.SetUiBlocked(false);
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         private void ResolveRuntimeReferences()
