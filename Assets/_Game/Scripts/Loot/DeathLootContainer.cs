@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
 using ROS.Game.UI;
@@ -36,7 +38,47 @@ namespace ROS.Game.Loot
 
         public bool IsEmpty => ItemCount <= 0;
 
+        /// <summary>
+        /// Cantidad general de objetos/tipos presentes en la caja.
+        /// Ejemplo: Rifle x1 + Munición Rifle x120 = 2 objetos de loot.
+        /// No suma cada bala como un objeto independiente ni duplica una misma
+        /// definición si internamente ocupa más de una pila por maxStack.
+        /// </summary>
         public int ItemCount
+        {
+            get
+            {
+                EnsureInventory();
+
+                HashSet<string> uniqueItems =
+                    new HashSet<string>();
+
+                foreach (
+                    InventoryStack stack
+                    in inventory.Stacks
+                )
+                {
+                    if (stack == null ||
+                        stack.item == null ||
+                        stack.amount <= 0)
+                    {
+                        continue;
+                    }
+
+                    uniqueItems.Add(
+                        GetGeneralItemKey(stack.item)
+                    );
+                }
+
+                return uniqueItems.Count;
+            }
+        }
+
+        /// <summary>
+        /// Total físico de unidades sumadas dentro de todas las pilas.
+        /// Se mantiene separado por si alguna lógica futura necesita ese dato.
+        /// </summary>
+        public int TotalUnitCount
         {
             get
             {
@@ -49,7 +91,9 @@ namespace ROS.Game.Loot
                     in inventory.Stacks
                 )
                 {
-                    if (stack != null)
+                    if (stack != null &&
+                        stack.item != null &&
+                        stack.amount > 0)
                     {
                         count += stack.amount;
                     }
@@ -111,15 +155,24 @@ namespace ROS.Game.Loot
                     ? source.gameObject.name
                     : string.Empty;
 
-            return
+            bool transferred =
                 source == null ||
                 source.Stacks.Count == 0 ||
                 source.TransferAllTo(inventory);
+
+            if (transferred)
+            {
+                // En la caja de muerte se quiere una fila por tipo de objeto.
+                // Por ejemplo, 120 balas se muestran como una sola entrada x120.
+                inventory.ConsolidateStacks();
+            }
+
+            return transferred;
         }
 
         public bool CanInteract(GameObject interactor)
         {
-            if (interactor == null || ItemCount <= 0)
+            if (interactor == null)
             {
                 return false;
             }
@@ -145,7 +198,7 @@ namespace ROS.Game.Loot
                 return;
             }
 
-            DeathLootPanelPresenter.OpenOrCreate(
+            RulesOfSurvivalHUDNearbyLootPresenter.OpenOrCreate(
                 this,
                 interactor
             );
@@ -185,6 +238,39 @@ namespace ROS.Game.Loot
             DestroyIfEmpty();
 
             return transferred;
+        }
+
+        private static string GetGeneralItemKey(
+            InventoryItemDefinition item
+        )
+        {
+            if (item == null)
+            {
+                return "null";
+            }
+
+            if (item.itemType == ItemType.Weapon &&
+                item.weaponDefinition != null)
+            {
+                string weaponId =
+                    item.weaponDefinition.weaponId;
+
+                return !string.IsNullOrWhiteSpace(weaponId)
+                    ? $"weapon:{weaponId}"
+                    : $"weapon:{item.weaponDefinition.GetInstanceID()}";
+            }
+
+            if (item.itemType == ItemType.Ammo)
+            {
+                return $"ammo:{item.ammoType}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.itemId))
+            {
+                return $"item:{item.itemId}";
+            }
+
+            return $"{item.itemType}:{item.displayName}";
         }
 
         private void DestroyIfEmpty()

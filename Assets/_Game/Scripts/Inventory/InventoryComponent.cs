@@ -121,6 +121,67 @@ namespace ROS.Game.Inventory
             );
         }
 
+        /// <summary>
+        /// Une todas las pilas que apuntan al mismo InventoryItemDefinition en
+        /// una sola entrada, conservando la cantidad total y el orden de primera
+        /// aparición. Se usa en cajas de muerte para que el HUD muestre, por
+        /// ejemplo, "Rifle Ammo x120" en una sola fila aunque maxStack sea 60.
+        /// El inventario normal del jugador sigue respetando maxStack al agregar.
+        /// </summary>
+        public void ConsolidateStacks()
+        {
+            if (stacks.Count <= 1)
+            {
+                return;
+            }
+
+            Dictionary<InventoryItemDefinition, int> totals =
+                new Dictionary<InventoryItemDefinition, int>();
+            List<InventoryItemDefinition> order =
+                new List<InventoryItemDefinition>();
+
+            for (int i = 0; i < stacks.Count; i++)
+            {
+                InventoryStack stack = stacks[i];
+                if (stack == null ||
+                    stack.item == null ||
+                    stack.amount <= 0)
+                {
+                    continue;
+                }
+
+                if (!totals.ContainsKey(stack.item))
+                {
+                    totals.Add(stack.item, 0);
+                    order.Add(stack.item);
+                }
+
+                totals[stack.item] += stack.amount;
+            }
+
+            stacks.Clear();
+
+            for (int i = 0; i < order.Count; i++)
+            {
+                InventoryItemDefinition item = order[i];
+                int amount = totals[item];
+                if (amount <= 0)
+                {
+                    continue;
+                }
+
+                stacks.Add(
+                    new InventoryStack
+                    {
+                        item = item,
+                        amount = amount
+                    }
+                );
+            }
+
+            Changed?.Invoke();
+        }
+
         public bool Remove(InventoryItemDefinition item, int amount)
         {
             if (item == null || amount <= 0) return false;
