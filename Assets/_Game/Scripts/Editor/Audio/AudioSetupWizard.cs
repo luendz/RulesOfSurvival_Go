@@ -34,6 +34,7 @@ namespace ROS.Game.Editor
 
             SetupCharacterAudio();
             SetupWeaponAudio();
+            SetupAirplaneAudio();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -62,7 +63,7 @@ namespace ROS.Game.Editor
                 so.FindProperty("actionSource").objectReferenceValue =
                     GetOrAddAudioSource(root, "AudioSource_Action", spatial: true, vol: 0.75f);
                 so.FindProperty("loopSource").objectReferenceValue =
-                    GetOrAddAudioSource(root, "AudioSource_Loop", spatial: true, vol: 0.55f);
+                    GetOrAddAudioSource(root, "AudioSource_Loop", spatial: false, vol: 0.55f);
 
                 // ── Footstep clips ────────────────────────────────
                 SetClipArray(so, "walkClips",       FindClips("walk_outdoor_0", "Character"));
@@ -94,9 +95,10 @@ namespace ROS.Game.Editor
 
                 // ── Parachute / skydive ───────────────────────────
                 SetClipArray(so, "parachuteOpenClips", FindClips("skydrive_open", "Character"));
-                SetSingleClip(so, "skydiveWindClip",     FindClipExact("skydive_wind",      "Character"));
-                SetSingleClip(so, "skydiveWindFastClip", FindClipExact("skydive_wind_fast", "Character"));
-                SetSingleClip(so, "skydiveLandingClip",  FindClipExact("skydive_landing",   "Character"));
+                SetSingleClip(so, "fallWindIntroClip",   FindClipExact("fly_partb_intro_v2", "Character"));
+                SetSingleClip(so, "skydiveWindClip",     FindClipExact("fly_partb_loop",     "Character"));
+                SetSingleClip(so, "skydiveWindFastClip", FindClipExact("skydive_wind_fast",  "Character"));
+                SetSingleClip(so, "skydiveLandingClip",  FindClipExact("skydive_landing",    "Character"));
 
                 so.ApplyModifiedProperties();
 
@@ -123,6 +125,35 @@ namespace ROS.Game.Editor
                 new[]{"sfx_body_exp","sfx_body_hit_01","sfx_body_hit_02"}, "UI"));
 
             so.ApplyModifiedProperties();
+        }
+
+        // ─────────────────────────────────────────────── airplane ──
+
+        private static void SetupAirplaneAudio()
+        {
+            string path = FindPrefabPath("PF_AirplaneStart");
+            if (path == null)
+            {
+                Debug.LogWarning("[AudioSetupWizard] PF_AirplaneStart prefab not found.");
+                return;
+            }
+
+            ModifyPrefab(path, root =>
+            {
+                AirplaneAudioController ctrl =
+                    root.GetComponent<AirplaneAudioController>() ??
+                    root.AddComponent<AirplaneAudioController>();
+
+                SerializedObject so = new SerializedObject(ctrl);
+
+                AudioSource src = GetOrAddAudioSource(root, "AudioSource_Airplane", spatial: false, vol: 0.85f);
+                if (src != null) so.FindProperty("audioSource").objectReferenceValue = src;
+
+                SetSingleClip(so, "flyLoopClip",      FindClipExact("fly2_part_a_loop",               "Character"));
+                SetSingleClip(so, "flyDaylightClip",  FindClipExact("Fly2_partc_daylight_oneshot_v2", "Character"));
+
+                so.ApplyModifiedProperties();
+            });
         }
 
         // ─────────────────────────────────────────────── weapons ──
@@ -376,9 +407,14 @@ namespace ROS.Game.Editor
 
         private static string FindPrefabPath(string prefabName)
         {
+            string[] searchFolders = new[]
+            {
+                "Assets/_Game/Prefabs",
+                "Assets/_Game/Resources"
+            };
+
             string[] guids = AssetDatabase.FindAssets(
-                $"{prefabName} t:Prefab",
-                new[]{ "Assets/_Game/Prefabs" });
+                $"{prefabName} t:Prefab", searchFolders);
 
             foreach (string guid in guids)
             {

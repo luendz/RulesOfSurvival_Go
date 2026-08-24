@@ -368,7 +368,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 58263ec731cdb1f4fac87143e9c084e6, type: 3}
   - {fileID: 8300000, guid: 9bfaf5c1eb765c845bda83e637a71a0e, type: 3}
   - {fileID: 8300000, guid: 3bcdc82bdfd5db94f981a64da6df85cc, type: 3}
-  skydiveWindClip: {fileID: 8300000, guid: cbfcefbe52fd9c74d9d4c214c0cb4a9d, type: 3}
+  fallWindIntroClip: {fileID: 8300000, guid: 1663abc5352bea440bd95e474496b76e, type: 3}
+  skydiveWindClip: {fileID: 8300000, guid: e1b86035c49066743a369489cbe00864, type: 3}
   skydiveWindFastClip: {fileID: 8300000, guid: 13c5e71d4eb22674f9c32a60cf358b4e, type: 3}
   skydiveLandingClip: {fileID: 8300000, guid: 992b51f4d0eef024dbaf23443b081a2f, type: 3}
   fastWindThreshold: 15
@@ -842,7 +843,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
+      value: 0
       inSlope: 0
       outSlope: 0
       tangentMode: 0

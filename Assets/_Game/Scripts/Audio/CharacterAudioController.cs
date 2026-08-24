@@ -54,6 +54,7 @@ namespace ROS.Game.Audio
 
         [Header("Parachute / Skydive")]
         [SerializeField] private AudioClip[] parachuteOpenClips;
+        [SerializeField] private AudioClip   fallWindIntroClip;
         [SerializeField] private AudioClip   skydiveWindClip;
         [SerializeField] private AudioClip   skydiveWindFastClip;
         [SerializeField] private AudioClip   skydiveLandingClip;
@@ -110,6 +111,7 @@ namespace ROS.Game.Audio
             HandleProneTransitions(prone);
             HandleCrouchTransitions(crouching, prone);
             HandleJumpTransition(state);
+            HandleFallingTransition(state);
             HandleLandTransition(state, grounded);
             HandleParachuteTransition(state);
             HandleSkydiveFallWind(state);
@@ -177,6 +179,18 @@ namespace ROS.Game.Audio
             {
                 RandomAudioPlayer.Play(actionSource, jumpClips);
             }
+        }
+
+        private void HandleFallingTransition(PlayerMovementState state)
+        {
+            if (state != PlayerMovementState.Falling ||
+                _prevState == PlayerMovementState.Falling)
+                return;
+
+            PlayOneShot(actionSource, fallWindIntroClip);
+
+            if (skydiveWindClip != null)
+                PlayLoop(skydiveWindClip);
         }
 
         private void HandleLandTransition(PlayerMovementState state, bool grounded)
