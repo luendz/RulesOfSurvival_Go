@@ -1,4 +1,5 @@
 using ROS.Game.Core;
+using ROS.Game.Input;
 using ROS.Game.Parachute;
 using UnityEngine;
 using UnityEngine.UI;
@@ -149,8 +150,7 @@ namespace ROS.Game.UI
 
         private Transform FindNamedTransform(string objectName)
         {
-            Transform root = transform;
-            Transform[] all = root.GetComponentsInChildren<Transform>(true);
+            Transform[] all = GetComponentsInChildren<Transform>(true);
             for (int i = 0; i < all.Length; i++)
                 if (all[i].name == objectName) return all[i];
             return null;
