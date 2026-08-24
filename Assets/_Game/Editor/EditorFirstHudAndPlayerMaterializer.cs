@@ -18,12 +18,6 @@ namespace ROS.Game.EditorTools
         private const string ScenePath =
             "Assets/_Game/Scenes/08_EditorFirstFunctionalTest.unity";
 
-        private static readonly Color Dark =
-            new Color(0.025f, 0.035f, 0.045f, 0.90f);
-
-        private static readonly Color Yellow =
-            new Color(1f, 0.86f, 0.03f, 0.96f);
-
         static EditorFirstHudAndPlayerMaterializer()
         {
             EditorApplication.delayCall += Materialize;
@@ -69,17 +63,16 @@ namespace ROS.Game.EditorTools
 
             if (canvas != null)
             {
-                changed |= EnsureMatchState(canvas);
+                // Estos bloques sí forman parte del HUD físico actual.
                 changed |= EnsureKillFeed(canvas);
                 changed |= EnsureDamageDirection(canvas);
-                changed |= EnsureEquipmentStatus(canvas);
-                changed |= EnsureQuickConsume(canvas);
                 changed |= EnsureCombatFeedback(canvas);
 
-                changed |= EnsureComponent<MatchStartHud>(hud.gameObject);
                 changed |= EnsureComponent<KillFeedPresenter>(hud.gameObject);
                 changed |= EnsureComponent<DamageDirectionIndicator>(hud.gameObject);
-                changed |= EnsureComponent<EquipmentStatusPresenter>(hud.gameObject);
+
+                // QuickConsumePresenter se conserva, pero su vista válida está en:
+                // Canvas/Vitals/Meds/QuickConsumeRoot. Nunca se crea aquí otro root.
                 changed |= EnsureComponent<QuickConsumePresenter>(hud.gameObject);
             }
 
@@ -106,34 +99,6 @@ namespace ROS.Game.EditorTools
 
             if (openedTemporarily)
                 EditorSceneManager.CloseScene(scene, true);
-        }
-
-        private static bool EnsureMatchState(Transform canvas)
-        {
-            Transform root = canvas.Find("MatchStatePanel");
-            if (root != null)
-                return false;
-
-            GameObject panel = CreateUiObject("MatchStatePanel", canvas);
-            RectTransform rt = panel.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 1f);
-            rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -55f);
-            rt.sizeDelta = new Vector2(540f, 78f);
-            Image bg = panel.AddComponent<Image>();
-            bg.color = Dark;
-            bg.raycastTarget = false;
-
-            CreateText(panel.transform, "MatchStateTitle", "", 19,
-                TextAnchor.MiddleCenter, new Vector2(0f, -7f),
-                new Vector2(520f, 30f), true);
-            CreateText(panel.transform, "MatchStateDetail", "", 14,
-                TextAnchor.MiddleCenter, new Vector2(0f, -40f),
-                new Vector2(520f, 26f), false);
-
-            panel.SetActive(false);
-            return true;
         }
 
         private static bool EnsureKillFeed(Transform canvas)
@@ -175,73 +140,6 @@ namespace ROS.Game.EditorTools
             CreateArrow(center.transform, "DamageArrow_Right", new Vector2(120f, 0f), -90f);
             CreateArrow(center.transform, "DamageArrow_Back", new Vector2(0f, -120f), 180f);
             CreateArrow(center.transform, "DamageArrow_Left", new Vector2(-120f, 0f), 90f);
-            return true;
-        }
-
-        private static bool EnsureEquipmentStatus(Transform canvas)
-        {
-            Transform root = canvas.Find("EquipmentStatusRoot");
-            if (root != null)
-                return false;
-
-            GameObject container = CreateUiObject("EquipmentStatusRoot", canvas);
-            RectTransform rt = container.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
-            rt.pivot = new Vector2(1f, 0f);
-            rt.anchoredPosition = new Vector2(-18f, 18f);
-            rt.sizeDelta = new Vector2(170f, 60f);
-
-            CreateText(container.transform, "HelmetStatus", "CASCO —", 13,
-                TextAnchor.MiddleRight, new Vector2(0f, 36f), new Vector2(160f, 18f), false);
-            CreateText(container.transform, "VestStatus", "CHALECO —", 13,
-                TextAnchor.MiddleRight, new Vector2(0f, 18f), new Vector2(160f, 18f), false);
-            CreateText(container.transform, "BackpackStatus", "MOCHILA —", 13,
-                TextAnchor.MiddleRight, Vector2.zero, new Vector2(160f, 18f), false);
-            return true;
-        }
-
-        private static bool EnsureQuickConsume(Transform canvas)
-        {
-            Transform root = canvas.Find("QuickConsumeRoot");
-            if (root != null)
-                return false;
-
-            GameObject container = CreateUiObject("QuickConsumeRoot", canvas);
-            RectTransform rt = container.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
-            rt.pivot = new Vector2(1f, 0f);
-            rt.anchoredPosition = new Vector2(-14f, 270f);
-            rt.sizeDelta = new Vector2(216f, 52f);
-
-            for (int i = 0; i < 3; i++)
-            {
-                GameObject slot = CreateUiObject("QuickConsumeSlot_" + i, container.transform);
-                RectTransform sr = slot.GetComponent<RectTransform>();
-                sr.anchorMin = sr.anchorMax = new Vector2(0f, 0f);
-                sr.pivot = Vector2.zero;
-                sr.anchoredPosition = new Vector2(i * 74f, 0f);
-                sr.sizeDelta = new Vector2(68f, 52f);
-                Image bg = slot.AddComponent<Image>();
-                bg.color = Dark;
-
-                GameObject iconObj = CreateUiObject("Icon", slot.transform);
-                RectTransform ir = iconObj.GetComponent<RectTransform>();
-                ir.anchorMin = new Vector2(0.1f, 0.35f);
-                ir.anchorMax = new Vector2(0.55f, 0.95f);
-                ir.offsetMin = ir.offsetMax = Vector2.zero;
-                iconObj.AddComponent<Image>().preserveAspect = true;
-
-                CreateText(slot.transform, "Name", string.Empty, 10,
-                    TextAnchor.LowerCenter, new Vector2(0f, 1f),
-                    new Vector2(64f, 19f), false);
-                CreateText(slot.transform, "Count", "0", 14,
-                    TextAnchor.MiddleRight, new Vector2(16f, 12f),
-                    new Vector2(45f, 28f), true);
-                slot.SetActive(false);
-            }
-
-            CreateText(container.transform, "QuickConsumeKeyHint", "H", 11,
-                TextAnchor.UpperLeft, new Vector2(4f, 54f), new Vector2(20f, 16f), false);
             return true;
         }
 
