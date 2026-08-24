@@ -19,17 +19,21 @@ namespace ROS.Game.Loot
         [SerializeField] private InventoryItemDefinition vestItem;
         [SerializeField] private InventoryItemDefinition backpackItem;
         [SerializeField] private InventoryItemDefinition[] weaponItems =
-            new InventoryItemDefinition[3];
+            new InventoryItemDefinition[PlayerWeaponSlotRules.SlotCount];
 
         private float _baseCapacity;
 
         public InventoryItemDefinition HelmetItem => helmetItem;
         public InventoryItemDefinition VestItem => vestItem;
         public InventoryItemDefinition BackpackItem => backpackItem;
+
         public InventoryItemDefinition GetWeaponItem(int slot) =>
             weaponItems != null && slot >= 1 && slot <= weaponItems.Length
                 ? weaponItems[slot - 1]
                 : null;
+
+        public InventoryItemDefinition GetWeaponItem(PlayerWeaponSlot slot) =>
+            GetWeaponItem((int)slot);
 
         public event Action EquipmentChanged;
 
@@ -44,28 +48,42 @@ namespace ROS.Game.Loot
         public bool CanEquip(InventoryItemDefinition item)
         {
             if (item == null || !item.IsEquippable)
-            {
                 return false;
-            }
 
             EnsureReferences();
 
             return item.itemType switch
             {
                 ItemType.Weapon =>
-                    weapons != null &&
-                    item.weaponDefinition != null,
+                    CanEquipWeaponLike(item),
+                ItemType.Throwable =>
+                    CanEquipWeaponLike(item),
                 ItemType.Helmet =>
-                    protection != null &&
-                    IsEquipmentUpgrade(item),
+                    protection != null && IsEquipmentUpgrade(item),
                 ItemType.Armor =>
-                    protection != null &&
-                    IsEquipmentUpgrade(item),
+                    protection != null && IsEquipmentUpgrade(item),
                 ItemType.Backpack =>
-                    inventory != null &&
-                    IsEquipmentUpgrade(item),
+                    inventory != null && IsEquipmentUpgrade(item),
                 _ => false
             };
+        }
+
+        private bool CanEquipWeaponLike(InventoryItemDefinition item)
+        {
+            int slot = ResolveWeaponSlot(item);
+            if (slot == 0)
+                return false;
+
+            // Primary 1/2 y pistola siguen utilizando WeaponController.
+            if (slot <= (int)PlayerWeaponSlot.Pistol)
+            {
+                return weapons != null && item.weaponDefinition != null;
+            }
+
+            // Melee y throwable ya tienen slot lógico independiente aunque su
+            // controlador de combate especializado se implemente por separado.
+            return slot == (int)PlayerWeaponSlot.Melee ||
+                   slot == (int)PlayerWeaponSlot.Throwable;
         }
 
         public bool IsEquipmentUpgrade(
@@ -73,9 +91,7 @@ namespace ROS.Game.Loot
         )
         {
             if (item == null)
-            {
                 return false;
-            }
 
             return item.itemType switch
             {
@@ -93,36 +109,34 @@ namespace ROS.Game.Loot
             InventoryItemDefinition equipped
         )
         {
-            return
-                equipped == null ||
-                (int)candidate.protectionLevel >
-                (int)equipped.protectionLevel;
+            return equipped == null ||
+                   (int)candidate.protectionLevel >
+                   (int)equipped.protectionLevel;
         }
 
         private bool IsBackpackUpgrade(
             InventoryItemDefinition candidate
         )
         {
-            return
-                backpackItem == null ||
-                candidate.backpackCapacity >
-                backpackItem.backpackCapacity;
+            return backpackItem == null ||
+                   candidate.backpackCapacity >
+                   backpackItem.backpackCapacity;
         }
 
         public bool TryEquip(
             InventoryItemDefinition item,
-            out InventoryItemDefinition replacedItem)
+            out InventoryItemDefinition replacedItem
+        )
         {
             replacedItem = null;
 
             if (!CanEquip(item))
-            {
                 return false;
-            }
 
             bool equipped = item.itemType switch
             {
-                ItemType.Weapon => TryEquipWeapon(item, out replacedItem),
+                ItemType.Weapon => TryEquipWeaponLike(item, out replacedItem),
+                ItemType.Throwable => TryEquipWeaponLike(item, out replacedItem),
                 ItemType.Helmet => EquipHelmet(item, out replacedItem),
                 ItemType.Armor => EquipVest(item, out replacedItem),
                 ItemType.Backpack => EquipBackpack(item, out replacedItem),
@@ -130,16 +144,15 @@ namespace ROS.Game.Loot
             };
 
             if (equipped)
-            {
                 EquipmentChanged?.Invoke();
-            }
 
             return equipped;
         }
 
         private bool EquipHelmet(
             InventoryItemDefinition item,
-            out InventoryItemDefinition replacedItem)
+            out InventoryItemDefinition replacedItem
+        )
         {
             replacedItem = helmetItem;
             helmetItem = item;
@@ -149,7 +162,8 @@ namespace ROS.Game.Loot
 
         private bool EquipVest(
             InventoryItemDefinition item,
-            out InventoryItemDefinition replacedItem)
+            out InventoryItemDefinition replacedItem
+        )
         {
             replacedItem = vestItem;
             vestItem = item;
@@ -159,7 +173,8 @@ namespace ROS.Game.Loot
 
         private bool EquipBackpack(
             InventoryItemDefinition item,
-            out InventoryItemDefinition replacedItem)
+            out InventoryItemDefinition replacedItem
+        )
         {
             replacedItem = backpackItem;
             backpackItem = item;
@@ -172,64 +187,74 @@ namespace ROS.Game.Loot
             return true;
         }
 
-        private bool TryEquipWeapon(
+        private bool TryEquipWeaponLike(
             InventoryItemDefinition item,
-            out InventoryItemDefinition replacedItem)
+            out InventoryItemDefinition replacedItem
+        )
         {
             replacedItem = null;
 
-            int slot = ResolveWeaponSlot(item.preferredWeaponSlot);
+            int slot = ResolveWeaponSlot(item);
             if (slot == 0)
-            {
                 return false;
+
+            EnsureWeaponItemArray();
+            replacedItem = weaponItems[slot - 1];
+
+            // Slots 4 y 5 son slots lógicos independientes. No se fuerzan a
+            // pasar por el controlador de armas de fuego.
+            if (slot >= (int)PlayerWeaponSlot.Melee)
+            {
+                weaponItems[slot - 1] = item;
+                return true;
             }
 
             WeaponController newWeapon = CreateWeapon(item);
             if (newWeapon == null)
-            {
                 return false;
-            }
 
             WeaponController oldWeapon = weapons.GetWeaponForSlot(slot);
-            replacedItem = weaponItems[slot - 1];
             weaponItems[slot - 1] = item;
-
             weapons.SetWeaponInSlot(slot, newWeapon, true);
 
             if (oldWeapon != null && oldWeapon != newWeapon)
-            {
                 Destroy(oldWeapon.gameObject);
-            }
 
             return true;
         }
 
-        private int ResolveWeaponSlot(int preferredSlot)
+        private int ResolveWeaponSlot(InventoryItemDefinition item)
         {
-            if (preferredSlot >= 1 && preferredSlot <= 3)
-            {
-                return preferredSlot;
-            }
+            if (item == null)
+                return 0;
 
-            if (!weapons.HasWeaponInSlot(1))
-            {
-                return 1;
-            }
+            int equippedSlot = weapons != null
+                ? weapons.EquippedSlot
+                : 0;
 
-            if (!weapons.HasWeaponInSlot(2))
-            {
-                return 2;
-            }
+            return PlayerWeaponSlotRules.ResolveSlot(
+                item,
+                item.preferredWeaponSlot,
+                slot => IsSlotOccupied(slot),
+                equippedSlot
+            );
+        }
 
-            int equippedSlot = weapons.EquippedSlot;
-            return equippedSlot == 1 || equippedSlot == 2
-                ? equippedSlot
-                : 1;
+        private bool IsSlotOccupied(int slot)
+        {
+            if (slot <= (int)PlayerWeaponSlot.Pistol)
+                return weapons != null && weapons.HasWeaponInSlot(slot);
+
+            return GetWeaponItem(slot) != null;
         }
 
         private WeaponController CreateWeapon(
-            InventoryItemDefinition item)
+            InventoryItemDefinition item
+        )
         {
+            if (item == null || item.weaponDefinition == null)
+                return null;
+
             GameObject weaponObject;
 
             if (item.weaponPrefab != null)
@@ -249,9 +274,7 @@ namespace ROS.Game.Loot
                 weaponObject.GetComponentInChildren<WeaponController>(true);
 
             if (controller == null)
-            {
                 controller = weaponObject.AddComponent<WeaponController>();
-            }
 
             controller.ConfigureDefinition(item.weaponDefinition);
             DisableWorldPhysics(weaponObject);
@@ -277,29 +300,39 @@ namespace ROS.Game.Loot
         private void EnsureReferences()
         {
             if (inventory == null)
-            {
                 inventory = GetComponent<InventoryComponent>();
-            }
 
             if (protection == null)
-            {
                 protection = GetComponent<ProtectiveEquipment>();
-            }
 
             if (protection == null)
-            {
                 protection = gameObject.AddComponent<ProtectiveEquipment>();
-            }
 
             if (weapons == null)
-            {
                 weapons = GetComponent<WeaponEquipmentController>();
+
+            EnsureWeaponItemArray();
+        }
+
+        private void EnsureWeaponItemArray()
+        {
+            if (weaponItems != null &&
+                weaponItems.Length == PlayerWeaponSlotRules.SlotCount)
+            {
+                return;
             }
 
-            if (weaponItems == null || weaponItems.Length != 3)
-            {
-                weaponItems = new InventoryItemDefinition[3];
-            }
+            InventoryItemDefinition[] oldItems = weaponItems;
+            weaponItems = new InventoryItemDefinition[
+                PlayerWeaponSlotRules.SlotCount
+            ];
+
+            if (oldItems == null)
+                return;
+
+            int copyCount = Mathf.Min(oldItems.Length, weaponItems.Length);
+            for (int i = 0; i < copyCount; i++)
+                weaponItems[i] = oldItems[i];
         }
     }
 }
