@@ -1,6 +1,7 @@
 using ROS.Game.Core;
 using ROS.Game.Parachute;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ROS.Game.UI
 {
@@ -8,42 +9,48 @@ namespace ROS.Game.UI
     {
         [SerializeField] private MatchStartController sequence;
         [SerializeField] private ParachuteController parachute;
+        [SerializeField] private GameObject panelRoot;
+        [SerializeField] private Text titleText;
+        [SerializeField] private Text detailText;
 
-        private GUIStyle _titleStyle;
-        private GUIStyle _detailStyle;
         private float _landingMessageUntil;
+
+        private void Awake()
+        {
+            ResolvePhysicalView();
+            ResolveGameplayReferences();
+            SetVisible(false);
+        }
 
         public void Configure(
             MatchStartController startSequence,
             ParachuteController playerParachute
         )
         {
+            Unsubscribe();
             sequence = startSequence;
             parachute = playerParachute;
-
-            if (parachute != null)
-            {
-                parachute.Landed -= HandleLanding;
-                parachute.Landed += HandleLanding;
-            }
+            Subscribe();
+            ResolvePhysicalView();
         }
 
-        private void OnGUI()
+        private void Update()
         {
+            ResolveGameplayReferences();
             if (sequence == null || parachute == null)
             {
+                SetVisible(false);
                 return;
             }
 
-            EnsureStyles();
             string title;
             string detail;
 
-            if (!sequence.SequenceRunning &&
-                parachute.State == AirDropState.Landed)
+            if (!sequence.SequenceRunning && parachute.State == AirDropState.Landed)
             {
                 if (Time.unscaledTime > _landingMessageUntil)
                 {
+                    SetVisible(false);
                     return;
                 }
 
@@ -77,56 +84,56 @@ namespace ROS.Game.UI
             }
             else
             {
+                SetVisible(false);
                 return;
             }
 
-            float width = Mathf.Min(540f, Screen.width - 32f);
-            Rect panel = new Rect(
-                (Screen.width - width) * 0.5f,
-                24f,
-                width,
-                78f
-            );
-
-            Color previous = GUI.color;
-            GUI.color = new Color(0.04f, 0.07f, 0.11f, 0.88f);
-            GUI.Box(panel, GUIContent.none);
-            GUI.color = Color.white;
-            GUI.Label(
-                new Rect(panel.x + 12f, panel.y + 9f, panel.width - 24f, 28f),
-                title,
-                _titleStyle
-            );
-            GUI.Label(
-                new Rect(panel.x + 12f, panel.y + 39f, panel.width - 24f, 27f),
-                detail,
-                _detailStyle
-            );
-            GUI.color = previous;
+            SetVisible(true);
+            if (titleText != null) titleText.text = title;
+            if (detailText != null) detailText.text = detail;
         }
 
-        private void EnsureStyles()
+        private void ResolvePhysicalView()
         {
-            if (_titleStyle != null)
+            if (panelRoot == null)
             {
-                return;
+                Transform root = FindNamedTransform("MatchStatePanel");
+                panelRoot = root != null ? root.gameObject : null;
             }
 
-            _titleStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 19,
-                fontStyle = FontStyle.Bold
-            };
-            _titleStyle.normal.textColor = Color.white;
+            if (titleText == null)
+                titleText = FindNamedComponent<Text>("MatchStateTitle");
 
-            _detailStyle = new GUIStyle(GUI.skin.label)
+            if (detailText == null)
+                detailText = FindNamedComponent<Text>("MatchStateDetail");
+        }
+
+        private void ResolveGameplayReferences()
+        {
+            if (sequence == null)
+                sequence = FindFirstObjectByType<MatchStartController>();
+
+            if (parachute == null)
             {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 14
-            };
-            _detailStyle.normal.textColor =
-                new Color(0.45f, 0.78f, 1f);
+                PlayerInputReader input = FindFirstObjectByType<PlayerInputReader>();
+                if (input != null)
+                    parachute = input.GetComponent<ParachuteController>();
+            }
+
+            Subscribe();
+        }
+
+        private void Subscribe()
+        {
+            if (parachute == null) return;
+            parachute.Landed -= HandleLanding;
+            parachute.Landed += HandleLanding;
+        }
+
+        private void Unsubscribe()
+        {
+            if (parachute != null)
+                parachute.Landed -= HandleLanding;
         }
 
         private void HandleLanding()
@@ -134,12 +141,30 @@ namespace ROS.Game.UI
             _landingMessageUntil = Time.unscaledTime + 2.5f;
         }
 
+        private void SetVisible(bool visible)
+        {
+            if (panelRoot != null && panelRoot.activeSelf != visible)
+                panelRoot.SetActive(visible);
+        }
+
+        private Transform FindNamedTransform(string objectName)
+        {
+            Transform root = transform;
+            Transform[] all = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i].name == objectName) return all[i];
+            return null;
+        }
+
+        private T FindNamedComponent<T>(string objectName) where T : Component
+        {
+            Transform target = FindNamedTransform(objectName);
+            return target != null ? target.GetComponent<T>() : null;
+        }
+
         private void OnDestroy()
         {
-            if (parachute != null)
-            {
-                parachute.Landed -= HandleLanding;
-            }
+            Unsubscribe();
         }
     }
 }
