@@ -162,8 +162,6 @@ namespace ROS.Game.Loot
 
             if (transferred)
             {
-                // En la caja de muerte se quiere una fila por tipo de objeto.
-                // Por ejemplo, 120 balas se muestran como una sola entrada x120.
                 inventory.ConsolidateStacks();
             }
 
@@ -238,6 +236,16 @@ namespace ROS.Game.Loot
             DestroyIfEmpty();
 
             return transferred;
+        }
+
+        /// <summary>
+        /// Se usa cuando una pieza de loot de la caja se equipa directamente
+        /// (arma, casco, chaleco, mochila, etc.) en vez de transferirse al
+        /// InventoryComponent. Mantiene el ciclo de vida de la caja coherente.
+        /// </summary>
+        public void DestroyIfEmptyAfterExternalLoot()
+        {
+            DestroyIfEmpty();
         }
 
         private static string GetGeneralItemKey(
