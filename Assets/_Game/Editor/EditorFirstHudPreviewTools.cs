@@ -8,11 +8,7 @@ namespace ROS.Game.EditorTools
 {
     /// <summary>
     /// Herramientas de preview del HUD Editor First.
-    /// Permiten mostrar temporalmente elementos que normalmente comienzan
-    /// ocultos, editarlos desde Hierarchy/Game View y luego restaurar el
-    /// estado de inicio esperado por runtime.
-    ///
-    /// No crea UI en Play Mode y no forma parte de la logica runtime.
+    /// No crea UI en Play Mode; solo muestra temporalmente objetos físicos.
     /// </summary>
     public static class EditorFirstHudPreviewTools
     {
@@ -39,8 +35,7 @@ namespace ROS.Game.EditorTools
             SetHierarchyActive(canvas.Find("DamageDirectionRoot"), true);
             SetHierarchyActive(canvas.Find("CombatFeedbackRoot"), true);
             SetHierarchyActive(canvas.Find("ConsumableProgressBar"), true);
-            SetHierarchyActive(canvas.Find("NearbyObjectIndicator"), true);
-            SetHierarchyActive(canvas.Find("DeathLootPanelROS"), true);
+            SetHierarchyActive(canvas.Find("NearbyLoot"), true);
 
             Transform quickConsume = FindQuickConsumeRoot(canvas);
             SetHierarchyActive(quickConsume, true);
@@ -63,8 +58,7 @@ namespace ROS.Game.EditorTools
             SetText(canvas, "HeadshotLabel", "HEADSHOT");
 
             ConfigureQuickConsumePreview(canvas);
-            ConfigureDeathLootPreview(canvas);
-            ConfigureNearbyPreview(canvas);
+            ConfigureNearbyLootPreview(canvas);
             ConfigureWeaponFireModePreview(canvas, true);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -73,8 +67,7 @@ namespace ROS.Game.EditorTools
             SceneView.RepaintAll();
 
             Debug.Log(
-                "[HUD Preview] Elementos editables del HUD visibles. " +
-                "QuickConsume usa exclusivamente Vitals/Meds/QuickConsumeRoot."
+                "[HUD Preview] HUD visible para edición. NearbyLoot muestra filas de ejemplo."
             );
         }
 
@@ -114,7 +107,7 @@ namespace ROS.Game.EditorTools
             SetPreviewAlpha(canvas, "DamageFeedback_Left", 0f);
 
             SetActive(canvas.Find("ConsumableProgressBar"), false);
-            SetActive(canvas.Find("NearbyObjectIndicator"), false);
+            SetActive(canvas.Find("NearbyLoot"), false);
             SetActive(canvas.Find("DeathLootPanelROS"), false);
             ConfigureWeaponFireModePreview(canvas, false);
 
@@ -180,6 +173,74 @@ namespace ROS.Game.EditorTools
             return true;
         }
 
+        private static void ConfigureNearbyLootPreview(Transform canvas)
+        {
+            Transform root = canvas.Find("NearbyLoot");
+            if (root == null)
+                return;
+
+            Text title = root.Find("Title/TitleText")?.GetComponent<Text>();
+            if (title != null)
+                title.text = "HERITAGE";
+
+            Text hint = root.Find("ToggleBg/ToggleHint")?.GetComponent<Text>();
+            if (hint != null)
+                hint.text = "RUEDA  •  F RECOGER";
+
+            string[] names =
+            {
+                "Desert Eagle",
+                "Sports Drink",
+                "Lv 1 Backpack",
+                "M870 SG",
+                "M4A1 Rifle",
+                "Med Kit",
+                "Rifle Ammo"
+            };
+
+            string[] secondary =
+            {
+                "Pistol",
+                "Speed and HP up",
+                "+capacity",
+                "Shotgun",
+                "Assault Rifle",
+                "+HP moderately",
+                string.Empty
+            };
+
+            for (int i = 0; i < 7; i++)
+            {
+                Transform row = root.Find("Row_" + i);
+                if (row == null)
+                    continue;
+
+                row.gameObject.SetActive(true);
+
+                Text name = row.Find("Name")?.GetComponent<Text>();
+                Text info = row.Find("SecondaryText")?.GetComponent<Text>();
+                Transform secondaryIcon = row.Find("SecondaryIcon");
+                Image background = row.GetComponent<Image>();
+
+                if (name != null) name.text = names[i];
+                if (info != null)
+                {
+                    info.text = secondary[i];
+                    info.gameObject.SetActive(i != 6);
+                }
+
+                if (secondaryIcon != null)
+                    secondaryIcon.gameObject.SetActive(i == 6);
+
+                if (background != null)
+                {
+                    background.color = i == 2
+                        ? new Color(1f, 0.86f, 0.03f, 0.16f)
+                        : new Color(1f, 0.86f, 0.03f, 0.98f);
+                }
+            }
+        }
+
         private static void ConfigureQuickConsumePreview(Transform canvas)
         {
             Transform quickConsume = FindQuickConsumeRoot(canvas);
@@ -211,47 +272,6 @@ namespace ROS.Game.EditorTools
             Transform vitals = canvas != null ? canvas.Find("Vitals") : null;
             Transform meds = vitals != null ? vitals.Find("Meds") : null;
             return meds != null ? meds.Find("QuickConsumeRoot") : null;
-        }
-
-        private static void ConfigureDeathLootPreview(Transform canvas)
-        {
-            Transform root = canvas.Find("DeathLootPanelROS");
-            if (root == null)
-                return;
-
-            Text title = root.Find("Title/Text")?.GetComponent<Text>();
-            if (title != null)
-                title.text = "CAJA DE JUGADOR";
-
-            Text footer = root.Find("Footer/Text")?.GetComponent<Text>();
-            if (footer != null)
-                footer.text = "1/7  •  RUEDA  •  F RECOGER  •  ESC";
-
-            for (int i = 0; i < 7; i++)
-            {
-                Transform row = root.Find("Row_" + i);
-                if (row == null)
-                    continue;
-
-                row.gameObject.SetActive(true);
-                Text itemName = row.Find("Name")?.GetComponent<Text>();
-                Text amount = row.Find("Amount")?.GetComponent<Text>();
-                if (itemName != null)
-                    itemName.text = i == 0 ? "M4A1" : "OBJETO " + (i + 1);
-                if (amount != null)
-                    amount.text = i == 0 ? "x1" : "x" + (i + 1);
-            }
-        }
-
-        private static void ConfigureNearbyPreview(Transform canvas)
-        {
-            Transform root = canvas.Find("NearbyObjectIndicator");
-            if (root == null)
-                return;
-
-            Text text = root.Find("Text")?.GetComponent<Text>();
-            if (text != null)
-                text.text = "OBJETO CERCANO";
         }
 
         private static void ConfigureWeaponFireModePreview(
