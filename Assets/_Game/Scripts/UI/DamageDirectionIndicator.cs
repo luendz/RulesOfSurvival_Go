@@ -1,150 +1,150 @@
-using ROS.Game.Combat;
 using System.Collections;
+using ROS.Game.Combat;
+using ROS.Game.Input;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ROS.Game.UI
 {
-    /// <summary>
-    /// Muestra flechas en pantalla indicando la dirección de la que viene el daño.
-    /// Se anclará al jugador local via Bind().
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class DamageDirectionIndicator : MonoBehaviour
     {
-        private const float ArrowSize    = 60f;
-        private const float ArrowRadius  = 120f;  // píxeles desde el centro
-        private const float FlashTime   = 0.9f;
+        private const float FlashTime = 0.9f;
 
-        private Health    _health;
-        private Transform _playerTransform;
+        [SerializeField] private Health health;
+        [SerializeField] private Transform playerTransform;
+        [SerializeField] private Image[] arrows = new Image[4];
 
-        private GameObject _root;
-        private Image[]    _arrows; // 0=front, 1=right, 2=back, 3=left
-
-        // ---------------------------------------------------------------
-
-        public void Bind(Health health, Transform playerTransform)
+        private void Awake()
         {
-            _health          = health;
-            _playerTransform = playerTransform;
-
-            if (_health != null)
-                _health.Damaged += OnDamaged;
-
-            BuildUI();
+            ResolvePhysicalView();
+            ResolveGameplayReferences();
         }
 
-        private void OnDestroy()
+        private void OnEnable()
         {
-            if (_health != null)
-                _health.Damaged -= OnDamaged;
-
-            if (_root != null) Destroy(_root);
+            ResolveGameplayReferences();
+            Subscribe();
         }
 
-        // ---------------------------------------------------------------
+        public void Bind(Health playerHealth, Transform player)
+        {
+            Unsubscribe();
+            health = playerHealth;
+            playerTransform = player;
+            ResolvePhysicalView();
+            Subscribe();
+        }
+
+        private void ResolveGameplayReferences()
+        {
+            if (playerTransform == null)
+            {
+                PlayerInputReader input = FindFirstObjectByType<PlayerInputReader>();
+                if (input != null)
+                {
+                    playerTransform = input.transform;
+                    if (health == null)
+                        health = input.GetComponent<Health>();
+                }
+            }
+        }
+
+        private void ResolvePhysicalView()
+        {
+            if (arrows == null || arrows.Length != 4)
+                arrows = new Image[4];
+
+            arrows[0] ??= FindNamed<Image>("DamageArrow_Front");
+            arrows[1] ??= FindNamed<Image>("DamageArrow_Right");
+            arrows[2] ??= FindNamed<Image>("DamageArrow_Back");
+            arrows[3] ??= FindNamed<Image>("DamageArrow_Left");
+        }
+
+        private void Subscribe()
+        {
+            if (health == null) return;
+            health.Damaged -= OnDamaged;
+            health.Damaged += OnDamaged;
+        }
+
+        private void Unsubscribe()
+        {
+            if (health != null)
+                health.Damaged -= OnDamaged;
+        }
 
         private void OnDamaged(DamageResult result)
         {
-            if (_playerTransform == null) return;
+            if (playerTransform == null)
+                return;
 
             Vector3 hitPoint = result.Damage.Point;
-            if (hitPoint == Vector3.zero) return; // daño sin posición (zona)
+            Vector3 direction = hitPoint != Vector3.zero
+                ? hitPoint - playerTransform.position
+                : -result.Damage.Direction;
 
-            Vector3 dir   = hitPoint - _playerTransform.position;
-            dir.y         = 0f;
-            if (dir.sqrMagnitude < 0.001f) return;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.001f)
+                return;
 
-            Vector3 forward = _playerTransform.forward;
+            Vector3 forward = playerTransform.forward;
             forward.y = 0f;
-            if (forward.sqrMagnitude < 0.001f) forward = Vector3.forward;
+            if (forward.sqrMagnitude < 0.001f)
+                forward = Vector3.forward;
 
-            float angle = Vector3.SignedAngle(forward, dir.normalized, Vector3.up);
-            // angle: 0=frente, 90=derecha, ±180=atrás, -90=izquierda
+            float angle = Vector3.SignedAngle(
+                forward.normalized,
+                direction.normalized,
+                Vector3.up
+            );
 
-            // Elegir flecha más cercana (4 direcciones)
-            int arrowIdx;
-            if      (angle > -45f && angle <=  45f) arrowIdx = 0; // frente
-            else if (angle >  45f && angle <= 135f) arrowIdx = 1; // derecha
-            else if (angle < -45f && angle >= -135f) arrowIdx = 3; // izquierda
-            else                                     arrowIdx = 2; // atrás
+            int index = angle > -45f && angle <= 45f
+                ? 0
+                : angle > 45f && angle <= 135f
+                    ? 1
+                    : angle < -45f && angle >= -135f
+                        ? 3
+                        : 2;
 
-            StartCoroutine(FlashArrow(arrowIdx));
+            StartCoroutine(FlashArrow(index));
         }
 
-        private IEnumerator FlashArrow(int idx)
+        private IEnumerator FlashArrow(int index)
         {
-            if (_arrows == null || idx < 0 || idx >= _arrows.Length) yield break;
+            if (arrows == null || index < 0 || index >= arrows.Length)
+                yield break;
 
-            Image arrow = _arrows[idx];
-            if (arrow == null) yield break;
+            Image arrow = arrows[index];
+            if (arrow == null)
+                yield break;
 
             float elapsed = 0f;
             while (elapsed < FlashTime)
             {
                 elapsed += Time.deltaTime;
-                float t = elapsed / FlashTime;
-                // Pulso: opaco → transparente
-                Color c = arrow.color;
-                c.a       = Mathf.SmoothStep(1f, 0f, t);
-                arrow.color = c;
+                Color color = arrow.color;
+                color.a = Mathf.SmoothStep(1f, 0f, elapsed / FlashTime);
+                arrow.color = color;
                 yield return null;
             }
 
-            Color final = arrow.color;
-            final.a = 0f;
-            arrow.color = final;
+            Color finalColor = arrow.color;
+            finalColor.a = 0f;
+            arrow.color = finalColor;
         }
 
-        // ---------------------------------------------------------------
-
-        private void BuildUI()
+        private T FindNamed<T>(string objectName) where T : Component
         {
-            _root = new GameObject("DamageDirectionCanvas");
+            T[] all = GetComponentsInChildren<T>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i].name == objectName) return all[i];
+            return null;
+        }
 
-            Canvas canvas = _root.AddComponent<Canvas>();
-            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 12;
-
-            _root.AddComponent<CanvasScaler>().referenceResolution =
-                new Vector2(1920, 1080);
-
-            // Contenedor centrado
-            GameObject center = new GameObject("Center");
-            center.transform.SetParent(_root.transform, false);
-            RectTransform cr = center.AddComponent<RectTransform>();
-            cr.anchorMin        = new Vector2(0.5f, 0.5f);
-            cr.anchorMax        = new Vector2(0.5f, 0.5f);
-            cr.sizeDelta        = Vector2.zero;
-            cr.anchoredPosition = Vector2.zero;
-
-            // 4 flechas: 0=arriba(frente), 1=derecha, 2=abajo(atrás), 3=izquierda
-            Vector2[] offsets = {
-                new Vector2(0f,  ArrowRadius),    // frente
-                new Vector2( ArrowRadius, 0f),    // derecha
-                new Vector2(0f, -ArrowRadius),    // atrás
-                new Vector2(-ArrowRadius, 0f),    // izquierda
-            };
-            float[] rotations = { 0f, -90f, 180f, 90f };
-
-            _arrows = new Image[4];
-            for (int i = 0; i < 4; i++)
-            {
-                GameObject go = new GameObject($"Arrow_{i}");
-                go.transform.SetParent(center.transform, false);
-
-                Image img = go.AddComponent<Image>();
-                img.color = new Color(1f, 0.15f, 0.1f, 0f); // rojo, invisible por defecto
-
-                // Usar un cuadrado rotado como flecha provisional
-                RectTransform rt = go.GetComponent<RectTransform>();
-                rt.sizeDelta       = new Vector2(ArrowSize * 0.4f, ArrowSize);
-                rt.anchoredPosition = offsets[i];
-                rt.localRotation    = Quaternion.Euler(0f, 0f, rotations[i]);
-
-                _arrows[i] = img;
-            }
+        private void OnDisable()
+        {
+            Unsubscribe();
         }
     }
 }
