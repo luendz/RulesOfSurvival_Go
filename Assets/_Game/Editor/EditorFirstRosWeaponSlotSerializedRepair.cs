@@ -1,4 +1,5 @@
 using ROS.Game.Input;
+using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using ROS.Game.Weapons;
 using UnityEditor;
@@ -37,18 +38,47 @@ namespace ROS.Game.EditorTools
             PlayerLootEquipment equipment = player != null
                 ? player.GetComponent<PlayerLootEquipment>()
                 : null;
+            WeaponEquipmentController weapons = player != null
+                ? player.GetComponent<WeaponEquipmentController>()
+                : null;
 
             bool changed = false;
             if (equipment != null)
             {
                 SerializedObject serialized = new SerializedObject(equipment);
                 SerializedProperty slots = serialized.FindProperty("weaponItems");
-                if (slots != null && slots.arraySize != PlayerWeaponSlotRules.SlotCount)
+                if (slots != null)
                 {
-                    slots.arraySize = PlayerWeaponSlotRules.SlotCount;
-                    serialized.ApplyModifiedPropertiesWithoutUndo();
-                    EditorUtility.SetDirty(equipment);
-                    changed = true;
+                    if (slots.arraySize != PlayerWeaponSlotRules.SlotCount)
+                    {
+                        slots.arraySize = PlayerWeaponSlotRules.SlotCount;
+                        changed = true;
+                    }
+
+                    if (weapons != null)
+                    {
+                        changed |= AssignStartingWeaponItem(
+                            slots,
+                            1,
+                            weapons.PrimarySlot1
+                        );
+                        changed |= AssignStartingWeaponItem(
+                            slots,
+                            2,
+                            weapons.PrimarySlot2
+                        );
+                        changed |= AssignStartingWeaponItem(
+                            slots,
+                            3,
+                            weapons.SidearmSlot
+                        );
+                    }
+
+                    if (changed)
+                    {
+                        serialized.ApplyModifiedPropertiesWithoutUndo();
+                        EditorUtility.SetDirty(equipment);
+                    }
                 }
             }
 
@@ -61,6 +91,55 @@ namespace ROS.Game.EditorTools
 
             if (openedTemporarily)
                 EditorSceneManager.CloseScene(scene, true);
+        }
+
+        private static bool AssignStartingWeaponItem(
+            SerializedProperty slots,
+            int slot,
+            WeaponController weapon
+        )
+        {
+            if (slots == null ||
+                slot < 1 ||
+                slot > slots.arraySize ||
+                weapon == null ||
+                weapon.Definition == null)
+            {
+                return false;
+            }
+
+            SerializedProperty element = slots.GetArrayElementAtIndex(slot - 1);
+            if (element.objectReferenceValue != null)
+                return false;
+
+            InventoryItemDefinition item = FindItemForDefinition(weapon.Definition);
+            if (item == null)
+                return false;
+
+            element.objectReferenceValue = item;
+            return true;
+        }
+
+        private static InventoryItemDefinition FindItemForDefinition(
+            WeaponDefinition definition
+        )
+        {
+            string[] guids = AssetDatabase.FindAssets(
+                "t:InventoryItemDefinition",
+                new[] { "Assets/_Game/Data/Weapons" }
+            );
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                InventoryItemDefinition item =
+                    AssetDatabase.LoadAssetAtPath<InventoryItemDefinition>(path);
+
+                if (item != null && item.weaponDefinition == definition)
+                    return item;
+            }
+
+            return null;
         }
 
         private static T FindInScene<T>(Scene scene)
