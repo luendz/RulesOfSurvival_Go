@@ -72,6 +72,7 @@ namespace ROS.Game.EditorTools
             );
 
             RepairFunctionalComponents();
+            EditorFirstStartMenuSceneRepair.RepairFunctionalSceneMenu();
             EnsureInBuildSettings();
 
             AssetDatabase.SaveAssets();
