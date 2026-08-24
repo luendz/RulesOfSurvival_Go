@@ -125,6 +125,7 @@ namespace ROS.Game.EditorTools
             EditorFirstLootViewsMaterializer.EnsureLootViews();
             EditorFirstHudBehaviorMaterializer.EnsureHudBehaviors();
             EditorFirstWeaponEffectsMaterializer.EnsureEditableWeaponEffects();
+            EditorFirstWeaponBackMountMaterializer.ApplyStandardBackMounts();
         }
 
         private static void RepairFunctionalComponents()
