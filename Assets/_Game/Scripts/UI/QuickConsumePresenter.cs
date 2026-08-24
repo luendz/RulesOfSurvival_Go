@@ -60,10 +60,19 @@ namespace ROS.Game.UI
             if (slots == null || slots.Length != MaxSlots)
                 slots = new ConsumeSlot[MaxSlots];
 
+            Transform quickConsumeRoot = ResolveQuickConsumeRoot();
+
             for (int i = 0; i < MaxSlots; i++)
             {
-                Transform root = FindNamedTransform("QuickConsumeSlot_" + i);
-                if (root == null) continue;
+                Transform root = quickConsumeRoot != null
+                    ? FindNamedUnderTransform(
+                        quickConsumeRoot,
+                        "QuickConsumeSlot_" + i
+                    )
+                    : null;
+
+                if (root == null)
+                    continue;
 
                 ConsumeSlot slot = slots[i] ?? new ConsumeSlot();
                 slot.root = root.gameObject;
@@ -73,6 +82,25 @@ namespace ROS.Game.UI
                 slot.countLabel = FindNamedUnder<Text>(root, "Count");
                 slots[i] = slot;
             }
+        }
+
+        private Transform ResolveQuickConsumeRoot()
+        {
+            Transform vitals = FindNamedTransform("Vitals");
+            if (vitals != null)
+            {
+                Transform meds = vitals.Find("Meds");
+                if (meds != null)
+                {
+                    Transform nested = meds.Find("QuickConsumeRoot");
+                    if (nested != null)
+                        return nested;
+                }
+            }
+
+            // Compatibilidad con escenas antiguas. La escena 08 reparada ya no
+            // debe usar este fallback porque el root válido vive en Vitals/Meds.
+            return FindNamedTransform("QuickConsumeRoot");
         }
 
         private void Update()
@@ -147,6 +175,17 @@ namespace ROS.Game.UI
         private Transform FindNamedTransform(string name)
         {
             Transform[] all = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i].name == name) return all[i];
+            return null;
+        }
+
+        private static Transform FindNamedUnderTransform(
+            Transform root,
+            string name
+        )
+        {
+            Transform[] all = root.GetComponentsInChildren<Transform>(true);
             for (int i = 0; i < all.Length; i++)
                 if (all[i].name == name) return all[i];
             return null;
