@@ -23,28 +23,26 @@ namespace ROS.Game.Parachute
             new Vector3(90f, 105f, 35f);
 
         private const string BattleRoyaleScene = "07_BattleRoyaleTest";
-        private const string ParachuteResource =
-            "Parachute/PF_ParachuteVisual";
         private const string AirplaneResource =
             "Parachute/PF_AirplaneStart";
+        private const string ParachuteResource =
+            "Parachute/PF_ParachuteVisual";
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.AfterSceneLoad
         )]
         private static void Initialize()
         {
-            if (SceneManager.GetActiveScene().name != BattleRoyaleScene ||
-                Object.FindFirstObjectByType<BattleRoyaleStartMenu>() != null)
-            {
+            if (SceneManager.GetActiveScene().name != BattleRoyaleScene)
                 return;
-            }
+
+            if (Object.FindFirstObjectByType<MatchStartController>() != null)
+                return;
 
             DemoBootstrap demo =
                 Object.FindFirstObjectByType<DemoBootstrap>();
             if (demo != null)
-            {
                 demo.SetBeginOnStart(false);
-            }
 
             PlayerInputReader input =
                 Object.FindFirstObjectByType<PlayerInputReader>();
@@ -56,49 +54,46 @@ namespace ROS.Game.Parachute
             if (input == null || manager == null)
             {
                 Debug.LogError(
-                    "Battle Royale requiere jugador y BattleRoyaleManager " +
-                    "para mostrar el menú de inicio."
+                    "Battle Royale requiere jugador y BattleRoyaleManager."
                 );
                 return;
             }
 
-            GameObject parachutePrefab =
-                Resources.Load<GameObject>(ParachuteResource);
-            GameObject airplanePrefab =
-                Resources.Load<GameObject>(AirplaneResource);
-
-            if (parachutePrefab == null || airplanePrefab == null)
-            {
-                Debug.LogError(
-                    "No se encontraron los prefabs de avión y paracaídas."
-                );
-                return;
-            }
-
+            // EDITOR FIRST: el jugador principal debe llegar completo desde la escena.
             ParachuteController parachute =
                 input.GetComponent<ParachuteController>();
             if (parachute == null)
             {
-                parachute = input.gameObject.AddComponent<ParachuteController>();
+                Debug.LogError(
+                    "[Editor First] Falta ParachuteController fisico en el jugador. " +
+                    "No se agregara en runtime."
+                );
+                return;
             }
 
-            GameObject parachuteVisual = Object.Instantiate(
-                parachutePrefab,
-                input.transform
-            );
-            parachuteVisual.name = "BattleRoyaleParachuteVisual";
-            parachuteVisual.transform.localPosition =
-                new Vector3(0f, 3.2f, 0f);
-            parachuteVisual.transform.localRotation = Quaternion.identity;
-            if (parachuteVisual.transform.childCount > 0)
+            Transform parachuteVisualTransform =
+                input.transform.Find("BattleRoyaleParachuteVisual");
+            if (parachuteVisualTransform == null)
             {
-                parachuteVisual.transform.GetChild(0).localRotation =
-                    Quaternion.Euler(
-                        ParachuteController.ModelEulerAngles
-                    );
+                Debug.LogError(
+                    "[Editor First] Falta BattleRoyaleParachuteVisual fisico en el jugador. " +
+                    "No se instanciara en runtime."
+                );
+                return;
             }
 
-            parachute.ConfigureVisual(parachuteVisual);
+            parachute.ConfigureVisual(parachuteVisualTransform.gameObject);
+
+            // El avion y el flujo BR siguen siendo dinamicos por ahora; se revisaran despues.
+            GameObject airplanePrefab =
+                Resources.Load<GameObject>(AirplaneResource);
+            if (airplanePrefab == null)
+            {
+                Debug.LogError(
+                    "No se encontro el prefab de avion Battle Royale."
+                );
+                return;
+            }
 
             GameObject airplaneObject = Object.Instantiate(airplanePrefab);
             airplaneObject.name = "Airplane_BattleRoyale";
@@ -111,20 +106,14 @@ namespace ROS.Game.Parachute
             AirplaneController airplane =
                 airplaneObject.GetComponent<AirplaneController>();
             if (airplane == null)
-            {
                 airplane = airplaneObject.AddComponent<AirplaneController>();
-            }
 
             if (airplaneObject.GetComponent<AirplaneFlightEffects>() == null)
-            {
                 airplaneObject.AddComponent<AirplaneFlightEffects>();
-            }
 
             airplane.PrepareRoute(RouteStart, RouteEnd);
 
-            GameObject flowObject = new GameObject(
-                "BattleRoyaleMatchStart"
-            );
+            GameObject flowObject = new GameObject("BattleRoyaleMatchStart");
             MatchStartController sequence =
                 flowObject.AddComponent<MatchStartController>();
             sequence.Configure(
@@ -138,6 +127,9 @@ namespace ROS.Game.Parachute
                 28f
             );
 
+            GameObject parachutePrefab =
+                Resources.Load<GameObject>(ParachuteResource);
+
             BattleRoyaleBotDirector botDirector =
                 flowObject.AddComponent<BattleRoyaleBotDirector>();
             botDirector.Configure(
@@ -149,73 +141,101 @@ namespace ROS.Game.Parachute
                 BattleRoyaleBotDirector.DefaultBotCount
             );
 
-            MatchStartHud hud = flowObject.AddComponent<MatchStartHud>();
-            hud.Configure(sequence, parachute);
+            // EDITOR FIRST: todos los componentes del jugador deben existir ya.
+            RequireExisting<DamageNumberSpawner>(input.gameObject);
+            RequireExisting<WeaponAmmoConnector>(input.gameObject);
+            ConsumableController consumable =
+                RequireExisting<ConsumableController>(input.gameObject);
+            PlayerLootEquipment lootEquipment =
+                RequireExisting<PlayerLootEquipment>(input.gameObject);
 
-            input.gameObject.AddComponent<DamageNumberSpawner>();
-
-            // Conectar munición del inventario a las armas
-            input.gameObject.AddComponent<WeaponAmmoConnector>();
-
-            // Sistema de consumibles (vendaje/botiquín con tecla F)
-            input.gameObject.AddComponent<ConsumableController>();
-
-            // HUD: kill feed, indicador de dirección de daño, estado del equipo
             Health localHealth = input.GetComponent<Health>();
-            ProtectiveEquipment protection = input.GetComponent<ProtectiveEquipment>();
-
-            // LootRuntimeSetup también agrega PlayerLootEquipment pero el orden
-            // de RuntimeInitializeOnLoadMethod no está garantizado; nos aseguramos aquí.
-            PlayerLootEquipment lootEquipment = input.GetComponent<PlayerLootEquipment>()
-                ?? input.gameObject.AddComponent<PlayerLootEquipment>();
-
-            KillFeedPresenter killFeed = flowObject.AddComponent<KillFeedPresenter>();
-            killFeed.Bind(manager, localHealth);
-
-            DamageDirectionIndicator damageDir =
-                flowObject.AddComponent<DamageDirectionIndicator>();
-            damageDir.Bind(localHealth, input.transform);
-
-            EquipmentStatusPresenter equipStatus =
-                flowObject.AddComponent<EquipmentStatusPresenter>();
-            equipStatus.Bind(lootEquipment, protection);
-
-            // Minimapa
-            MinimapSystem minimap = flowObject.AddComponent<MinimapSystem>();
-            minimap.Bind(
-                input.transform,
-                manager.SafeZone,
-                flowObject.GetComponent<BattleRoyaleBotDirector>()
-            );
-
-            // Brujula (usa el yaw de la camara para reflejar free-look)
-            CompassUI compass = flowObject.AddComponent<CompassUI>();
-            compass.Bind(input.transform, playerCamera);
-
-            // Slots de armas y acceso rapido a consumibles
+            ProtectiveEquipment protection =
+                input.GetComponent<ProtectiveEquipment>();
             WeaponEquipmentController weaponEquip =
                 input.GetComponent<WeaponEquipmentController>();
-            ConsumableController consumable =
-                input.GetComponent<ConsumableController>();
             InventoryComponent inventory =
                 input.GetComponent<InventoryComponent>();
 
+            // EDITOR FIRST: el HUD solo enlaza componentes fisicos existentes.
+            MatchStartHud matchHud =
+                Object.FindFirstObjectByType<MatchStartHud>();
+            if (matchHud != null)
+                matchHud.Configure(sequence, parachute);
+
+            KillFeedPresenter killFeed =
+                Object.FindFirstObjectByType<KillFeedPresenter>();
+            if (killFeed != null)
+                killFeed.Bind(manager, localHealth);
+
+            DamageDirectionIndicator damageDir =
+                Object.FindFirstObjectByType<DamageDirectionIndicator>();
+            if (damageDir != null)
+                damageDir.Bind(localHealth, input.transform);
+
+            EquipmentStatusPresenter equipStatus =
+                Object.FindFirstObjectByType<EquipmentStatusPresenter>();
+            if (equipStatus != null)
+                equipStatus.Bind(lootEquipment, protection);
+
+            MinimapSystem minimap =
+                Object.FindFirstObjectByType<MinimapSystem>();
+            if (minimap != null)
+            {
+                minimap.Bind(
+                    input.transform,
+                    manager.SafeZone,
+                    botDirector
+                );
+            }
+
+            CompassUI compass =
+                Object.FindFirstObjectByType<CompassUI>();
+            if (compass != null)
+                compass.Bind(input.transform, playerCamera);
+
             WeaponSlotsPresenter weaponSlots =
-                flowObject.AddComponent<WeaponSlotsPresenter>();
-            weaponSlots.Bind(weaponEquip, lootEquipment);
+                Object.FindFirstObjectByType<WeaponSlotsPresenter>();
+            if (weaponSlots != null)
+                weaponSlots.Bind(weaponEquip, lootEquipment);
 
             QuickConsumePresenter quickConsume =
-                flowObject.AddComponent<QuickConsumePresenter>();
-            quickConsume.Bind(inventory, consumable);
+                Object.FindFirstObjectByType<QuickConsumePresenter>();
+            if (quickConsume != null)
+                quickConsume.Bind(inventory, consumable);
 
             DeathLootPanelPresenter deathLootPanel =
-                new GameObject("DeathLootPanelPresenter")
-                    .AddComponent<DeathLootPanelPresenter>();
-            deathLootPanel.Bind(input.gameObject);
+                Object.FindFirstObjectByType<DeathLootPanelPresenter>();
+            if (deathLootPanel != null)
+                deathLootPanel.Bind(input.gameObject);
 
             BattleRoyaleStartMenu menu =
-                flowObject.AddComponent<BattleRoyaleStartMenu>();
-            menu.Configure(sequence, input, playerCamera);
+                Object.FindFirstObjectByType<BattleRoyaleStartMenu>();
+            if (menu != null)
+            {
+                menu.Configure(sequence, input, playerCamera);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[Editor First] No existe BattleRoyaleStartMenu fisico en 07."
+                );
+            }
+        }
+
+        private static T RequireExisting<T>(GameObject target)
+            where T : Component
+        {
+            T component = target.GetComponent<T>();
+            if (component == null)
+            {
+                Debug.LogWarning(
+                    "[Editor First] Falta " + typeof(T).Name +
+                    " fisico en " + target.name +
+                    ". No se agregara en runtime."
+                );
+            }
+            return component;
         }
     }
 }
