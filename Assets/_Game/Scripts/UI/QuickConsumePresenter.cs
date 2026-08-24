@@ -1,248 +1,164 @@
 using ROS.Game.Core;
 using ROS.Game.Gameplay;
+using ROS.Game.Input;
 using ROS.Game.Inventory;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ROS.Game.UI
 {
-    /// <summary>
-    /// Muestra los items de curacion disponibles en el inventario
-    /// con su cantidad, en la esquina inferior derecha encima de los slots
-    /// de armas. El primero que usaria la tecla H se resalta.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class QuickConsumePresenter : MonoBehaviour
     {
-        private const int   MaxSlots  = 3;
-        private const float SlotW     = 68f;
-        private const float SlotH     = 52f;
-        private const float SlotGap   = 6f;
+        private const int MaxSlots = 3;
 
-        private InventoryComponent   _inventory;
-        private ConsumableController _consumable;
-        private GameObject           _root;
+        [SerializeField] private InventoryComponent inventory;
+        [SerializeField] private ConsumableController consumable;
+        [SerializeField] private ConsumeSlot[] slots = new ConsumeSlot[MaxSlots];
 
-        private readonly ConsumeSlot[] _slots = new ConsumeSlot[MaxSlots];
-
-        private struct ConsumeSlot
+        [System.Serializable]
+        private sealed class ConsumeSlot
         {
-            public GameObject          Root;
-            public Image               Bg;
-            public Image               IconImg;
-            public Text                NameLabel;
-            public Text                CountLabel;
+            public GameObject root;
+            public Image background;
+            public Image icon;
+            public Text nameLabel;
+            public Text countLabel;
         }
 
-        private static readonly Color BgNormal  = new Color(0.06f, 0.06f, 0.06f, 0.82f);
-        private static readonly Color BgActive  = new Color(0.10f, 0.22f, 0.06f, 0.90f);
+        private static readonly Color BgNormal =
+            new Color(0.06f, 0.06f, 0.06f, 0.82f);
+        private static readonly Color BgActive =
+            new Color(0.10f, 0.22f, 0.06f, 0.90f);
 
-        // ----------------------------------------------------------------
-
-        public void Bind(InventoryComponent inventory, ConsumableController consumable)
+        private void Awake()
         {
-            _inventory  = inventory;
-            _consumable = consumable;
-            BuildUI();
+            ResolvePhysicalView();
+            ResolveGameplayReferences();
         }
 
-        private void OnDestroy()
+        public void Bind(InventoryComponent playerInventory, ConsumableController controller)
         {
-            if (_root != null) Destroy(_root);
+            inventory = playerInventory;
+            consumable = controller;
+            ResolvePhysicalView();
+        }
+
+        private void ResolveGameplayReferences()
+        {
+            PlayerInputReader input = FindFirstObjectByType<PlayerInputReader>();
+            if (input == null) return;
+
+            if (inventory == null)
+                inventory = input.GetComponent<InventoryComponent>();
+            if (consumable == null)
+                consumable = input.GetComponent<ConsumableController>();
+        }
+
+        private void ResolvePhysicalView()
+        {
+            if (slots == null || slots.Length != MaxSlots)
+                slots = new ConsumeSlot[MaxSlots];
+
+            for (int i = 0; i < MaxSlots; i++)
+            {
+                Transform root = FindNamedTransform("QuickConsumeSlot_" + i);
+                if (root == null) continue;
+
+                ConsumeSlot slot = slots[i] ?? new ConsumeSlot();
+                slot.root = root.gameObject;
+                slot.background = root.GetComponent<Image>();
+                slot.icon = FindNamedUnder<Image>(root, "Icon");
+                slot.nameLabel = FindNamedUnder<Text>(root, "Name");
+                slot.countLabel = FindNamedUnder<Text>(root, "Count");
+                slots[i] = slot;
+            }
         }
 
         private void Update()
         {
-            if (_inventory == null) return;
+            ResolveGameplayReferences();
+            if (inventory == null || slots == null)
+                return;
 
-            // Recopilar items de curacion unicos con cantidad total
             var entries = new (InventoryItemDefinition item, int count)[MaxSlots];
             int found = 0;
 
-            foreach (InventoryStack stack in _inventory.Stacks)
+            foreach (InventoryStack stack in inventory.Stacks)
             {
-                if (stack.item == null || stack.amount <= 0) continue;
-                if (stack.item.itemType != ItemType.Healing) continue;
+                if (stack.item == null || stack.amount <= 0 ||
+                    stack.item.itemType != ItemType.Healing)
+                    continue;
 
                 bool merged = false;
                 for (int i = 0; i < found; i++)
                 {
-                    if (entries[i].item == stack.item)
-                    {
-                        entries[i].count += stack.amount;
-                        merged = true;
-                        break;
-                    }
+                    if (entries[i].item != stack.item) continue;
+                    entries[i].count += stack.amount;
+                    merged = true;
+                    break;
                 }
+
                 if (!merged && found < MaxSlots)
-                {
                     entries[found++] = (stack.item, stack.amount);
-                }
             }
 
-            bool healActive = _consumable != null && _consumable.IsUsing;
+            bool healActive = consumable != null && consumable.IsUsing;
 
             for (int i = 0; i < MaxSlots; i++)
             {
-                ConsumeSlot slot = _slots[i];
-                bool hasItem = i < found;
+                ConsumeSlot slot = slots[i];
+                if (slot == null || slot.root == null) continue;
 
-                slot.Root.SetActive(hasItem);
+                bool hasItem = i < found;
+                slot.root.SetActive(hasItem);
                 if (!hasItem) continue;
 
-                InventoryItemDefinition def = entries[i].item;
-                int count = entries[i].count;
-                bool isFirst = (i == 0);
+                InventoryItemDefinition item = entries[i].item;
+                bool first = i == 0;
 
-                slot.NameLabel.text  = ShortName(def.displayName);
-                slot.CountLabel.text = count.ToString();
+                if (slot.nameLabel != null)
+                    slot.nameLabel.text = ShortName(item.displayName);
+                if (slot.countLabel != null)
+                    slot.countLabel.text = entries[i].count.ToString();
 
-                // Icono: sprite del item o color fallback
-                if (def.icon != null)
+                if (slot.icon != null)
                 {
-                    slot.IconImg.sprite = def.icon;
-                    slot.IconImg.color  = Color.white;
-                }
-                else
-                {
-                    slot.IconImg.sprite = null;
-                    slot.IconImg.color  = LootIconHelper.GetIconColor(def.itemType);
+                    slot.icon.sprite = item.icon;
+                    slot.icon.color = item.icon != null
+                        ? Color.white
+                        : LootIconHelper.GetIconColor(item.itemType);
                 }
 
-                // Resaltado: el primer slot (el que usaria H) mientras no
-                // este activo ya se ve mas brillante
-                bool highlight = isFirst && !healActive;
-                slot.Bg.color = highlight ? BgActive : BgNormal;
-                slot.CountLabel.color = isFirst
-                    ? new Color(0.55f, 1f, 0.55f, 1f)
-                    : new Color(0.85f, 0.85f, 0.85f, 0.9f);
+                if (slot.background != null)
+                    slot.background.color = first && !healActive
+                        ? BgActive
+                        : BgNormal;
             }
         }
 
-        // ----------------------------------------------------------------
-
-        private static string ShortName(string name)
+        private static string ShortName(string value)
         {
-            // Truncar a 8 caracteres para que quepa en el slot pequeno
-            if (name.Length <= 8) return name;
-            return name.Substring(0, 7) + ".";
+            if (string.IsNullOrEmpty(value) || value.Length <= 8)
+                return value;
+            return value.Substring(0, 7) + ".";
         }
 
-        private void BuildUI()
+        private Transform FindNamedTransform(string name)
         {
-            _root = new GameObject("QuickConsumeCanvas");
-            Canvas canvas = _root.AddComponent<Canvas>();
-            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 15;
-
-            CanvasScaler scaler = _root.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-
-            float totalW = MaxSlots * SlotW + (MaxSlots - 1) * SlotGap;
-
-            // Contenedor anclado a esquina inferior derecha, encima de los slots de arma
-            // (los slots de arma estan a 110px del fondo, cada uno 46px -> 3 * 46 + 2 * 4 = 146 -> 110 + 146 + margen)
-            GameObject container = new GameObject("Container");
-            container.transform.SetParent(_root.transform, false);
-            RectTransform cr = container.AddComponent<RectTransform>();
-            cr.anchorMin        = new Vector2(1f, 0f);
-            cr.anchorMax        = new Vector2(1f, 0f);
-            cr.pivot            = new Vector2(1f, 0f);
-            cr.anchoredPosition = new Vector2(-14f, 270f);
-            cr.sizeDelta        = new Vector2(totalW, SlotH);
-
-            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-
-            for (int i = 0; i < MaxSlots; i++)
-            {
-                float x = i * (SlotW + SlotGap);
-                _slots[i] = MakeSlot(container.transform, x, font);
-                _slots[i].Root.SetActive(false);
-            }
-
-            // Etiqueta de tecla H
-            GameObject keyGo = new GameObject("KeyHint");
-            keyGo.transform.SetParent(container.transform, false);
-            Text keyTxt = keyGo.AddComponent<Text>();
-            keyTxt.font      = font;
-            keyTxt.fontSize  = 11;
-            keyTxt.color     = new Color(0.6f, 0.6f, 0.6f, 0.7f);
-            keyTxt.alignment = TextAnchor.UpperLeft;
-            keyTxt.text      = "H";
-            RectTransform kr = keyGo.GetComponent<RectTransform>();
-            kr.anchorMin        = new Vector2(0f, 1f);
-            kr.anchorMax        = new Vector2(0f, 1f);
-            kr.pivot            = new Vector2(0f, 0f);
-            kr.sizeDelta        = new Vector2(20f, 16f);
-            kr.anchoredPosition = new Vector2(4f, 2f);
+            Transform[] all = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i].name == name) return all[i];
+            return null;
         }
 
-        private ConsumeSlot MakeSlot(Transform parent, float x, Font font)
+        private static T FindNamedUnder<T>(Transform root, string name)
+            where T : Component
         {
-            GameObject go = new GameObject("ConsumeSlot");
-            go.transform.SetParent(parent, false);
-
-            RectTransform rt = go.AddComponent<RectTransform>();
-            rt.anchorMin        = new Vector2(0f, 0f);
-            rt.anchorMax        = new Vector2(0f, 1f);
-            rt.pivot            = new Vector2(0f, 0f);
-            rt.anchoredPosition = new Vector2(x, 0f);
-            rt.sizeDelta        = new Vector2(SlotW, 0f);
-
-            Image bg = go.AddComponent<Image>();
-            bg.color = BgNormal;
-
-            // Icono
-            GameObject iconGo = new GameObject("Icon");
-            iconGo.transform.SetParent(go.transform, false);
-            Image icon = iconGo.AddComponent<Image>();
-            icon.color  = Color.white;
-            RectTransform ir = iconGo.GetComponent<RectTransform>();
-            ir.anchorMin        = new Vector2(0.1f, 0.35f);
-            ir.anchorMax        = new Vector2(0.55f, 0.95f);
-            ir.offsetMin        = Vector2.zero;
-            ir.offsetMax        = Vector2.zero;
-
-            // Nombre
-            GameObject nameGo = new GameObject("Name");
-            nameGo.transform.SetParent(go.transform, false);
-            Text nameLabel = nameGo.AddComponent<Text>();
-            nameLabel.font      = font;
-            nameLabel.fontSize  = 10;
-            nameLabel.color     = new Color(0.85f, 0.85f, 0.85f, 0.9f);
-            nameLabel.alignment = TextAnchor.LowerCenter;
-            nameLabel.text      = string.Empty;
-            RectTransform wr = nameGo.GetComponent<RectTransform>();
-            wr.anchorMin        = new Vector2(0f, 0f);
-            wr.anchorMax        = new Vector2(1f, 0.38f);
-            wr.offsetMin        = new Vector2(2f, 0f);
-            wr.offsetMax        = new Vector2(-2f, 0f);
-
-            // Cantidad
-            GameObject countGo = new GameObject("Count");
-            countGo.transform.SetParent(go.transform, false);
-            Text countLabel = countGo.AddComponent<Text>();
-            countLabel.font      = font;
-            countLabel.fontSize  = 14;
-            countLabel.fontStyle = FontStyle.Bold;
-            countLabel.color     = new Color(0.55f, 1f, 0.55f, 1f);
-            countLabel.alignment = TextAnchor.MiddleRight;
-            countLabel.text      = "0";
-            RectTransform cr = countGo.GetComponent<RectTransform>();
-            cr.anchorMin        = new Vector2(0.5f, 0.3f);
-            cr.anchorMax        = new Vector2(1f, 1f);
-            cr.offsetMin        = Vector2.zero;
-            cr.offsetMax        = new Vector2(-4f, 0f);
-
-            return new ConsumeSlot
-            {
-                Root       = go,
-                Bg         = bg,
-                IconImg    = icon,
-                NameLabel  = nameLabel,
-                CountLabel = countLabel,
-            };
+            T[] all = root.GetComponentsInChildren<T>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i].name == name) return all[i];
+            return null;
         }
     }
 }
