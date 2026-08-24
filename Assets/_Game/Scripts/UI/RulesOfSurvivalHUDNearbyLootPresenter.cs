@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using ROS.Game.Core;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
+using ROS.Game.Weapons;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -10,9 +12,9 @@ using UnityEngine.UI;
 namespace ROS.Game.UI
 {
     /// <summary>
-    /// Controla exclusivamente las vistas fisicas NearbyObjectIndicator y
-    /// DeathLootPanelROS ya presentes dentro de HUD_ROS_EDITABLE.
-    /// Nunca crea GameObjects, Canvas, filas, textos ni imagenes en runtime.
+    /// NearbyLoot es la única lista visual de loot del HUD.
+    /// Muestra pickups del suelo y contenido de cajas de jugadores eliminados.
+    /// Nunca crea UI en runtime: solo enlaza y actualiza filas físicas existentes.
     /// </summary>
     [DefaultExecutionOrder(2800)]
     [DisallowMultipleComponent]
@@ -20,19 +22,23 @@ namespace ROS.Game.UI
     {
         private const float MaximumOpenDistance = 4.5f;
         private const int VisibleRows = 7;
+        private const float WeaponIconTilt = -12f;
 
         private static readonly Color Yellow =
             new Color(1f, 0.86f, 0.03f, 0.98f);
         private static readonly Color YellowSelected =
             new Color(1f, 0.93f, 0.28f, 1f);
+        private static readonly Color UnavailableBackground =
+            new Color(1f, 0.86f, 0.03f, 0.16f);
+        private static readonly Color TextAvailable =
+            new Color(0.05f, 0.05f, 0.05f, 1f);
+        private static readonly Color TextUnavailable =
+            new Color(1f, 1f, 1f, 0.42f);
 
-        [Header("Physical HUD References")]
+        [Header("Physical NearbyLoot References")]
         [SerializeField] private RectTransform nearbyRoot;
-        [SerializeField] private Image nearbyIcon;
-        [SerializeField] private Text nearbyText;
-        [SerializeField] private RectTransform deathLootRoot;
-        [SerializeField] private Text deathLootTitle;
-        [SerializeField] private Text deathLootFooter;
+        [SerializeField] private Text nearbyTitle;
+        [SerializeField] private Text nearbyHint;
         [SerializeField] private LootRowView[] rowViews =
             new LootRowView[VisibleRows];
 
@@ -41,15 +47,26 @@ namespace ROS.Game.UI
         {
             public RectTransform root;
             public Image background;
-            public Image icon;
+            public Image mainIcon;
             public Text name;
-            public Text amount;
+            public Text secondaryText;
+            public Image secondaryIcon;
             public Image selection;
+        }
+
+        private sealed class NearbyEntry
+        {
+            public InventoryItemDefinition item;
+            public LootPickup pickup;
+            public DeathLootContainer container;
+            public bool canCollect;
+            public bool isCurrent;
         }
 
         private PlayerInputReader _localInput;
         private PlayerInteractor _interactor;
         private InventoryComponent _inventory;
+        private PlayerLootEquipment _lootEquipment;
         private DeathLootContainer _openedContainer;
         private int _selectedIndex;
         private int _openedFrame = -1;
@@ -64,7 +81,6 @@ namespace ROS.Game.UI
         {
             BindPhysicalView();
             ResolveLocalPlayer();
-            SetDeathLootVisible(false);
             SetNearbyVisible(false);
         }
 
@@ -80,7 +96,7 @@ namespace ROS.Game.UI
             {
                 Debug.LogError(
                     "[Editor First] Falta RulesOfSurvivalHUDNearbyLootPresenter " +
-                    "fisico en el HUD. No se creara en runtime."
+                    "físico en HUD_ROS_EDITABLE. No se creará en runtime."
                 );
                 return null;
             }
@@ -103,10 +119,10 @@ namespace ROS.Game.UI
                 return false;
 
             BindPhysicalView();
-            if (deathLootRoot == null)
+            if (nearbyRoot == null)
             {
                 Debug.LogError(
-                    "[Editor First] Falta DeathLootPanelROS fisico en HUD_ROS_EDITABLE."
+                    "[Editor First] Falta NearbyLoot físico en HUD_ROS_EDITABLE."
                 );
                 return false;
             }
@@ -114,6 +130,7 @@ namespace ROS.Game.UI
             _localInput = interactor.GetComponent<PlayerInputReader>();
             _interactor = interactor.GetComponent<PlayerInteractor>();
             _inventory = inventory;
+            _lootEquipment = interactor.GetComponent<PlayerLootEquipment>();
 
             if (_openedContainer != container)
             {
@@ -122,7 +139,7 @@ namespace ROS.Game.UI
                 _openedFrame = Time.frameCount;
             }
 
-            DrawOpenedPanel();
+            DrawOpenedContainer();
             return true;
         }
 
@@ -131,7 +148,6 @@ namespace ROS.Game.UI
             _openedContainer = null;
             _selectedIndex = 0;
             _openedFrame = -1;
-            SetDeathLootVisible(false);
         }
 
         private void LateUpdate()
@@ -143,9 +159,10 @@ namespace ROS.Game.UI
                 BindPhysicalView();
             }
 
-            HideLegacyNearbyLootPanel();
-            UpdateNearbyIndicator();
-            UpdateOpenedLoot();
+            if (IsOpen)
+                UpdateOpenedContainer();
+            else
+                UpdateNearbyLoot();
         }
 
         private void ResolveLocalPlayer()
@@ -154,6 +171,7 @@ namespace ROS.Game.UI
             {
                 _interactor ??= _localInput.GetComponent<PlayerInteractor>();
                 _inventory ??= _localInput.GetComponent<InventoryComponent>();
+                _lootEquipment ??= _localInput.GetComponent<PlayerLootEquipment>();
                 return;
             }
 
@@ -163,13 +181,14 @@ namespace ROS.Game.UI
             _localInput = null;
             for (int i = 0; i < inputs.Length; i++)
             {
-                if (inputs[i] == null || !inputs[i].gameObject.activeInHierarchy)
+                PlayerInputReader input = inputs[i];
+                if (input == null || !input.gameObject.activeInHierarchy)
                     continue;
 
-                if (inputs[i].GetComponent<PlayerInteractor>() == null)
+                if (input.GetComponent<PlayerInteractor>() == null)
                     continue;
 
-                _localInput = inputs[i];
+                _localInput = input;
                 break;
             }
 
@@ -178,6 +197,9 @@ namespace ROS.Game.UI
                 : null;
             _inventory = _localInput != null
                 ? _localInput.GetComponent<InventoryComponent>()
+                : null;
+            _lootEquipment = _localInput != null
+                ? _localInput.GetComponent<PlayerLootEquipment>()
                 : null;
         }
 
@@ -194,63 +216,131 @@ namespace ROS.Game.UI
                 return;
 
             if (nearbyRoot == null)
-            {
-                Transform t = canvas.Find("NearbyObjectIndicator");
-                nearbyRoot = t as RectTransform;
-            }
+                nearbyRoot = canvas.Find("NearbyLoot") as RectTransform;
 
-            if (nearbyRoot != null)
-            {
-                nearbyIcon ??= nearbyRoot.Find("Icon")?.GetComponent<Image>();
-                nearbyText ??= nearbyRoot.Find("Text")?.GetComponent<Text>();
-            }
-
-            if (deathLootRoot == null)
-            {
-                Transform t = canvas.Find("DeathLootPanelROS");
-                deathLootRoot = t as RectTransform;
-            }
-
-            if (deathLootRoot == null)
+            if (nearbyRoot == null)
                 return;
 
-            deathLootTitle ??=
-                deathLootRoot.Find("Title/Text")?.GetComponent<Text>();
-            deathLootFooter ??=
-                deathLootRoot.Find("Footer/Text")?.GetComponent<Text>();
+            nearbyTitle ??=
+                nearbyRoot.Find("Title/TitleText")?.GetComponent<Text>();
+            nearbyHint ??=
+                nearbyRoot.Find("ToggleBg/ToggleHint")?.GetComponent<Text>();
 
             if (rowViews == null || rowViews.Length != VisibleRows)
                 rowViews = new LootRowView[VisibleRows];
 
             for (int i = 0; i < VisibleRows; i++)
             {
-                Transform row = deathLootRoot.Find("Row_" + i);
+                Transform row = nearbyRoot.Find("Row_" + i);
                 if (row == null)
                     continue;
 
                 LootRowView view = rowViews[i] ?? new LootRowView();
                 view.root = row as RectTransform;
                 view.background = row.GetComponent<Image>();
-                view.icon = row.Find("Icon")?.GetComponent<Image>();
+                view.mainIcon = row.Find("MainIcon")?.GetComponent<Image>();
                 view.name = row.Find("Name")?.GetComponent<Text>();
-                view.amount = row.Find("Amount")?.GetComponent<Text>();
+                view.secondaryText = row.Find("SecondaryText")?.GetComponent<Text>();
+                view.secondaryIcon = row.Find("SecondaryIcon")?.GetComponent<Image>();
                 view.selection = row.Find("Selection")?.GetComponent<Image>();
                 rowViews[i] = view;
             }
         }
 
-        private void UpdateOpenedLoot()
+        private void UpdateNearbyLoot()
         {
-            if (!IsOpen)
+            if (nearbyRoot == null || _localInput == null || _interactor == null)
             {
-                SetDeathLootVisible(false);
+                SetNearbyVisible(false);
                 return;
             }
 
+            List<NearbyEntry> entries = BuildNearbyEntries();
+            if (entries.Count == 0)
+            {
+                SetNearbyVisible(false);
+                return;
+            }
+
+            SetNearbyVisible(true);
+            nearbyRoot.SetAsLastSibling();
+
+            bool heritage = false;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (entries[i].container != null)
+                {
+                    heritage = true;
+                    break;
+                }
+            }
+
+            if (nearbyTitle != null)
+                nearbyTitle.text = heritage ? "HERITAGE" : "NEARBY";
+
+            if (nearbyHint != null)
+                nearbyHint.text = "F RECOGER";
+
+            DrawEntries(entries, 0, -1);
+        }
+
+        private List<NearbyEntry> BuildNearbyEntries()
+        {
+            List<NearbyEntry> result = new List<NearbyEntry>();
+            IReadOnlyList<IInteractable> nearby = _interactor.Nearby;
+            IInteractable current = _interactor.Current;
+
+            if (nearby == null)
+                return result;
+
+            for (int i = 0; i < nearby.Count; i++)
+            {
+                IInteractable interactable = nearby[i];
+                if (interactable == null)
+                    continue;
+
+                if (interactable is LootPickup pickup)
+                {
+                    if (pickup.Item == null || pickup.IsConsumed)
+                        continue;
+
+                    result.Add(new NearbyEntry
+                    {
+                        item = pickup.Item,
+                        pickup = pickup,
+                        canCollect = pickup.CanInteract(_localInput.gameObject),
+                        isCurrent = ReferenceEquals(interactable, current)
+                    });
+                    continue;
+                }
+
+                if (interactable is DeathLootContainer container)
+                {
+                    List<InventoryStack> stacks = Snapshot(container);
+                    for (int s = 0; s < stacks.Count; s++)
+                    {
+                        InventoryStack stack = stacks[s];
+                        result.Add(new NearbyEntry
+                        {
+                            item = stack.item,
+                            container = container,
+                            canCollect = CanReceiveItem(stack.item),
+                            isCurrent = ReferenceEquals(interactable, current) && s == 0
+                        });
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private void UpdateOpenedContainer()
+        {
             if (_localInput == null || _inventory == null ||
                 _openedContainer == null || _openedContainer.IsEmpty)
             {
                 Close();
+                UpdateNearbyLoot();
                 return;
             }
 
@@ -262,6 +352,7 @@ namespace ROS.Game.UI
             if (distance > MaximumOpenDistance)
             {
                 Close();
+                UpdateNearbyLoot();
                 return;
             }
 
@@ -269,6 +360,7 @@ namespace ROS.Game.UI
                 Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 Close();
+                UpdateNearbyLoot();
                 return;
             }
 
@@ -276,14 +368,15 @@ namespace ROS.Game.UI
             if (stacks.Count == 0)
             {
                 Close();
+                UpdateNearbyLoot();
                 return;
             }
 
             HandleSelection(stacks.Count);
-            DrawOpenedPanel(stacks);
+            DrawOpenedContainer(stacks);
 
             if (Time.frameCount != _openedFrame)
-                HandlePickup(stacks);
+                HandleOpenedPickup(stacks);
         }
 
         private void HandleSelection(int count)
@@ -304,7 +397,7 @@ namespace ROS.Game.UI
                 _selectedIndex = Mathf.Min(count - 1, _selectedIndex + 1);
         }
 
-        private void HandlePickup(List<InventoryStack> stacks)
+        private void HandleOpenedPickup(List<InventoryStack> stacks)
         {
             if (Keyboard.current == null ||
                 !Keyboard.current.fKey.wasPressedThisFrame ||
@@ -312,14 +405,13 @@ namespace ROS.Game.UI
                 return;
 
             InventoryStack selected = stacks[_selectedIndex];
-            if (selected == null || selected.item == null)
+            if (selected == null || selected.item == null ||
+                !CanReceiveItem(selected.item))
                 return;
 
-            _openedContainer.TryLoot(
-                selected.item,
-                selected.amount,
-                _inventory
-            );
+            bool collected = TryCollectFromOpenedContainer(selected);
+            if (!collected)
+                return;
 
             if (_openedContainer == null || _openedContainer.IsEmpty)
             {
@@ -335,158 +427,262 @@ namespace ROS.Game.UI
             );
         }
 
-        private void DrawOpenedPanel()
+        private bool TryCollectFromOpenedContainer(InventoryStack stack)
         {
-            if (_openedContainer != null)
-                DrawOpenedPanel(Snapshot(_openedContainer));
+            if (_openedContainer == null || stack?.item == null)
+                return false;
+
+            InventoryItemDefinition item = stack.item;
+
+            if (item.IsEquippable)
+            {
+                if (_lootEquipment == null ||
+                    !_lootEquipment.TryEquip(item, out InventoryItemDefinition replaced))
+                    return false;
+
+                if (!_openedContainer.StoredInventory.Remove(item, 1))
+                    return false;
+
+                if (replaced != null && replaced != item)
+                    _openedContainer.StoredInventory.Add(replaced, 1);
+
+                _openedContainer.DestroyIfEmptyAfterExternalLoot();
+                return true;
+            }
+
+            return _openedContainer.TryLoot(
+                item,
+                stack.amount,
+                _inventory
+            ) > 0;
         }
 
-        private void DrawOpenedPanel(List<InventoryStack> stacks)
+        private void DrawOpenedContainer()
+        {
+            if (_openedContainer != null)
+                DrawOpenedContainer(Snapshot(_openedContainer));
+        }
+
+        private void DrawOpenedContainer(List<InventoryStack> stacks)
         {
             BindPhysicalView();
-            if (deathLootRoot == null)
+            if (nearbyRoot == null)
                 return;
 
-            SetDeathLootVisible(true);
-            deathLootRoot.SetAsLastSibling();
+            SetNearbyVisible(true);
+            nearbyRoot.SetAsLastSibling();
 
-            if (deathLootTitle != null)
+            if (nearbyTitle != null)
+                nearbyTitle.text = "HERITAGE";
+
+            if (nearbyHint != null)
+                nearbyHint.text = "RUEDA  •  F RECOGER  •  ESC";
+
+            List<NearbyEntry> entries = new List<NearbyEntry>(stacks.Count);
+            for (int i = 0; i < stacks.Count; i++)
             {
-                deathLootTitle.text = _openedContainer != null
-                    ? _openedContainer.DisplayName.ToUpperInvariant()
-                    : "LOOT";
+                InventoryStack stack = stacks[i];
+                entries.Add(new NearbyEntry
+                {
+                    item = stack.item,
+                    container = _openedContainer,
+                    canCollect = CanReceiveItem(stack.item),
+                    isCurrent = i == _selectedIndex
+                });
             }
 
             int firstVisible = Mathf.Clamp(
                 _selectedIndex - VisibleRows + 1,
                 0,
-                Mathf.Max(0, stacks.Count - VisibleRows)
+                Mathf.Max(0, entries.Count - VisibleRows)
             );
 
+            DrawEntries(entries, firstVisible, _selectedIndex);
+        }
+
+        private void DrawEntries(
+            List<NearbyEntry> entries,
+            int firstVisible,
+            int selectedAbsoluteIndex
+        )
+        {
             for (int rowIndex = 0; rowIndex < VisibleRows; rowIndex++)
             {
                 LootRowView view = rowViews != null && rowIndex < rowViews.Length
                     ? rowViews[rowIndex]
                     : null;
-                int stackIndex = firstVisible + rowIndex;
+                int entryIndex = firstVisible + rowIndex;
 
                 if (view?.root == null)
                     continue;
 
-                if (stackIndex >= stacks.Count)
+                if (entryIndex >= entries.Count)
+                {
+                    view.root.gameObject.SetActive(false);
+                    continue;
+                }
+
+                NearbyEntry entry = entries[entryIndex];
+                InventoryItemDefinition item = entry.item;
+                if (item == null)
                 {
                     view.root.gameObject.SetActive(false);
                     continue;
                 }
 
                 view.root.gameObject.SetActive(true);
-                InventoryStack stack = stacks[stackIndex];
-                bool selected = stackIndex == _selectedIndex;
+                bool selected = selectedAbsoluteIndex >= 0
+                    ? entryIndex == selectedAbsoluteIndex
+                    : entry.isCurrent;
 
-                if (view.name != null)
-                    view.name.text = stack.item.displayName;
-
-                if (view.amount != null)
-                    view.amount.text = stack.amount > 1
-                        ? $"x{stack.amount}"
-                        : string.Empty;
-
-                if (view.icon != null)
-                {
-                    view.icon.sprite = stack.item.icon;
-                    view.icon.enabled = stack.item.icon != null;
-                    view.icon.color = Color.white;
-                }
+                Color textColor = entry.canCollect
+                    ? TextAvailable
+                    : TextUnavailable;
 
                 if (view.background != null)
-                    view.background.color = selected ? YellowSelected : Yellow;
+                {
+                    view.background.color = entry.canCollect
+                        ? (selected ? YellowSelected : Yellow)
+                        : UnavailableBackground;
+                }
+
+                if (view.name != null)
+                {
+                    view.name.text = item.displayName;
+                    view.name.color = textColor;
+                }
+
+                ConfigureMainIcon(view.mainIcon, item, entry.canCollect);
+                ConfigureSecondary(view, item, textColor);
 
                 if (view.selection != null)
                 {
-                    view.selection.color = selected
-                        ? new Color(0.35f, 0.12f, 0.42f, 0.18f)
+                    view.selection.color = selected && entry.canCollect
+                        ? new Color(0.35f, 0.12f, 0.42f, 0.16f)
                         : Color.clear;
                 }
             }
-
-            if (deathLootFooter != null)
-            {
-                deathLootFooter.text =
-                    $"{_selectedIndex + 1}/{stacks.Count}  •  RUEDA  •  F RECOGER  •  ESC";
-            }
         }
 
-        private void UpdateNearbyIndicator()
+        private static void ConfigureMainIcon(
+            Image image,
+            InventoryItemDefinition item,
+            bool available
+        )
         {
-            if (nearbyRoot == null || _localInput == null)
+            if (image == null)
                 return;
 
-            IInteractable interactable = ResolveNearestInteractable();
-            if (interactable == null)
-            {
-                SetNearbyVisible(false);
-                return;
-            }
+            image.sprite = item != null ? item.icon : null;
+            image.enabled = image.sprite != null;
+            image.preserveAspect = true;
+            image.color = available
+                ? Color.white
+                : new Color(1f, 1f, 1f, 0.42f);
 
-            string label = interactable.InteractionLabel;
-            Sprite icon = ResolveIcon(interactable);
-
-            if (IsOpen && interactable is DeathLootContainer opened &&
-                opened == _openedContainer)
-            {
-                label = $"Caja abierta: {_openedContainer.ItemCount} objetos";
-            }
-
-            if (nearbyText != null)
-            {
-                nearbyText.text = string.IsNullOrWhiteSpace(label)
-                    ? "OBJETO CERCANO"
-                    : label;
-            }
-
-            if (nearbyIcon != null)
-            {
-                nearbyIcon.sprite = icon;
-                nearbyIcon.enabled = icon != null;
-            }
-
-            SetNearbyVisible(true);
-            nearbyRoot.SetAsLastSibling();
+            image.rectTransform.localEulerAngles = new Vector3(
+                0f,
+                0f,
+                item != null && item.itemType == ItemType.Weapon
+                    ? WeaponIconTilt
+                    : 0f
+            );
         }
 
-        private IInteractable ResolveNearestInteractable()
+        private static void ConfigureSecondary(
+            LootRowView view,
+            InventoryItemDefinition item,
+            Color textColor
+        )
         {
-            if (_interactor != null)
-            {
-                IInteractable current = _interactor.Current;
-                if (current != null)
-                    return current;
+            bool ammo = item.itemType == ItemType.Ammo;
 
-                IReadOnlyList<IInteractable> nearby = _interactor.Nearby;
-                if (nearby != null && nearby.Count > 0)
-                    return nearby[0];
+            if (view.secondaryText != null)
+            {
+                view.secondaryText.gameObject.SetActive(!ammo);
+                view.secondaryText.text = ammo
+                    ? string.Empty
+                    : ResolveSecondaryText(item);
+                view.secondaryText.color = textColor;
             }
 
-            return _openedContainer;
+            if (view.secondaryIcon != null)
+            {
+                Sprite icon = ammo ? item.nearbySecondaryIcon : null;
+                view.secondaryIcon.sprite = icon;
+                view.secondaryIcon.enabled = icon != null;
+                view.secondaryIcon.gameObject.SetActive(ammo);
+                view.secondaryIcon.preserveAspect = true;
+                view.secondaryIcon.color = textColor.a < 0.9f
+                    ? new Color(1f, 1f, 1f, 0.42f)
+                    : Color.white;
+            }
         }
 
-        private static Sprite ResolveIcon(IInteractable interactable)
+        private static string ResolveSecondaryText(InventoryItemDefinition item)
         {
-            if (interactable is not DeathLootContainer deathContainer ||
-                deathContainer.StoredInventory == null)
-                return null;
+            if (item == null)
+                return string.Empty;
 
-            IReadOnlyList<InventoryStack> stacks =
-                deathContainer.StoredInventory.Stacks;
+            if (!string.IsNullOrWhiteSpace(item.nearbySecondaryText))
+                return item.nearbySecondaryText;
 
-            for (int i = 0; i < stacks.Count; i++)
+            switch (item.itemType)
             {
-                InventoryItemDefinition item = stacks[i]?.item;
-                if (item != null && item.icon != null)
-                    return item.icon;
+                case ItemType.Weapon:
+                    return item.weaponDefinition != null
+                        ? WeaponFamilyLabel(item.weaponDefinition.family)
+                        : "Weapon";
+                case ItemType.Healing:
+                    if (item.consumableDefinition != null)
+                    {
+                        bool hp = item.consumableDefinition.healAmount > 0f;
+                        bool energy = item.consumableDefinition.energyAmount > 0f;
+                        if (hp && energy) return "Speed and HP up";
+                        if (hp) return "+HP";
+                        if (energy) return "Energy up";
+                    }
+                    return "Healing item";
+                case ItemType.Armor:
+                    return "Reduces damage";
+                case ItemType.Helmet:
+                    return "Reduces head damage";
+                case ItemType.Backpack:
+                    return "+capacity";
+                case ItemType.Throwable:
+                    return "Throwable";
+                case ItemType.Attachment:
+                    return "Attachment";
+                default:
+                    return string.Empty;
             }
+        }
 
-            return null;
+        private static string WeaponFamilyLabel(WeaponFamily family)
+        {
+            return family switch
+            {
+                WeaponFamily.AssaultRifle => "Assault Rifle",
+                WeaponFamily.SubmachineGun => "SMG",
+                WeaponFamily.SniperRifle => "Sniper Rifle",
+                WeaponFamily.Shotgun => "Shotgun",
+                WeaponFamily.Pistol => "Pistol",
+                WeaponFamily.LightMachineGun => "LMG",
+                WeaponFamily.Melee => "Melee",
+                _ => "Weapon"
+            };
+        }
+
+        private bool CanReceiveItem(InventoryItemDefinition item)
+        {
+            if (item == null || _localInput == null)
+                return false;
+
+            if (item.IsEquippable)
+                return _lootEquipment != null && _lootEquipment.CanEquip(item);
+
+            return _inventory != null &&
+                   _inventory.GetMaxAddableAmount(item) > 0;
         }
 
         private static List<InventoryStack> Snapshot(
@@ -510,27 +706,10 @@ namespace ROS.Game.UI
             return result;
         }
 
-        private static void HideLegacyNearbyLootPanel()
-        {
-            RulesOfSurvivalHUD hud = FindFirstObjectByType<RulesOfSurvivalHUD>();
-            if (hud == null)
-                return;
-
-            Transform legacy = hud.transform.Find("Canvas/NearbyLoot");
-            if (legacy != null && legacy.gameObject.activeSelf)
-                legacy.gameObject.SetActive(false);
-        }
-
         private void SetNearbyVisible(bool visible)
         {
             if (nearbyRoot != null && nearbyRoot.gameObject.activeSelf != visible)
                 nearbyRoot.gameObject.SetActive(visible);
-        }
-
-        private void SetDeathLootVisible(bool visible)
-        {
-            if (deathLootRoot != null && deathLootRoot.gameObject.activeSelf != visible)
-                deathLootRoot.gameObject.SetActive(visible);
         }
     }
 }
