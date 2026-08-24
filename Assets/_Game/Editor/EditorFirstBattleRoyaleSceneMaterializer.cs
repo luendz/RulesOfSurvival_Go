@@ -6,20 +6,16 @@ using UnityEngine.SceneManagement;
 namespace ROS.Game.EditorTools
 {
     /// <summary>
-    /// Materializa los elementos de presentacion directamente dentro de
-    /// 07_BattleRoyaleTest para que puedan editarse desde Hierarchy/Inspector.
-    ///
-    /// Los objetos se desempaquetan completamente: la escena se convierte en
-    /// la fuente visual que usa Play Mode, mientras los prefabs EditorFirst se
-    /// conservan como respaldo/origen para recrear elementos faltantes.
+    /// Inserta la presentacion Editor First dentro de cualquier escena Battle Royale.
+    /// Los objetos se desempaquetan completamente para poder editarlos directamente
+    /// desde Hierarchy/Inspector sin que el prefab bloquee los cambios de escena.
     /// </summary>
-    [InitializeOnLoad]
     public static class EditorFirstBattleRoyaleSceneMaterializer
     {
-        private const string ScenePath =
-            "Assets/_Game/Scenes/07_BattleRoyaleTest.unity";
+        public const string PresentationRootName = "__EDITOR_FIRST_PRESENTATION";
 
-        private const string RootName = "__EDITOR_FIRST_PRESENTATION";
+        private const string DefaultScenePath =
+            "Assets/_Game/Scenes/07_BattleRoyaleTest.unity";
 
         private const string HudPath =
             "Assets/_Game/Resources/EditorFirst/ROS_HUD_Editable.prefab";
@@ -32,85 +28,62 @@ namespace ROS.Game.EditorTools
         private const string DamageNumberPath =
             "Assets/_Game/Resources/EditorFirst/DamageNumber.prefab";
 
-        static EditorFirstBattleRoyaleSceneMaterializer()
-        {
-            EditorApplication.delayCall += EnsureSceneOnce;
-        }
-
-        [MenuItem("Rules Of Survival/Editor First/Put Everything In Battle Royale Hierarchy")]
+        [MenuItem("Rules Of Survival/Editor First/Put Everything In Original Battle Royale Hierarchy")]
         public static void MaterializeInBattleRoyaleScene()
         {
-            MaterializeScene(false);
+            MaterializeSceneAtPath(DefaultScenePath, false);
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Open Battle Royale Editable Hierarchy")]
+        [MenuItem("Rules Of Survival/Editor First/Open Original Battle Royale Editable Hierarchy")]
         public static void OpenEditableScene()
         {
-            MaterializeScene(false);
-            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-
-            Scene scene = SceneManager.GetSceneByPath(ScenePath);
-            GameObject root = FindRoot(scene, RootName);
-            if (root != null)
-            {
-                Selection.activeGameObject = root;
-                EditorGUIUtility.PingObject(root);
-            }
+            MaterializeSceneAtPath(DefaultScenePath, false);
+            EditorSceneManager.OpenScene(DefaultScenePath, OpenSceneMode.Single);
+            SelectPresentationRoot(DefaultScenePath);
         }
 
-        private static void EnsureSceneOnce()
+        public static bool MaterializeSceneAtPath(
+            string scenePath,
+            bool onlyIfMissing = false
+        )
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
-                return;
+                return false;
 
-            if (!System.IO.File.Exists(ScenePath))
-                return;
-
-            Scene loaded = SceneManager.GetSceneByPath(ScenePath);
-            if (loaded.IsValid() && loaded.isLoaded && FindRoot(loaded, RootName) != null)
-                return;
-
-            MaterializeScene(true);
-        }
-
-        private static void MaterializeScene(bool onlyIfMissing)
-        {
-            if (Application.isPlaying || EditorApplication.isCompiling)
-                return;
-
-            if (!System.IO.File.Exists(ScenePath))
+            if (string.IsNullOrWhiteSpace(scenePath) ||
+                !System.IO.File.Exists(scenePath))
             {
-                Debug.LogError("[Editor First] No existe la escena: " + ScenePath);
-                return;
+                Debug.LogError("[Editor First] No existe la escena: " + scenePath);
+                return false;
             }
 
-            // Primero se materializan/actualizan los prefabs fuente.
             EditorFirstPresentationBuilder.EnsureMaterialized();
             EditorFirstCrosshairMaterializer.EnsureCrosshair();
             EditorFirstLootViewsMaterializer.EnsureLootViews();
+            EditorFirstHudBehaviorMaterializer.EnsureHudBehaviors();
 
-            Scene scene = SceneManager.GetSceneByPath(ScenePath);
+            Scene scene = SceneManager.GetSceneByPath(scenePath);
             bool openedTemporarily = !scene.IsValid() || !scene.isLoaded;
 
             if (openedTemporarily)
-                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+                scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
 
             if (!scene.IsValid() || !scene.isLoaded)
-                return;
+                return false;
 
-            GameObject existingRoot = FindRoot(scene, RootName);
+            GameObject existingRoot = FindRoot(scene, PresentationRootName);
             if (existingRoot != null && onlyIfMissing)
             {
                 if (openedTemporarily)
                     EditorSceneManager.CloseScene(scene, true);
-                return;
+                return false;
             }
 
             bool changed = false;
             GameObject presentationRoot = existingRoot;
             if (presentationRoot == null)
             {
-                presentationRoot = new GameObject(RootName);
+                presentationRoot = new GameObject(PresentationRootName);
                 SceneManager.MoveGameObjectToScene(presentationRoot, scene);
                 changed = true;
             }
@@ -173,12 +146,30 @@ namespace ROS.Game.EditorTools
                 EditorSceneManager.SaveScene(scene);
                 AssetDatabase.SaveAssets();
                 Debug.Log(
-                    "[Editor First] 07_BattleRoyaleTest ya contiene la presentacion editable en Hierarchy."
+                    "[Editor First] Presentacion editable materializada en: " + scenePath
                 );
             }
 
             if (openedTemporarily)
                 EditorSceneManager.CloseScene(scene, true);
+
+            return changed;
+        }
+
+        public static GameObject FindPresentationRoot(Scene scene)
+        {
+            return FindRoot(scene, PresentationRootName);
+        }
+
+        private static void SelectPresentationRoot(string scenePath)
+        {
+            Scene scene = SceneManager.GetSceneByPath(scenePath);
+            GameObject root = FindPresentationRoot(scene);
+            if (root == null)
+                return;
+
+            Selection.activeGameObject = root;
+            EditorGUIUtility.PingObject(root);
         }
 
         private static Transform EnsureGroup(
