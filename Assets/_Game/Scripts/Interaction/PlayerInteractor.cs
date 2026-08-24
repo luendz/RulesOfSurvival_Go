@@ -29,7 +29,14 @@ namespace ROS.Game.Interaction
                 ? _current
                 : null;
 
-        public IReadOnlyList<IInteractable> Nearby => _nearby;
+        public IReadOnlyList<IInteractable> Nearby
+        {
+            get
+            {
+                RemoveDestroyedNearbyReferences();
+                return _nearby;
+            }
+        }
 
         public event Action<IInteractable> Interacted;
 
@@ -174,6 +181,17 @@ namespace ROS.Game.Interaction
             }
 
             return nearest;
+        }
+
+        private void RemoveDestroyedNearbyReferences()
+        {
+            for (int i = _nearby.Count - 1; i >= 0; i--)
+            {
+                if (!IsAlive(_nearby[i]))
+                {
+                    _nearby.RemoveAt(i);
+                }
+            }
         }
 
         private static bool IsAlive(
