@@ -9,6 +9,8 @@ namespace ROS.Game.Weapons
 {
     public sealed class WeaponEffects : MonoBehaviour
     {
+        private const string TracerMaterialResource = "EditorFirst/WeaponTracer";
+
         [Serializable]
         private sealed class SurfaceImpactVariant
         {
@@ -23,11 +25,13 @@ namespace ROS.Game.Weapons
         [SerializeField] private Transform muzzle;
 
         [Header("Muzzle Flash")]
-        [Tooltip("Assign a real muzzle-flash ParticleSystem here. No runtime square particle is generated when this is empty.")]
+        [Tooltip("ParticleSystem fisico del prefab del arma.")]
         [SerializeField] private ParticleSystem muzzleFlash;
 
-        [Header("Tracer")]
+        [Header("Tracer - Editable")]
+        [Tooltip("LineRenderer fisico del prefab. No se crea en runtime.")]
         [SerializeField] private LineRenderer tracer;
+        [SerializeField] private Material tracerMaterial;
         [SerializeField] private float tracerDuration = 0.04f;
         [Range(2, 32)]
         [SerializeField] private int tracerSegments = 10;
@@ -54,7 +58,6 @@ namespace ROS.Game.Weapons
         [SerializeField] private bool randomizeBulletHoleRotation = true;
 
         private Coroutine _tracerRoutine;
-        private Material _runtimeTracerMaterial;
         private WeaponDefinition _definition;
         private float _impactScale = 1f;
         private float _bulletHoleScale = 1f;
@@ -87,7 +90,7 @@ namespace ROS.Game.Weapons
             if (bulletHolePrefab == null)
                 bulletHolePrefab = Resources.Load<GameObject>("Effects/PF_BulletHole");
 
-            EnsureTracer();
+            ResolveEditableTracer();
 
             if (tracer != null)
                 tracer.enabled = false;
@@ -125,10 +128,33 @@ namespace ROS.Game.Weapons
                 muzzleFlash.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
-        private void OnDestroy()
+        private void ResolveEditableTracer()
         {
-            if (_runtimeTracerMaterial != null)
-                Destroy(_runtimeTracerMaterial);
+            if (tracer == null)
+            {
+                Transform existing = FindChildRecursive(transform, "Tracer");
+                if (existing == null)
+                    existing = FindChildRecursive(transform, "RuntimeTracer");
+                if (existing != null)
+                    tracer = existing.GetComponent<LineRenderer>();
+            }
+
+            if (tracer == null)
+                return;
+
+            tracer.useWorldSpace = true;
+            tracer.positionCount = 2;
+            tracer.startWidth = _tracerWidth;
+            tracer.endWidth = _tracerWidth * 0.2f;
+            tracer.numCapVertices = 2;
+            tracer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            tracer.receiveShadows = false;
+
+            if (tracerMaterial == null)
+                tracerMaterial = Resources.Load<Material>(TracerMaterialResource);
+
+            if (tracer.sharedMaterial == null && tracerMaterial != null)
+                tracer.sharedMaterial = tracerMaterial;
         }
 
         public void PlayShot(
@@ -151,73 +177,11 @@ namespace ROS.Game.Weapons
                 ? ImpactSurfaceType.Flesh
                 : ResolveSurfaceType(hitPoint);
 
-            SpawnImpact(
-                hitPoint,
-                hitNormal,
-                hitCharacter,
-                surfaceType
-            );
-
+            SpawnImpact(hitPoint, hitNormal, hitCharacter, surfaceType);
             PlayImpactSound(hitCharacter, surfaceType);
 
             if (!hitCharacter)
                 SpawnBulletHole(hitPoint, hitNormal, surfaceType);
-        }
-
-        private void EnsureTracer()
-        {
-            if (tracer != null)
-                return;
-
-            Transform existing = transform.Find("RuntimeTracer");
-            GameObject tracerObject;
-
-            if (existing != null)
-            {
-                tracerObject = existing.gameObject;
-                tracer = tracerObject.GetComponent<LineRenderer>();
-            }
-            else
-            {
-                tracerObject = new GameObject("RuntimeTracer");
-                tracerObject.transform.SetParent(transform, false);
-                tracer = tracerObject.AddComponent<LineRenderer>();
-            }
-
-            if (tracer == null)
-                return;
-
-            tracer.useWorldSpace = true;
-            tracer.positionCount = 2;
-            tracer.startWidth = _tracerWidth;
-            tracer.endWidth = _tracerWidth * 0.2f;
-            tracer.numCapVertices = 2;
-            tracer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            tracer.receiveShadows = false;
-
-            if (tracer.sharedMaterial == null)
-            {
-                Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-                if (shader == null)
-                    shader = Shader.Find("Unlit/Color");
-                if (shader == null)
-                    shader = Shader.Find("Sprites/Default");
-
-                if (shader != null)
-                {
-                    _runtimeTracerMaterial = new Material(shader)
-                    {
-                        name = "RuntimeTracerMaterial"
-                    };
-
-                    if (_runtimeTracerMaterial.HasProperty("_BaseColor"))
-                        _runtimeTracerMaterial.SetColor("_BaseColor", new Color(1f, 0.85f, 0.35f, 1f));
-                    if (_runtimeTracerMaterial.HasProperty("_Color"))
-                        _runtimeTracerMaterial.SetColor("_Color", new Color(1f, 0.85f, 0.35f, 1f));
-
-                    tracer.material = _runtimeTracerMaterial;
-                }
-            }
         }
 
         private void PlayMuzzleFlash()
@@ -290,7 +254,6 @@ namespace ROS.Game.Weapons
             }
 
             yield return new WaitForSeconds(tracerDuration);
-
             tracer.enabled = false;
             _tracerRoutine = null;
         }
@@ -326,7 +289,6 @@ namespace ROS.Game.Weapons
                 return;
 
             AudioClip[] clips;
-
             if (hitCharacter)
             {
                 clips = characterImpactClips;
@@ -369,12 +331,7 @@ namespace ROS.Game.Weapons
                 );
             }
 
-            GameObject bulletHole = Instantiate(
-                prefab,
-                spawnPosition,
-                surfaceRotation
-            );
-
+            GameObject bulletHole = Instantiate(prefab, spawnPosition, surfaceRotation);
             bulletHole.transform.localScale *= _bulletHoleScale;
             Destroy(bulletHole, bulletHoleLifetime);
         }
