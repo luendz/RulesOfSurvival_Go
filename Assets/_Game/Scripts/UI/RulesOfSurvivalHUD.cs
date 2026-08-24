@@ -305,11 +305,16 @@ namespace ROS.Game.UI
             );
             _minimapPlayerArrow.sprite = CreateTriangleSprite(64);
 
-            Text mapBadge = CreateText("MapBadge", _minimapRoot, "1", 16, TextAnchor.MiddleCenter, Color.black, FontStyle.Bold);
-            Image badgeBg = mapBadge.gameObject.AddComponent<Image>();
-            badgeBg.color = Yellow;
-            badgeBg.transform.SetAsFirstSibling();
-            SetRect(mapBadge.rectTransform, new Vector2(28f, 28f), new Vector2(0f, 5f), new Vector2(0.5f, 0.5f));
+            RectTransform mapBadge = CreatePanel(
+                "MapBadge",
+                _minimapRoot,
+                new Vector2(28f, 28f),
+                new Vector2(0f, 5f),
+                new Vector2(0.5f, 0.5f),
+                Yellow
+            );
+            Text mapBadgeText = CreateText("Text", mapBadge, "1", 16, TextAnchor.MiddleCenter, Color.black, FontStyle.Bold);
+            Stretch(mapBadgeText.rectTransform, 0f, 0f, 0f, 0f);
 
             Text latency = CreateText("Latency", _canvas.transform, "64ms", 14, TextAnchor.MiddleLeft, Color.white, FontStyle.Bold);
             SetRect(latency.rectTransform, new Vector2(75f, 24f), new Vector2(130f, 10f), new Vector2(0f, 0f));
