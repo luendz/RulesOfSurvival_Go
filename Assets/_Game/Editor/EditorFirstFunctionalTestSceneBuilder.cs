@@ -78,6 +78,7 @@ namespace ROS.Game.EditorTools
             EditorFirstMainPlayerRuntimeSupportMaterializer.Materialize();
             EditorFirstHudCompatibilityMaterializer.Materialize();
             EditorFirstBattleRoyaleBotMaterializer.Materialize();
+            EditorFirstRosWeaponSlotsMaterializer.Materialize();
             EnsureInBuildSettings();
 
             AssetDatabase.SaveAssets();
