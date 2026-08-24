@@ -7,95 +7,124 @@ using UnityEngine.UI;
 
 namespace ROS.Game.UI
 {
-    /// <summary>
-    /// Muestra las últimas eliminaciones en pantalla (esquina superior derecha).
-    /// Las entradas se desvanecen tras KillDisplayTime segundos.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KillFeedPresenter : MonoBehaviour
     {
-        private const int   MaxEntries      = 5;
+        private const int MaxEntries = 5;
         private const float KillDisplayTime = 5f;
-        private const float FadeTime        = 0.8f;
+        private const float FadeTime = 0.8f;
 
-        private BattleRoyaleManager _manager;
-        private Health              _localHealth;
+        [SerializeField] private BattleRoyaleManager manager;
+        [SerializeField] private Health localHealth;
+        [SerializeField] private Text[] rows = new Text[MaxEntries];
 
-        private readonly List<KillEntry> _entries = new List<KillEntry>();
+        private readonly List<Entry> _entries = new List<Entry>();
 
-        private GameObject _root;
-
-        // ---------------------------------------------------------------
-
-        public void Bind(BattleRoyaleManager manager, Health localHealth)
+        private void Awake()
         {
-            _manager     = manager;
-            _localHealth = localHealth;
-
-            if (_manager != null)
-                _manager.PlayerEliminated += OnElimination;
-
-            BuildUI();
+            ResolvePhysicalRows();
+            ResolveGameplayReferences();
         }
 
-        private void OnDestroy()
+        private void OnEnable()
         {
-            if (_manager != null)
-                _manager.PlayerEliminated -= OnElimination;
-
-            if (_root != null) Destroy(_root);
+            ResolveGameplayReferences();
+            Subscribe();
         }
 
-        // ---------------------------------------------------------------
+        public void Bind(BattleRoyaleManager matchManager, Health health)
+        {
+            Unsubscribe();
+            manager = matchManager;
+            localHealth = health;
+            ResolvePhysicalRows();
+            Subscribe();
+        }
+
+        private void ResolveGameplayReferences()
+        {
+            if (manager == null)
+                manager = FindFirstObjectByType<BattleRoyaleManager>();
+
+            if (localHealth == null)
+            {
+                PlayerInputReader input = FindFirstObjectByType<PlayerInputReader>();
+                if (input != null)
+                    localHealth = input.GetComponent<Health>();
+            }
+        }
+
+        private void ResolvePhysicalRows()
+        {
+            if (rows == null || rows.Length != MaxEntries)
+                rows = new Text[MaxEntries];
+
+            Transform[] all = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < MaxEntries; i++)
+            {
+                string wanted = "KillFeedRow_" + i;
+                for (int j = 0; j < all.Length; j++)
+                {
+                    if (all[j].name != wanted) continue;
+                    rows[i] = all[j].GetComponent<Text>();
+                    break;
+                }
+
+                if (rows[i] != null)
+                {
+                    rows[i].text = string.Empty;
+                    rows[i].gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private void Subscribe()
+        {
+            if (manager == null) return;
+            manager.PlayerEliminated -= OnElimination;
+            manager.PlayerEliminated += OnElimination;
+        }
+
+        private void Unsubscribe()
+        {
+            if (manager != null)
+                manager.PlayerEliminated -= OnElimination;
+        }
 
         private void OnElimination(EliminationInfo info)
         {
-            string victimName  = info.Victim  != null ? info.Victim.gameObject.name  : "?";
-            string killerName  = info.Killer  != null ? info.Killer.gameObject.name  : "Zona";
-            bool   isLocalKill = info.Killer  == _localHealth;
-            bool   localDied   = info.Victim  == _localHealth;
+            if (rows == null || rows.Length == 0)
+                return;
 
-            // Simplificar nombres de bots
-            victimName = SimplifyName(victimName);
-            killerName = SimplifyName(killerName);
+            string victim = info.Victim != null
+                ? SimplifyName(info.Victim.gameObject.name)
+                : "?";
+            string killer = info.Killer != null
+                ? SimplifyName(info.Killer.gameObject.name)
+                : "Zona";
 
-            string line = $"{killerName}  ▶  {victimName}";
+            bool isLocalKill = info.Killer == localHealth;
+            bool localDied = info.Victim == localHealth;
 
-            // Si hay demasiadas, quitar la más antigua
-            if (_entries.Count >= MaxEntries && _entries.Count > 0)
+            Entry entry = new Entry
             {
-                KillEntry oldest = _entries[0];
-                _entries.RemoveAt(0);
-                if (oldest.Label != null) Destroy(oldest.Label.gameObject);
-                RebuildLayout();
-            }
+                Text = $"{killer}  ▶  {victim}",
+                Color = isLocalKill
+                    ? new Color(1f, 0.85f, 0.1f)
+                    : localDied
+                        ? new Color(1f, 0.3f, 0.2f)
+                        : Color.white
+            };
 
-            // Crear nueva entrada
-            GameObject go = new GameObject("KillEntry");
-            go.transform.SetParent(_root.transform, false);
-
-            Text txt = go.AddComponent<Text>();
-            txt.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize  = 15;
-            txt.color     = isLocalKill
-                ? new Color(1f, 0.85f, 0.1f)   // amarillo: el jugador hizo el kill
-                : localDied
-                    ? new Color(1f, 0.3f, 0.2f) // rojo: el jugador murió
-                    : Color.white;
-            txt.alignment = TextAnchor.MiddleRight;
-            txt.text      = line;
-
-            RectTransform rt = go.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(340f, 22f);
-
-            KillEntry entry = new KillEntry { Label = txt };
             _entries.Add(entry);
-            RebuildLayout();
+            if (_entries.Count > MaxEntries)
+                _entries.RemoveAt(0);
 
-            StartCoroutine(FadeAndRemove(entry));
+            RefreshRows();
+            StartCoroutine(RemoveLater(entry));
         }
 
-        private IEnumerator FadeAndRemove(KillEntry entry)
+        private IEnumerator RemoveLater(Entry entry)
         {
             yield return new WaitForSeconds(KillDisplayTime - FadeTime);
 
@@ -103,64 +132,56 @@ namespace ROS.Game.UI
             while (elapsed < FadeTime)
             {
                 elapsed += Time.deltaTime;
-                if (entry.Label != null)
-                {
-                    Color c = entry.Label.color;
-                    c.a = 1f - elapsed / FadeTime;
-                    entry.Label.color = c;
-                }
+                entry.Alpha = 1f - Mathf.Clamp01(elapsed / FadeTime);
+                RefreshRows();
                 yield return null;
             }
 
-            if (entry.Label != null)
-                Destroy(entry.Label.gameObject);
-
             _entries.Remove(entry);
+            RefreshRows();
         }
 
-        private void RebuildLayout()
+        private void RefreshRows()
         {
-            for (int i = 0; i < _entries.Count; i++)
+            for (int i = 0; i < MaxEntries; i++)
             {
-                RectTransform rt = _entries[i].Label?.GetComponent<RectTransform>();
-                if (rt == null) continue;
-                rt.anchoredPosition = new Vector2(0f, -i * 24f);
+                Text row = rows != null && i < rows.Length ? rows[i] : null;
+                if (row == null) continue;
+
+                if (i >= _entries.Count)
+                {
+                    row.text = string.Empty;
+                    row.gameObject.SetActive(false);
+                    continue;
+                }
+
+                Entry entry = _entries[i];
+                Color color = entry.Color;
+                color.a *= entry.Alpha;
+                row.color = color;
+                row.text = entry.Text;
+                row.gameObject.SetActive(true);
             }
         }
 
         private static string SimplifyName(string raw)
         {
-            // "Bot_BattleRoyale_03" → "Bot_03"
-            if (raw.StartsWith("Bot_BattleRoyale_"))
-                return "Bot_" + raw.Substring("Bot_BattleRoyale_".Length);
-            return raw;
+            const string prefix = "Bot_BattleRoyale_";
+            return raw.StartsWith(prefix)
+                ? "Bot_" + raw.Substring(prefix.Length)
+                : raw;
         }
 
-        private void BuildUI()
+        private void OnDisable()
         {
-            _root = new GameObject("KillFeedCanvas");
-
-            Canvas canvas = _root.AddComponent<Canvas>();
-            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 15;
-
-            CanvasScaler scaler = _root.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-
-            // Ancla: esquina superior derecha
-            RectTransform rt = _root.GetComponent<RectTransform>();
-            if (rt == null) rt = _root.AddComponent<RectTransform>();
-            rt.anchorMin        = new Vector2(1f, 1f);
-            rt.anchorMax        = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-20f, -20f);
+            Unsubscribe();
         }
 
-        // ---------------------------------------------------------------
-
-        private sealed class KillEntry
+        private sealed class Entry
         {
-            public Text Label;
+            public string Text;
+            public Color Color;
+            public float Alpha = 1f;
         }
     }
 }
