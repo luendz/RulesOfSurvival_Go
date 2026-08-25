@@ -1,4 +1,5 @@
 using ROS.Game.Core;
+using ROS.Game.Gameplay;
 using ROS.Game.Input;
 using ROS.Game.Weapons;
 using UnityEngine;
@@ -12,6 +13,7 @@ namespace ROS.Game.Character
         [SerializeField] private Transform cameraTransform;
         [SerializeField] private Transform visualRoot;
         [SerializeField] private WeaponEquipmentController equipment;
+        [SerializeField] private ConsumableController consumable;
 
         [Header("Movement")]
         [SerializeField] private float walkSpeed = 2.3f;
@@ -25,6 +27,11 @@ namespace ROS.Game.Character
         [SerializeField] private float gravity = -24f;
         [SerializeField] private float groundedGravity = -2f;
 
+        [Header("Healing Movement")]
+        [Tooltip("Multiplicador de desplazamiento mientras se usa un objeto de curacion. La locomocion visual conserva Walk/Run/Sprint.")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float healingSpeedMultiplier = 0.5f;
+
         [Header("Stances")]
         [SerializeField] private float standingHeight = 1.8f;
         [SerializeField] private float crouchingHeight = 1.25f;
@@ -36,6 +43,17 @@ namespace ROS.Game.Character
         public bool IsCrouching { get; private set; }
 
         public bool IsProne { get; private set; }
+
+        public bool IsHealing
+        {
+            get
+            {
+                EnsureReferences();
+                return consumable != null && consumable.IsUsing;
+            }
+        }
+
+        public float HealingSpeedMultiplier => healingSpeedMultiplier;
 
         public bool ExternalMovementLocked =>
             _externalMovementLocked;
@@ -126,6 +144,12 @@ namespace ROS.Game.Character
             {
                 equipment =
                     GetComponent<WeaponEquipmentController>();
+            }
+
+            if (consumable == null)
+            {
+                consumable =
+                    GetComponent<ConsumableController>();
             }
         }
 
@@ -316,8 +340,14 @@ namespace ROS.Game.Character
                     ).normalized;
             }
 
-            float speed =
+            // locomotionSpeed representa el gait elegido por el jugador y se
+            // conserva para el Animator (Walk/Run/Sprint). finalSpeed aplica
+            // modificadores de gameplay, como la penalizacion durante la cura.
+            float locomotionSpeed =
                 ResolveSpeed(input);
+
+            float finalSpeed =
+                ApplyMovementSpeedModifiers(locomotionSpeed);
 
             HandleRotation(
                 move,
@@ -327,7 +357,7 @@ namespace ROS.Game.Character
             HandleGravityAndJump();
 
             Vector3 finalVelocity =
-                move * speed +
+                move * finalSpeed +
                 Vector3.up * _velocity.y;
 
             _controller.Move(
@@ -337,8 +367,23 @@ namespace ROS.Game.Character
 
             UpdateMovementState(
                 input,
-                speed
+                locomotionSpeed
             );
+        }
+
+        private float ApplyMovementSpeedModifiers(float baseSpeed)
+        {
+            if (IsHealing)
+            {
+                return baseSpeed *
+                       Mathf.Clamp(
+                           healingSpeedMultiplier,
+                           0.1f,
+                           1f
+                       );
+            }
+
+            return baseSpeed;
         }
 
         private void HandleExternalMovementLock()
