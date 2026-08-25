@@ -1,7 +1,6 @@
 using ROS.Game.Character;
 using ROS.Game.Parachute;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace ROS.Game.Animation
 {
@@ -9,7 +8,11 @@ namespace ROS.Game.Animation
     /// Evita entrar en Fall durante saltos o desniveles pequenos.
     /// ShouldFall solo se activa cuando el personaje ya esta descendiendo y
     /// ha caido una distancia minima desde el punto mas alto alcanzado.
+    ///
+    /// Este componente debe existir de forma serializada en el Player para que
+    /// sus valores se vean y se ajusten directamente desde el Inspector.
     /// </summary>
+    [AddComponentMenu("Rules Of Survival/Animation/Player Fall Animation Gate")]
     [DefaultExecutionOrder(70)]
     [DisallowMultipleComponent]
     public sealed class PlayerFallAnimationGate : MonoBehaviour
@@ -20,7 +23,10 @@ namespace ROS.Game.Animation
         [SerializeField] private ParachuteController parachute;
 
         [Header("Fall Animation")]
+        [Tooltip("Distancia minima, en metros, que debe caer el jugador desde el punto mas alto antes de entrar en Fall.")]
         [SerializeField, Min(0.05f)] private float fallDistanceThreshold = 0.85f;
+
+        [Tooltip("Velocidad vertical maxima para considerar que el jugador ya esta descendiendo.")]
         [SerializeField] private float descendingVelocityThreshold = -0.2f;
 
         [Header("Runtime Debug")]
@@ -31,36 +37,6 @@ namespace ROS.Game.Animation
         private static readonly int ShouldFall = Animator.StringToHash("ShouldFall");
         private bool _wasGrounded = true;
         private float _peakY;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            EnsureGatesInLoadedScenes();
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
-
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            EnsureGatesInLoadedScenes();
-        }
-
-        private static void EnsureGatesInLoadedScenes()
-        {
-            PlayerMotor[] motors = Object.FindObjectsByType<PlayerMotor>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None
-            );
-
-            for (int i = 0; i < motors.Length; i++)
-            {
-                PlayerMotor candidate = motors[i];
-                if (candidate == null || candidate.GetComponent<PlayerFallAnimationGate>() != null)
-                    continue;
-
-                candidate.gameObject.AddComponent<PlayerFallAnimationGate>();
-            }
-        }
 
         private void Awake()
         {
