@@ -1,6 +1,7 @@
 using ROS.Game.Character;
 using ROS.Game.Parachute;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ROS.Game.Animation
 {
@@ -30,6 +31,36 @@ namespace ROS.Game.Animation
         private static readonly int ShouldFall = Animator.StringToHash("ShouldFall");
         private bool _wasGrounded = true;
         private float _peakY;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Bootstrap()
+        {
+            EnsureGatesInLoadedScenes();
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            EnsureGatesInLoadedScenes();
+        }
+
+        private static void EnsureGatesInLoadedScenes()
+        {
+            PlayerMotor[] motors = Object.FindObjectsByType<PlayerMotor>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+            for (int i = 0; i < motors.Length; i++)
+            {
+                PlayerMotor candidate = motors[i];
+                if (candidate == null || candidate.GetComponent<PlayerFallAnimationGate>() != null)
+                    continue;
+
+                candidate.gameObject.AddComponent<PlayerFallAnimationGate>();
+            }
+        }
 
         private void Awake()
         {
@@ -61,6 +92,7 @@ namespace ROS.Game.Animation
                 SetShouldFall(false);
                 debugFallDistance = 0f;
                 debugPeakY = _peakY;
+                debugShouldFall = false;
                 return;
             }
 
