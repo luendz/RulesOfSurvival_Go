@@ -50,11 +50,13 @@ namespace ROS.Game.UI
 
         private PlayerInputReader _input;
         private PlayerGestureController _gestureController;
+        private RectTransform _internalHintRoot;
         private bool _isOpen;
         private bool _blockedInputByWheel;
         private int _selectedIndex = -1;
         private CursorLockMode _previousCursorLock;
         private bool _previousCursorVisible;
+        private float _nextHintRebindTime;
 
         private static readonly Color ItemColor =
             new Color(0.12f, 0.14f, 0.16f, 0.96f);
@@ -95,7 +97,8 @@ namespace ROS.Game.UI
             wheelOverlay = FindNamed<RectTransform>("WheelOverlay");
             wheelCenter = FindNamed<RectTransform>("WheelCenter");
             selectionLabel = FindNamed<Text>("SelectionLabel");
-            hintRoot = FindNamed<RectTransform>("GestureHint");
+            _internalHintRoot = FindNamed<RectTransform>("GestureHint");
+            BindHintTarget();
 
             optionImages = new Image[Options.Length];
             optionTexts = new Text[Options.Length];
@@ -193,6 +196,7 @@ namespace ROS.Game.UI
             _selectedIndex = -1;
             SetWheelVisible(true);
             RefreshSelectionVisuals();
+            UpdateHintVisibility();
         }
 
         public void CloseWheel()
@@ -215,6 +219,7 @@ namespace ROS.Game.UI
             }
 
             _blockedInputByWheel = false;
+            UpdateHintVisibility();
         }
 
         private void SelectAndPlay(int index)
@@ -261,14 +266,65 @@ namespace ROS.Game.UI
 
         private void UpdateHintVisibility()
         {
+            if (Time.unscaledTime >= _nextHintRebindTime)
+            {
+                _nextHintRebindTime = Time.unscaledTime + 0.5f;
+                BindHintTarget();
+            }
+
             if (hintRoot == null)
                 return;
 
             bool shouldShow = _input != null &&
                               _gestureController != null &&
+                              _gestureController.CanPlayGesture &&
+                              !_input.UiBlocked &&
                               !_isOpen;
             if (hintRoot.gameObject.activeSelf != shouldShow)
                 hintRoot.gameObject.SetActive(shouldShow);
+        }
+
+        private void BindHintTarget()
+        {
+            RectTransform externalHint = FindSceneHudHint();
+            if (externalHint != null)
+            {
+                if (_internalHintRoot != null &&
+                    _internalHintRoot != externalHint &&
+                    _internalHintRoot.gameObject.activeSelf)
+                {
+                    _internalHintRoot.gameObject.SetActive(false);
+                }
+
+                hintRoot = externalHint;
+                return;
+            }
+
+            if (_internalHintRoot == null)
+                _internalHintRoot = FindNamed<RectTransform>("GestureHint");
+
+            hintRoot = _internalHintRoot;
+        }
+
+        private static RectTransform FindSceneHudHint()
+        {
+            RectTransform[] all = Resources.FindObjectsOfTypeAll<RectTransform>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                RectTransform current = all[i];
+                if (current == null || current.name != "GestureHintHUD")
+                    continue;
+
+                if (!current.gameObject.scene.IsValid() ||
+                    !current.gameObject.scene.isLoaded)
+                {
+                    continue;
+                }
+
+                return current;
+            }
+
+            return null;
         }
 
         private void UpdateSelection()
