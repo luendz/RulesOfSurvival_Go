@@ -15,7 +15,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += EnsureHealingUpperBody;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Configure Healing Upper Body")]
         public static void EnsureHealingUpperBody()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
