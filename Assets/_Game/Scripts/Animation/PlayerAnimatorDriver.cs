@@ -1,4 +1,5 @@
 using System;
+using ROS.Game.Character;
 using UnityEngine;
 
 namespace ROS.Game.Animation
@@ -43,11 +44,10 @@ namespace ROS.Game.Animation
                 return;
             }
 
-            Transform owner = transform;
-            while (owner.parent != null)
-                owner = owner.parent;
+            PlayerMotor motor = GetComponent<PlayerMotor>() ??
+                                GetComponentInParent<PlayerMotor>();
+            GameObject target = motor != null ? motor.gameObject : gameObject;
 
-            GameObject target = owner.gameObject;
             coordinator = target.GetComponent<PlayerAnimationCoordinator>();
             if (coordinator == null)
                 coordinator = target.AddComponent<PlayerAnimationCoordinator>();
