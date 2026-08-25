@@ -55,6 +55,12 @@ namespace ROS.Game.EditorTools
             changed |= EnsureComponent<PlayerAimController>(player);
             changed |= EnsureComponent<PlayerLeanController>(player);
             changed |= EnsureComponent<PlayerLeanRigApplier>(player);
+
+            // Herramienta de prueba física de la escena 08. F5 resta
+            // exactamente cinco puntos de vida y permanece editable/visible
+            // en el Inspector del jugador principal.
+            changed |= EnsureComponent<DamageDebugControls>(player);
+
             changed |= ConfigurePersistentLean(player);
 
             WeaponEquipmentController equipment =
@@ -87,7 +93,7 @@ namespace ROS.Game.EditorTools
                 EditorSceneManager.SaveScene(scene);
                 AssetDatabase.SaveAssets();
                 Debug.Log(
-                    "[Editor First] Soporte del jugador principal materializado fisicamente, incluido Lean persistente."
+                    "[Editor First] Soporte del jugador principal materializado fisicamente, incluido Lean persistente y DamageDebugControls (F5 = -5 vida)."
                 );
             }
 
