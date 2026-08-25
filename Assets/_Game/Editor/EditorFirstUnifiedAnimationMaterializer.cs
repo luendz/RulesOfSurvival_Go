@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ROS.Game.Animation;
+using ROS.Game.Character;
 using ROS.Game.Input;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -16,11 +17,12 @@ namespace ROS.Game.EditorTools
     /// 1 WeaponUpperBody      (Override + upper-body mask)
     /// 2 UpperBodyActions     (Override + upper-body mask)
     /// 3 AimRecoil            (Additive + upper-body mask)
-    /// 4 FullBodyOverride     (Override, sin máscara)
+    /// 4 FullBodyOverride     (Override, sin mascara)
     ///
     /// Los clips existentes se reutilizan; no se fabrican motions nuevos.
-    /// Las capas legacy quedan fuera de controller.layers y dejan de participar
-    /// en la evaluación, aunque sus sub-assets históricos puedan permanecer.
+    /// Las capas superiores nacen con peso 0: PlayerAnimationCoordinator las
+    /// activa solo cuando existe un arma o accion real. Esto evita que un Empty
+    /// Override neutralice la animacion natural de brazos/manos sin arma.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorFirstUnifiedAnimationMaterializer
@@ -114,7 +116,7 @@ namespace ROS.Game.EditorTools
             if (locomotion == null)
             {
                 Debug.LogError(
-                    "[Editor First] El Animator no contiene Locomotion. Se cancela la migración para no perder la locomoción base."
+                    "[Editor First] El Animator no contiene Locomotion. Se cancela la migracion para no perder la locomocion base."
                 );
                 return false;
             }
@@ -243,7 +245,7 @@ namespace ROS.Game.EditorTools
                 PlayerAnimationCoordinator.WeaponUpperBodyLayerName,
                 mask,
                 AnimatorLayerBlendingMode.Override,
-                1f,
+                0f,
                 true
             );
 
@@ -353,7 +355,7 @@ namespace ROS.Game.EditorTools
                 PlayerAnimationCoordinator.UpperBodyActionsLayerName,
                 mask,
                 AnimatorLayerBlendingMode.Override,
-                1f,
+                0f,
                 true
             );
 
@@ -542,9 +544,9 @@ namespace ROS.Game.EditorTools
             changed |= ConfigureLayer(
                 layers[0], null, AnimatorLayerBlendingMode.Override, 1f, false);
             changed |= ConfigureLayer(
-                layers[1], upperBodyMask, AnimatorLayerBlendingMode.Override, 1f, true);
+                layers[1], upperBodyMask, AnimatorLayerBlendingMode.Override, 0f, true);
             changed |= ConfigureLayer(
-                layers[2], upperBodyMask, AnimatorLayerBlendingMode.Override, 1f, true);
+                layers[2], upperBodyMask, AnimatorLayerBlendingMode.Override, 0f, true);
             changed |= ConfigureLayer(
                 layers[3], upperBodyMask, AnimatorLayerBlendingMode.Additive, 0f, false);
             changed |= ConfigureLayer(
@@ -707,7 +709,9 @@ namespace ROS.Game.EditorTools
             }
 
             bool changed = false;
-            GameObject player = input.gameObject;
+            PlayerMotor motor =
+                input.GetComponent<PlayerMotor>() ?? input.GetComponentInParent<PlayerMotor>();
+            GameObject player = motor != null ? motor.gameObject : input.gameObject;
 
             PlayerAnimationCoordinator coordinator =
                 player.GetComponent<PlayerAnimationCoordinator>();
