@@ -81,6 +81,7 @@ namespace ROS.Game.EditorTools
             EditorFirstBattleRoyaleBotMaterializer.Materialize();
             EditorFirstRosWeaponSlotsMaterializer.Materialize();
             EditorFirstRosWeaponSlotVisualMaterializer.Materialize();
+            EditorFirstGestureHudHintMaterializer.Materialize();
             EditorFirstRosWeaponSlotSerializedRepair.Repair();
             EditorFirstEmptyPlayerLoadoutMaterializer.Materialize();
 
