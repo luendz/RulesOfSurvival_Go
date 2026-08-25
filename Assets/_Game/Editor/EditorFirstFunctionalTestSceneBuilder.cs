@@ -76,6 +76,12 @@ namespace ROS.Game.EditorTools
             EditorFirstHudAndPlayerMaterializer.Materialize();
             EditorFirstConsumableHudMaterializer.Materialize();
             EditorFirstMainPlayerRuntimeSupportMaterializer.Materialize();
+
+            // Debe ejecutarse después de que el jugador físico exista en la
+            // escena: agrega PlayerAnimationCoordinator y desactiva el driver
+            // legacy para que haya un único escritor del Animator.
+            EditorFirstUnifiedAnimationMaterializer.Materialize();
+
             EditorFirstPlayerEquipmentVisualMaterializer.Materialize();
             EditorFirstHudCompatibilityMaterializer.Materialize();
             EditorFirstBattleRoyaleBotMaterializer.Materialize();
@@ -138,8 +144,9 @@ namespace ROS.Game.EditorTools
             EditorFirstWeaponEffectsMaterializer.EnsureEditableWeaponEffects();
             EditorFirstWeaponBackMountMaterializer.ApplyStandardBackMounts();
 
-            // Una sola arquitectura para locomocion y cintura superior.
-            EditorFirstAnimationLayerConsolidator.EnsureConsolidatedAnimationLayers();
+            // Única arquitectura de animación: locomoción full-body + torso
+            // de combate/acciones. No se crean capas especiales por combinación.
+            EditorFirstUnifiedAnimationMaterializer.EnsureAnimatorArchitecture();
         }
 
         private static void RepairFunctionalComponents()
