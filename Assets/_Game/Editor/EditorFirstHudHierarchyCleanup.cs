@@ -21,7 +21,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += Cleanup;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Clean Obsolete HUD Hierarchy")]
         public static void Cleanup()
         {
             if (Application.isPlaying || EditorApplication.isCompiling ||
