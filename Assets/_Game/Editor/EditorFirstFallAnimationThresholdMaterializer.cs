@@ -1,16 +1,12 @@
-using System;
 using ROS.Game.Animation;
-using ROS.Game.Character;
 using UnityEditor;
 using UnityEditor.Animations;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace ROS.Game.EditorTools
 {
     /// <summary>
-    /// Hace que Fall dependa de ShouldFall, que a su vez se calcula por distancia
+    /// Hace que Fall dependa de ShouldFall, calculado en runtime por distancia
     /// real de caida. Los saltos bajos aterrizan sin pasar por Fall.
     /// </summary>
     [InitializeOnLoad]
@@ -18,9 +14,6 @@ namespace ROS.Game.EditorTools
     {
         private const string ControllerPath =
             "Assets/_Game/Animations/AC_Player_Prototype.controller";
-
-        private const string FunctionalScenePath =
-            "Assets/_Game/Scenes/08_EditorFirstFunctionalTest.unity";
 
         private const string ParameterName = "ShouldFall";
         private const string LocomotionLayerName = "Locomotion";
@@ -37,18 +30,15 @@ namespace ROS.Game.EditorTools
             if (Application.isPlaying || EditorApplication.isCompiling)
                 return;
 
-            bool controllerChanged = ConfigureAnimator();
-            bool sceneChanged = EnsureRuntimeGateInFunctionalScene();
+            if (!ConfigureAnimator())
+                return;
 
-            if (controllerChanged || sceneChanged)
-            {
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-                Debug.Log(
-                    "[Editor First] Fall configurado por distancia minima de caida. " +
-                    "Los saltos bajos pueden ir de Jump a Landing sin reproducir Fall."
-                );
-            }
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log(
+                "[Editor First] Fall configurado por distancia minima de caida. " +
+                "Los saltos bajos pueden ir de Jump a Landing sin reproducir Fall."
+            );
         }
 
         private static bool ConfigureAnimator()
@@ -201,53 +191,6 @@ namespace ROS.Game.EditorTools
             AnimatorCondition[] conditions = transition.conditions;
             for (int i = conditions.Length - 1; i >= 0; i--)
                 transition.RemoveCondition(conditions[i]);
-        }
-
-        private static bool EnsureRuntimeGateInFunctionalScene()
-        {
-            if (!System.IO.File.Exists(FunctionalScenePath))
-                return false;
-
-            Scene activeScene = SceneManager.GetActiveScene();
-            string activePath = activeScene.path;
-            bool activeDirty = activeScene.IsValid() && activeScene.isDirty;
-
-            Scene scene = EditorSceneManager.OpenScene(
-                FunctionalScenePath,
-                OpenSceneMode.Single
-            );
-
-            bool changed = false;
-            PlayerMotor[] motors = UnityEngine.Object.FindObjectsByType<PlayerMotor>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None
-            );
-
-            for (int i = 0; i < motors.Length; i++)
-            {
-                PlayerMotor motor = motors[i];
-                if (motor == null || motor.gameObject.scene != scene)
-                    continue;
-
-                PlayerFallAnimationGate gate = motor.GetComponent<PlayerFallAnimationGate>();
-                if (gate != null)
-                    continue;
-
-                Undo.AddComponent<PlayerFallAnimationGate>(motor.gameObject);
-                changed = true;
-            }
-
-            if (changed)
-                EditorSceneManager.SaveScene(scene);
-
-            if (!string.IsNullOrWhiteSpace(activePath) && activePath != FunctionalScenePath)
-            {
-                Scene restored = EditorSceneManager.OpenScene(activePath, OpenSceneMode.Single);
-                if (activeDirty)
-                    EditorSceneManager.MarkSceneDirty(restored);
-            }
-
-            return changed;
         }
     }
 }
