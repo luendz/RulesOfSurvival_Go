@@ -32,7 +32,7 @@ namespace ROS.Game.Editor
             };
         }
 
-        [MenuItem("ROS Battle Royale/Build Static Sedan")]
+        [MenuItem("Rules Of Survival/Tools/World/Build Static Sedan")]
         public static void Build()
         {
             EnsureFolder(ResourcesFolder);
@@ -69,7 +69,7 @@ namespace ROS.Game.Editor
             Validate();
         }
 
-        [MenuItem("ROS Battle Royale/Validate Static Sedan")]
+        [MenuItem("Rules Of Survival/Tools/World/Validate Static Sedan")]
         public static void Validate()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
