@@ -11,6 +11,12 @@ namespace ROS.Game.EditorTools
     /// Normaliza el Animator del jugador para que Locomotion sea responsable
     /// solo del movimiento/postura del cuerpo base y WeaponUpperBody del torso.
     ///
+    /// Primera fase deliberadamente conservadora:
+    /// - elimina locomocion armada duplicada del layer base;
+    /// - elimina ArmedCrouch del torso porque las piernas ya resuelven Crouch;
+    /// - mantiene ReloadStanding/ReloadCrouch hasta unificar tambien el calculo
+    ///   de duracion de recarga del runtime.
+    ///
     /// Es idempotente: puede ejecutarse varias veces sin duplicar estados.
     /// </summary>
     [InitializeOnLoad]
@@ -66,7 +72,7 @@ namespace ROS.Game.EditorTools
 
             Debug.Log(
                 "[Editor First] Animator refactorizado: Locomotion queda libre de estados de arma " +
-                "y WeaponUpperBody se reduce a Empty/Hip/Aim/Reload/WeaponSwitch."
+                "y WeaponUpperBody usa Empty/Hip/Aim con recargas aisladas en el torso."
             );
         }
 
@@ -151,20 +157,20 @@ namespace ROS.Game.EditorTools
 
             AnimatorStateMachine machine = layer.stateMachine;
 
-            // Si ya esta en el formato nuevo no volvemos a reconstruirlo.
+            // El formato nuevo ya no duplica la postura de brazos por Crouch.
             if (FindState(machine, "Hip") != null &&
                 FindState(machine, "Aim") != null &&
-                FindState(machine, "Reload") != null &&
                 FindState(machine, "ArmedLocomotion") == null &&
                 FindState(machine, "ArmedCrouch") == null &&
-                FindState(machine, "ReloadCrouch") == null)
+                FindState(machine, "AimLocomotion") == null)
             {
                 return false;
             }
 
             Motion hipMotion = FindMotion(machine, "Hip", "ArmedLocomotion", "ArmedCrouch");
             Motion aimMotion = FindMotion(machine, "Aim", "AimLocomotion");
-            Motion reloadMotion = FindMotion(machine, "Reload", "ReloadStanding", "ReloadCrouch");
+            Motion reloadStandingMotion = FindMotion(machine, "ReloadStanding");
+            Motion reloadCrouchMotion = FindMotion(machine, "ReloadCrouch");
             Motion switchMotion = FindMotion(machine, "WeaponSwitch");
 
             ClearStateMachine(machine);
@@ -172,41 +178,76 @@ namespace ROS.Game.EditorTools
             AnimatorState empty = machine.AddState("Empty", new Vector3(260f, 80f));
             AnimatorState hip = machine.AddState("Hip", new Vector3(540f, 20f));
             AnimatorState aim = machine.AddState("Aim", new Vector3(800f, 20f));
-            AnimatorState reload = machine.AddState("Reload", new Vector3(800f, 170f));
-            AnimatorState weaponSwitch = machine.AddState("WeaponSwitch", new Vector3(540f, 190f));
+            AnimatorState reloadStanding = machine.AddState(
+                "ReloadStanding",
+                new Vector3(800f, 160f)
+            );
+            AnimatorState reloadCrouch = machine.AddState(
+                "ReloadCrouch",
+                new Vector3(800f, 270f)
+            );
+            AnimatorState weaponSwitch = machine.AddState(
+                "WeaponSwitch",
+                new Vector3(540f, 210f)
+            );
 
             empty.writeDefaultValues = false;
             hip.writeDefaultValues = false;
             aim.writeDefaultValues = false;
-            reload.writeDefaultValues = false;
+            reloadStanding.writeDefaultValues = false;
+            reloadCrouch.writeDefaultValues = false;
             weaponSwitch.writeDefaultValues = false;
 
             hip.motion = hipMotion;
             aim.motion = aimMotion;
-            reload.motion = reloadMotion;
+            reloadStanding.motion = reloadStandingMotion;
+            reloadCrouch.motion = reloadCrouchMotion != null
+                ? reloadCrouchMotion
+                : reloadStandingMotion;
             weaponSwitch.motion = switchMotion;
 
-            if (reloadMotion != null)
+            if (reloadStanding.motion != null)
             {
-                reload.speedParameterActive = true;
-                reload.speedParameter = "ReloadSpeed";
+                reloadStanding.speedParameterActive = true;
+                reloadStanding.speedParameter = "ReloadSpeed";
+            }
+
+            if (reloadCrouch.motion != null)
+            {
+                reloadCrouch.speedParameterActive = true;
+                reloadCrouch.speedParameter = "ReloadSpeed";
             }
 
             machine.defaultState = empty;
 
+            // Crouch deja de decidir una pose de arma distinta: solamente cambia
+            // las piernas desde Locomotion. Hip/Aim siguen siendo torso puro.
             AddBoolTransition(empty, hip, "UpperBodyArmed", true, 0.08f);
             AddBoolTransition(hip, empty, "UpperBodyArmed", false, 0.08f);
             AddBoolTransition(hip, aim, "UpperBodyAim", true, 0.05f);
             AddBoolTransition(aim, hip, "UpperBodyAim", false, 0.05f);
             AddBoolTransition(aim, empty, "UpperBodyArmed", false, 0.05f);
 
-            if (reloadMotion != null)
+            if (reloadStanding.motion != null)
             {
-                AnimatorStateTransition toReload = machine.AddAnyStateTransition(reload);
-                ConfigureTransition(toReload, 0.04f);
-                toReload.AddCondition(AnimatorConditionMode.If, 0f, "Reloading");
+                AnimatorStateTransition toReloadStanding =
+                    machine.AddAnyStateTransition(reloadStanding);
+                ConfigureTransition(toReloadStanding, 0.04f);
+                toReloadStanding.AddCondition(AnimatorConditionMode.If, 0f, "Reloading");
+                toReloadStanding.AddCondition(AnimatorConditionMode.IfNot, 0f, "Crouch");
 
-                AddBoolTransition(reload, hip, "Reloading", false, 0.05f);
+                AddBoolTransition(reloadStanding, hip, "Reloading", false, 0.05f);
+            }
+
+            if (reloadCrouch.motion != null)
+            {
+                AnimatorStateTransition toReloadCrouch =
+                    machine.AddAnyStateTransition(reloadCrouch);
+                ConfigureTransition(toReloadCrouch, 0.04f);
+                toReloadCrouch.AddCondition(AnimatorConditionMode.If, 0f, "Reloading");
+                toReloadCrouch.AddCondition(AnimatorConditionMode.If, 0f, "Crouch");
+
+                AddBoolTransition(reloadCrouch, hip, "Reloading", false, 0.05f);
             }
 
             if (switchMotion != null)
