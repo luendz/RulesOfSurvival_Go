@@ -67,10 +67,17 @@ namespace ROS.Game.Gameplay
             }
         }
 
-        private void TryUseFirstHealing()
+        /// <summary>
+        /// Intenta usar la primera cura valida del inventario. Es la misma ruta
+        /// jugable usada por H y por la IA: respeta tiempo de uso, limites del
+        /// consumible, cancelacion por daño y consume una unidad al completar.
+        /// </summary>
+        public bool TryUseFirstHealing()
         {
-            if (_inventory == null) return;
-            if (_health.CurrentHealth >= _health.MaxHealth) return;
+            if (_isUsing || _inventory == null || _health == null)
+                return false;
+            if (!_health.IsAlive || _health.CurrentHealth >= _health.MaxHealth)
+                return false;
 
             foreach (InventoryStack stack in _inventory.Stacks)
             {
@@ -89,8 +96,10 @@ namespace ROS.Game.Gameplay
                 }
 
                 BeginUse(stack.item, def);
-                return;
+                return true;
             }
+
+            return false;
         }
 
         private ConsumableDefinition GetDefaultHealDef()
