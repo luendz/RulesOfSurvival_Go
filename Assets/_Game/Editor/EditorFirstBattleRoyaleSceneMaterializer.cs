@@ -28,13 +28,11 @@ namespace ROS.Game.EditorTools
         private const string DamageNumberPath =
             "Assets/_Game/Resources/EditorFirst/DamageNumber.prefab";
 
-        [MenuItem("Rules Of Survival/Editor First/Put Everything In Original Battle Royale Hierarchy")]
         public static void MaterializeInBattleRoyaleScene()
         {
             MaterializeSceneAtPath(DefaultScenePath, false);
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Open Original Battle Royale Editable Hierarchy")]
         public static void OpenEditableScene()
         {
             MaterializeSceneAtPath(DefaultScenePath, false);
