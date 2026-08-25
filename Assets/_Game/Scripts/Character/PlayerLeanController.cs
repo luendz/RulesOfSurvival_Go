@@ -31,9 +31,16 @@ namespace ROS.Game.Character
         [SerializeField] private float leanSpeed = 20f;
 
         [Header("Restrictions")]
-        [SerializeField] private bool cancelWhileSprinting = true;
+        [Tooltip("Si se activa, el sprint centra visualmente el torso de forma temporal, pero no borra el lado de lean elegido.")]
+        [SerializeField] private bool cancelWhileSprinting = false;
+
+        [Tooltip("Prone cancela por completo el lean seleccionado.")]
         [SerializeField] private bool cancelWhileProne = true;
+
+        [Tooltip("En el aire el lean puede centrarse temporalmente. Al volver al suelo recupera el lado elegido.")]
         [SerializeField] private bool cancelWhileAirborne = true;
+
+        [Tooltip("Durante recarga el lean puede centrarse temporalmente. Al terminar recupera el lado elegido.")]
         [SerializeField] private bool cancelWhileReloading = true;
 
         [Header("Body Collision")]
@@ -47,6 +54,8 @@ namespace ROS.Game.Character
             PlayerLeanState.Center;
 
         public float CurrentLean { get; private set; }
+
+        public bool IsTemporarilySuppressed { get; private set; }
 
         public float TargetLean
         {
@@ -79,6 +88,7 @@ namespace ROS.Game.Character
         {
             State = PlayerLeanState.Center;
             CurrentLean = 0f;
+            IsTemporarilySuppressed = false;
         }
 
         private void Update()
@@ -88,6 +98,7 @@ namespace ROS.Game.Character
             if (input == null)
             {
                 SetCenter();
+                IsTemporarilySuppressed = false;
                 UpdateLeanValue(0f);
                 return;
             }
@@ -101,12 +112,20 @@ namespace ROS.Game.Character
                 ToggleRight();
             }
 
-            if (ShouldCancelLean())
+            // Solo estados que realmente invalidan el lean borran la selección.
+            // Caminar, correr, apuntar, un frame sin Grounded o una recarga NO
+            // deben hacer perder el lado que el jugador eligió.
+            if (ShouldClearLeanState())
             {
                 SetCenter();
             }
 
-            float target = ResolveObstructedTarget(TargetLean);
+            IsTemporarilySuppressed = ShouldTemporarilySuppressLean();
+
+            float target = IsTemporarilySuppressed
+                ? 0f
+                : ResolveObstructedTarget(TargetLean);
+
             UpdateLeanValue(target);
         }
 
@@ -138,25 +157,40 @@ namespace ROS.Game.Character
             );
         }
 
-        private bool ShouldCancelLean()
+        private bool ShouldClearLeanState()
         {
             if (health != null && !health.IsAlive)
             {
                 return true;
             }
 
+            // Durante avión/paracaídas no conservamos una selección de lean de
+            // la fase terrestre anterior.
             if (parachute != null && parachute.IsAirbornePhase)
             {
                 return true;
             }
 
+            if (motor != null && cancelWhileProne && motor.IsProne)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool ShouldTemporarilySuppressLean()
+        {
+            if (State == PlayerLeanState.Center)
+            {
+                return false;
+            }
+
             if (motor != null)
             {
-                if (cancelWhileProne && motor.IsProne)
-                {
-                    return true;
-                }
-
+                // CharacterController.isGrounded puede fluctuar un frame al
+                // bajar pendientes o superar escalones. Nunca borramos State;
+                // como máximo ocultamos el lean durante ese instante.
                 if (cancelWhileAirborne && !motor.IsGrounded)
                 {
                     return true;
