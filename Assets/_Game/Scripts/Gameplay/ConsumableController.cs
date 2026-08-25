@@ -1,6 +1,7 @@
 using System.Collections;
 using ROS.Game.Combat;
 using ROS.Game.Core;
+using ROS.Game.Input;
 using ROS.Game.Inventory;
 using ROS.Game.UI;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace ROS.Game.Gameplay
     {
         private Health _health;
         private InventoryComponent _inventory;
+        private PlayerInputReader _input;
 
         public bool IsUsing => _isUsing;
         private bool _isUsing;
@@ -33,6 +35,7 @@ namespace ROS.Game.Gameplay
         {
             _health = GetComponent<Health>();
             _inventory = GetComponent<InventoryComponent>();
+            _input = GetComponent<PlayerInputReader>();
             ResolvePhysicalHud();
             SetBarVisible(false);
         }
@@ -57,6 +60,12 @@ namespace ROS.Game.Gameplay
         private void Update()
         {
             if (_health == null || !_health.IsAlive) return;
+
+            // Los bots utilizan TryUseFirstHealing desde su IA. Nunca deben
+            // reaccionar a la tecla H global del jugador local.
+            if (_input != null && _input.UsesExternalControl)
+                return;
+
             if (Keyboard.current == null) return;
 
             if (Keyboard.current.hKey.wasPressedThisFrame)
