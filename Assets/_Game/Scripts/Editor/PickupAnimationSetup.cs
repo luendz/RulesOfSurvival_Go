@@ -17,7 +17,6 @@ namespace ROS.Game.Editor
         private const string LayerName   = "Actions";
         private const float  Speed       = 3f;
 
-        [MenuItem("ROS/Setup/Agregar animación de recogida (Taking Item)")]
         public static void Run()
         {
             AnimatorController controller =
