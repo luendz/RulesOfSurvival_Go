@@ -23,7 +23,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += Materialize;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Materialize HUD And Main Player")]
         public static void Materialize()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
@@ -63,16 +62,12 @@ namespace ROS.Game.EditorTools
 
             if (canvas != null)
             {
-                // Estos bloques sí forman parte del HUD físico actual.
                 changed |= EnsureKillFeed(canvas);
                 changed |= EnsureDamageDirection(canvas);
                 changed |= EnsureCombatFeedback(canvas);
 
                 changed |= EnsureComponent<KillFeedPresenter>(hud.gameObject);
                 changed |= EnsureComponent<DamageDirectionIndicator>(hud.gameObject);
-
-                // QuickConsumePresenter se conserva, pero su vista válida está en:
-                // Canvas/Vitals/Meds/QuickConsumeRoot. Nunca se crea aquí otro root.
                 changed |= EnsureComponent<QuickConsumePresenter>(hud.gameObject);
             }
 

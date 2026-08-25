@@ -20,8 +20,6 @@ namespace ROS.Game.EditorTools
         private const string CanonicalAssetPath =
             "Assets/_Game/Data/Ammo/Item_RifleAmmo.asset";
 
-        // Se conserva como fallback para poder reparar referencias incluso si el
-        // asset legado ya fue borrado manualmente antes de ejecutar la migracion.
         private const string LegacyGuid =
             "bdecb8b4df730704783d4d93c1ee6782";
 
@@ -42,7 +40,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += Migrate;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Migrate Legacy 5.56 To Rifle Ammo")]
         public static void Migrate()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
@@ -78,7 +75,6 @@ namespace ROS.Game.EditorTools
             }
             else if (File.Exists(LegacyAssetPath))
             {
-                // Respaldo para un asset que Unity aun no haya importado.
                 File.Delete(LegacyAssetPath);
 
                 string meta = LegacyAssetPath + ".meta";
@@ -97,8 +93,7 @@ namespace ROS.Game.EditorTools
             {
                 Debug.LogWarning(
                     "[Editor First] La migracion 5.56 termino, pero aun existen " +
-                    remaining + " archivo(s) con el GUID legado. Ejecuta otra vez: " +
-                    "Rules Of Survival > Editor First > Migrate Legacy 5.56 To Rifle Ammo."
+                    remaining + " archivo(s) con el GUID legado."
                 );
                 return;
             }
@@ -198,7 +193,6 @@ namespace ROS.Game.EditorTools
                 }
                 catch
                 {
-                    // La fase de reemplazo ya informa errores detallados.
                 }
             }
 

@@ -25,7 +25,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += Materialize;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Reset Main Player To Empty Loadout")]
         public static void Materialize()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
