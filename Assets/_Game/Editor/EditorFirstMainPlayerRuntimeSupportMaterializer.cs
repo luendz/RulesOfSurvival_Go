@@ -53,6 +53,9 @@ namespace ROS.Game.EditorTools
             GameObject player = input.gameObject;
 
             changed |= EnsureComponent<PlayerAimController>(player);
+            changed |= EnsureComponent<PlayerLeanController>(player);
+            changed |= EnsureComponent<PlayerLeanRigApplier>(player);
+            changed |= ConfigurePersistentLean(player);
 
             WeaponEquipmentController equipment =
                 player.GetComponent<WeaponEquipmentController>();
@@ -84,12 +87,61 @@ namespace ROS.Game.EditorTools
                 EditorSceneManager.SaveScene(scene);
                 AssetDatabase.SaveAssets();
                 Debug.Log(
-                    "[Editor First] Soporte del jugador principal materializado fisicamente."
+                    "[Editor First] Soporte del jugador principal materializado fisicamente, incluido Lean persistente."
                 );
             }
 
             if (openedTemporarily)
                 EditorSceneManager.CloseScene(scene, true);
+        }
+
+        private static bool ConfigurePersistentLean(GameObject player)
+        {
+            PlayerLeanController lean = player.GetComponent<PlayerLeanController>();
+            if (lean == null)
+                return false;
+
+            SerializedObject serialized = new SerializedObject(lean);
+            bool changed = false;
+
+            changed |= SetBool(serialized, "cancelWhileSprinting", false);
+            changed |= SetBool(serialized, "cancelWhileProne", true);
+            changed |= SetBool(serialized, "cancelWhileAirborne", true);
+            changed |= SetBool(serialized, "cancelWhileReloading", true);
+            changed |= SetFloat(serialized, "airborneSuppressDelay", 0.12f);
+
+            if (!changed)
+                return false;
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(lean);
+            return true;
+        }
+
+        private static bool SetBool(
+            SerializedObject serialized,
+            string propertyName,
+            bool value)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property == null || property.boolValue == value)
+                return false;
+
+            property.boolValue = value;
+            return true;
+        }
+
+        private static bool SetFloat(
+            SerializedObject serialized,
+            string propertyName,
+            float value)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property == null || Mathf.Approximately(property.floatValue, value))
+                return false;
+
+            property.floatValue = value;
+            return true;
         }
 
         private static bool EnsureSocketFollower(
