@@ -4,9 +4,8 @@ using UnityEngine;
 namespace ROS.Game.EditorTools
 {
     /// <summary>
-    /// Compatibilidad con el menu/herramienta anterior. Crouch Aim ya no usa
-    /// una capa exclusiva: ahora forma parte de UpperBodyCombat, compartida con
-    /// el apuntado de pie y en movimiento.
+    /// Compatibilidad con el menú anterior. Crouch Aim ya no usa una capa
+    /// exclusiva: se compone dentro de UpperBodyCombat.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorFirstCrouchAimUpperBodyMaterializer
@@ -22,7 +21,7 @@ namespace ROS.Game.EditorTools
             if (Application.isPlaying || EditorApplication.isCompiling)
                 return;
 
-            EditorFirstAnimationLayerConsolidator.EnsureConsolidatedAnimationLayers();
+            EditorFirstUnifiedAnimationMaterializer.EnsureAnimatorArchitecture();
         }
     }
 }
