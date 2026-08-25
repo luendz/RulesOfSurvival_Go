@@ -20,7 +20,7 @@ namespace ROS.Game.Animation
     /// - UpperBodyCombat: apuntado solamente de cintura hacia arriba.
     /// - Actions: curacion/pickup solamente de cintura hacia arriba.
     /// - WeaponUpperBody: recarga/cambio de arma solamente de cintura hacia arriba.
-    /// - Gestures: cuerpo completo y administrado por PlayerGestureController.
+    /// - Gestures: cuerpo completo mientras existe un gesto activo.
     /// - Lean: se aplica despues del Animator mediante PlayerLeanRigApplier.
     ///
     /// Mantener esta clase como el unico escritor continuo de parametros/pesos
@@ -33,6 +33,7 @@ namespace ROS.Game.Animation
         public const string UpperBodyCombatLayerName = "UpperBodyCombat";
         public const string ActionsLayerName = "Actions";
         public const string WeaponUpperBodyLayerName = "WeaponUpperBody";
+        public const string GestureLayerName = "Gestures";
         public const string LegacyCrouchAimLayerName = "CrouchAimUpperBody";
 
         [Header("References")]
@@ -67,6 +68,7 @@ namespace ROS.Game.Animation
         [SerializeField] private bool debugHealing;
         [SerializeField] private bool debugReloading;
         [SerializeField] private bool debugWeaponSwitching;
+        [SerializeField] private bool debugGesturePlaying;
         [SerializeField] private float debugCombatLayerWeight;
         [SerializeField] private float debugActionsLayerWeight;
         [SerializeField] private float debugWeaponActionsLayerWeight;
@@ -94,6 +96,7 @@ namespace ROS.Game.Animation
         private int _upperBodyCombatLayer = -1;
         private int _actionsLayer = -1;
         private int _weaponUpperBodyLayer = -1;
+        private int _gestureLayer = -1;
         private int _legacyCrouchAimLayer = -1;
         private RuntimeAnimatorController _resolvedController;
 
@@ -152,7 +155,7 @@ namespace ROS.Game.Animation
 
         private void OnInteracted(IInteractable interactable)
         {
-            if (interactable is not LootPickup || animator == null)
+            if (!(interactable is LootPickup) || animator == null)
                 return;
 
             _pickupUpperBodyUntil = Time.time + pickupUpperBodyDuration;
@@ -174,9 +177,10 @@ namespace ROS.Game.Animation
             SetLayerWeight(_upperBodyCombatLayer, 0f);
             SetLayerWeight(_actionsLayer, 0f);
             SetLayerWeight(_weaponUpperBodyLayer, 0f);
+            SetLayerWeight(_gestureLayer, 0f);
             SetLayerWeight(_legacyCrouchAimLayer, 0f);
 
-            UpdateDebug(false, false, false, false, false, 0f, 0f, 0f);
+            UpdateDebug(false, false, false, false, false, false, 0f, 0f, 0f);
         }
 
         private void UpdateMovement()
@@ -272,6 +276,12 @@ namespace ROS.Game.Animation
             SetLayerWeight(_actionsLayer, actionsWeight);
             SetLayerWeight(_weaponUpperBodyLayer, weaponActionsWeight);
 
+            // PlayerGestureController hace el CrossFade y pone Gestures a 1.
+            // Aqui solo garantizamos que al terminar vuelva a cero y no quede un
+            // GestureIdle Override pisando la locomocion de cuerpo completo.
+            if (!gesturePlaying)
+                SetLayerWeight(_gestureLayer, 0f);
+
             // Migracion: si una escena/controller aun conserva la capa vieja,
             // nunca debe competir con UpperBodyCombat.
             SetLayerWeight(_legacyCrouchAimLayer, 0f);
@@ -282,6 +292,7 @@ namespace ROS.Game.Animation
                 healing,
                 reloading,
                 switchingWeapon,
+                gesturePlaying,
                 combatWeight,
                 actionsWeight,
                 weaponActionsWeight
@@ -346,6 +357,7 @@ namespace ROS.Game.Animation
             _upperBodyCombatLayer = animator.GetLayerIndex(UpperBodyCombatLayerName);
             _actionsLayer = animator.GetLayerIndex(ActionsLayerName);
             _weaponUpperBodyLayer = animator.GetLayerIndex(WeaponUpperBodyLayerName);
+            _gestureLayer = animator.GetLayerIndex(GestureLayerName);
             _legacyCrouchAimLayer = animator.GetLayerIndex(LegacyCrouchAimLayerName);
 
             if (_locomotionLayer >= 0)
@@ -356,6 +368,7 @@ namespace ROS.Game.Animation
             SetLayerWeight(_upperBodyCombatLayer, 0f);
             SetLayerWeight(_actionsLayer, 0f);
             SetLayerWeight(_weaponUpperBodyLayer, 0f);
+            SetLayerWeight(_gestureLayer, 0f);
             SetLayerWeight(_legacyCrouchAimLayer, 0f);
         }
 
@@ -395,6 +408,9 @@ namespace ROS.Game.Animation
 
         private void SetTriggerIfPresent(int parameterHash)
         {
+            if (animator == null)
+                return;
+
             AnimatorControllerParameter[] parameters = animator.parameters;
             for (int i = 0; i < parameters.Length; i++)
             {
@@ -416,6 +432,7 @@ namespace ROS.Game.Animation
             bool healing,
             bool reloading,
             bool switchingWeapon,
+            bool gesturePlaying,
             float combatWeight,
             float actionsWeight,
             float weaponActionsWeight
@@ -426,6 +443,7 @@ namespace ROS.Game.Animation
             debugHealing = healing;
             debugReloading = reloading;
             debugWeaponSwitching = switchingWeapon;
+            debugGesturePlaying = gesturePlaying;
             debugCombatLayerWeight = combatWeight;
             debugActionsLayerWeight = actionsWeight;
             debugWeaponActionsLayerWeight = weaponActionsWeight;
