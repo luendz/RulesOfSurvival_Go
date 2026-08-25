@@ -137,8 +137,9 @@ namespace ROS.Game.EditorTools
             EditorFirstHudBehaviorMaterializer.EnsureHudBehaviors();
             EditorFirstWeaponEffectsMaterializer.EnsureEditableWeaponEffects();
             EditorFirstWeaponBackMountMaterializer.ApplyStandardBackMounts();
-            EditorFirstHealingUpperBodyMaterializer.EnsureHealingUpperBody();
-            EditorFirstCrouchAimUpperBodyMaterializer.EnsureCrouchAimUpperBody();
+
+            // Una sola arquitectura para locomocion y cintura superior.
+            EditorFirstAnimationLayerConsolidator.EnsureConsolidatedAnimationLayers();
         }
 
         private static void RepairFunctionalComponents()
