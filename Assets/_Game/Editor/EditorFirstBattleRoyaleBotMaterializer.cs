@@ -24,7 +24,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += Materialize;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Materialize Battle Royale Bots")]
         public static void Materialize()
         {
             if (Application.isPlaying || EditorApplication.isCompiling ||
