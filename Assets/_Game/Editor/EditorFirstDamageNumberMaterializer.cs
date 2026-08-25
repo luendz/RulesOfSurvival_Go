@@ -32,7 +32,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += EnsureDamageNumberStyle;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Ensure Editable Damage Number Style")]
         public static void EnsureDamageNumberStyle()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
