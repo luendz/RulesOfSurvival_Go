@@ -276,7 +276,9 @@ namespace ROS.Game.Loot
             if (controller == null)
                 controller = weaponObject.AddComponent<WeaponController>();
 
-            controller.ConfigureDefinition(item.weaponDefinition);
+            // Un arma recogida aporta su cargador, pero no genera reserva gratis.
+            // La municion de reserva debe existir realmente como loot/inventario.
+            controller.ConfigureDefinition(item.weaponDefinition, 0);
             DisableWorldPhysics(weaponObject);
             return controller;
         }
