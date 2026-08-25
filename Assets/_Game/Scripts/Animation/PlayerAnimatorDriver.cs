@@ -295,11 +295,19 @@ namespace ROS.Game.Animation
                 motor.IsProne
             );
 
+            if (_consumable == null)
+                _consumable = GetComponentInParent<ConsumableController>();
+
+            bool isHealing =
+                _consumable != null &&
+                _consumable.IsUsing;
+
             bool aimActive = IsAimActive();
             bool crouchUpperBodyAim =
                 aimActive &&
                 motor.IsCrouching &&
                 !motor.IsProne &&
+                !isHealing &&
                 equipment != null &&
                 equipment.HasEquippedWeapon;
 
@@ -327,12 +335,9 @@ namespace ROS.Game.Animation
                 IsReloading()
             );
 
-            if (_consumable == null)
-                _consumable = GetComponentInParent<ConsumableController>();
-
             SetBoolIfPresent(
                 Healing,
-                _consumable != null && _consumable.IsUsing
+                isHealing
             );
 
             animator.SetFloat(
