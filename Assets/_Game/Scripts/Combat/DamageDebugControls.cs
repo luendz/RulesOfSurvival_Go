@@ -10,7 +10,6 @@ namespace ROS.Game.Combat
         [SerializeField] private Health health;
         [SerializeField] private bool showHelp = true;
 
-        private ProtectiveEquipment _protection;
         private FallDamageReceiver _fallDamage;
 
         private void Awake()
@@ -20,7 +19,6 @@ namespace ROS.Game.Combat
                 health = GetComponent<Health>();
             }
 
-            _protection = GetComponent<ProtectiveEquipment>();
             _fallDamage = GetComponent<FallDamageReceiver>();
         }
 
@@ -33,11 +31,17 @@ namespace ROS.Game.Combat
                 return;
             }
 
+            // Prueba rapida solicitada: F5 siempre resta exactamente 5 de VIDA.
+            // DamageType.Fall no pasa por casco/chaleco, por lo que la armadura
+            // equipada no altera el valor de la prueba.
             if (Keyboard.current.f5Key.wasPressedThisFrame)
             {
-                EnsureProtection();
-                _protection.EquipHelmet(ProtectionLevel.Level2);
-                _protection.EquipVest(ProtectionLevel.Level2);
+                ApplyDebugDamage(
+                    5f,
+                    DamageType.Fall,
+                    HitZone.Torso,
+                    Vector3.down
+                );
             }
 
             if (Keyboard.current.f6Key.wasPressedThisFrame)
@@ -99,20 +103,6 @@ namespace ROS.Game.Combat
             );
         }
 
-        private void EnsureProtection()
-        {
-            if (_protection == null)
-            {
-                _protection = GetComponent<ProtectiveEquipment>();
-            }
-
-            if (_protection == null)
-            {
-                _protection = gameObject
-                    .AddComponent<ProtectiveEquipment>();
-            }
-        }
-
         private void OnGUI()
         {
             if (!showHelp)
@@ -123,7 +113,7 @@ namespace ROS.Game.Combat
             GUI.Box(
                 new Rect(Screen.width - 315f, 16f, 299f, 132f),
                 "PRUEBA RAPIDA DE DAÑO\n" +
-                "F5: equipar casco/chaleco N2\n" +
+                "F5: -5 de vida\n" +
                 "F6: disparo al torso | F7: headshot\n" +
                 "F8: explosión | F9: caída"
             );
