@@ -19,7 +19,7 @@ namespace ROS.Game.Editor
         private const string AirplanePrefabPath =
             ResourcesFolder + "/PF_AirplaneStart.prefab";
 
-        [MenuItem("ROS Battle Royale/Build Parachute Match Start")]
+        [MenuItem("Rules Of Survival/Tools/Parachute/Build Match Start")]
         public static void Build()
         {
             EnsureFolder(ResourcesFolder);
@@ -54,7 +54,7 @@ namespace ROS.Game.Editor
             Validate();
         }
 
-        [MenuItem("ROS Battle Royale/Validate Parachute Match Start")]
+        [MenuItem("Rules Of Survival/Tools/Parachute/Validate Match Start")]
         public static void Validate()
         {
             GameObject parachute = AssetDatabase.LoadAssetAtPath<GameObject>(
