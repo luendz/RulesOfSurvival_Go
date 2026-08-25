@@ -25,7 +25,7 @@ namespace ROS.Game.EditorTools
 
         static EditorFirstReloadUpperBodyRepair()
         {
-            EditorApplication.delayCall += Repair;
+            EditorApplication.delayCall += () => Repair();
         }
 
         public static bool Repair()
@@ -60,11 +60,7 @@ namespace ROS.Game.EditorTools
 
             // Las capas superiores deben comenzar apagadas. El Coordinator las
             // enciende solo cuando existe arma/accion real.
-            changed |= SetDefaultWeight(
-                layers,
-                weaponLayerIndex,
-                0f
-            );
+            changed |= SetDefaultWeight(layers, weaponLayerIndex, 0f);
 
             int actionsLayerIndex = FindLayer(
                 controller,
@@ -108,34 +104,14 @@ namespace ROS.Game.EditorTools
             changed |= ConfigureReloadSpeed(reloadStanding);
             changed |= ConfigureReloadSpeed(reloadCrouch);
 
-            changed |= EnsureReloadEntry(
-                machine,
-                reloadStanding,
-                crouching: false
-            );
-            changed |= EnsureReloadEntry(
-                machine,
-                reloadCrouch,
-                crouching: true
-            );
+            changed |= EnsureReloadEntry(machine, reloadStanding, crouching: false);
+            changed |= EnsureReloadEntry(machine, reloadCrouch, crouching: true);
 
             if (armed != null)
-            {
-                changed |= EnsureReloadExit(
-                    reloadStanding,
-                    armed,
-                    crouching: false
-                );
-            }
+                changed |= EnsureReloadExit(reloadStanding, armed, crouching: false);
 
             if (armedCrouch != null)
-            {
-                changed |= EnsureReloadExit(
-                    reloadCrouch,
-                    armedCrouch,
-                    crouching: true
-                );
-            }
+                changed |= EnsureReloadExit(reloadCrouch, armedCrouch, crouching: true);
 
             if (changed)
             {
