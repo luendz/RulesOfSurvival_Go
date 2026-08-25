@@ -21,7 +21,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += EnsureCrosshair;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Ensure Editable Weapon Crosshair")]
         public static void EnsureCrosshair()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
