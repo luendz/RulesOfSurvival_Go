@@ -119,8 +119,9 @@ namespace ROS.Game.EditorTools
 
                 // Entramos al sub-state machine desde cualquier estado de
                 // Locomotion cuando empieza la caida desde el avion.
-                AnimatorTransition enterParachute =
+                AnimatorStateTransition enterParachute =
                     root.AddAnyStateTransition(parachute);
+                ConfigureStateTransition(enterParachute, 0.05f);
                 enterParachute.AddCondition(
                     AnimatorConditionMode.Equals,
                     1f,
@@ -154,8 +155,7 @@ namespace ROS.Game.EditorTools
                 landingToExit.exitTime = 0.90f;
 
                 // Al salir de Parachute siempre regresamos a la locomocion base.
-                AnimatorTransition parachuteToLocomotion =
-                    root.AddStateMachineTransition(parachute, locomotion);
+                root.AddStateMachineTransition(parachute, locomotion);
 
                 changed = true;
             }
