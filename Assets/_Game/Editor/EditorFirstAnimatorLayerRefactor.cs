@@ -14,7 +14,8 @@ namespace ROS.Game.EditorTools
     /// - FullBodyOverride: gestos y espacio reservado para ataques melee completos.
     ///
     /// Todo queda materializado como estados/parametros normales del Animator,
-    /// visible y editable desde Unity.
+    /// visible y editable desde Unity. Una vez migrado, no vuelve a reconstruir
+    /// los grupos principales para no pisar ajustes manuales posteriores.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorFirstAnimatorLayerRefactor
@@ -27,6 +28,7 @@ namespace ROS.Game.EditorTools
         private const string WeaponStyleParameter = "WeaponStyle";
         private const string MeleeAttackParameter = "MeleeAttack";
         private const string MeleeAttackIndexParameter = "MeleeAttackIndex";
+        private const string AirborneFlowTag = "ROS_AirborneV2";
 
         private static readonly HashSet<string> LegacyLocomotionStates =
             new HashSet<string>(StringComparer.Ordinal)
@@ -212,12 +214,9 @@ namespace ROS.Game.EditorTools
         }
 
         /// <summary>
-        /// Fuerza un flujo aereo determinista:
+        /// Fuerza un flujo aereo determinista una sola vez:
         /// salto corto: Jump -> Landing -> BT_Locomotion
         /// caida real : Jump/Locomotion -> Fall -> Landing -> BT_Locomotion
-        ///
-        /// De esta forma Fall nunca depende de que termine el clip de Jump y
-        /// tampoco puede quedar sin salida al tocar el suelo.
         /// </summary>
         private static bool RefactorAirborneFlow(AnimatorController controller)
         {
@@ -238,8 +237,11 @@ namespace ROS.Game.EditorTools
             if (jump == null || fall == null || landing == null || locomotion == null)
                 return false;
 
-            // Rehacer solo el triangulo aereo. No tocamos transiciones de
-            // Locomotion hacia Crouch ni otras posturas.
+            // Marca de migracion: desde aqui el usuario puede editar las
+            // transiciones manualmente y no se volveran a pisar al abrir Unity.
+            if (landing.tag == AirborneFlowTag)
+                return false;
+
             RemoveAllTransitions(jump);
             RemoveAllTransitions(fall);
             RemoveAllTransitions(landing);
@@ -280,6 +282,7 @@ namespace ROS.Game.EditorTools
             jump.writeDefaultValues = false;
             fall.writeDefaultValues = false;
             landing.writeDefaultValues = false;
+            landing.tag = AirborneFlowTag;
 
             EditorUtility.SetDirty(jump);
             EditorUtility.SetDirty(fall);
@@ -360,6 +363,17 @@ namespace ROS.Game.EditorTools
 
             AnimatorStateMachine machine = layer.stateMachine;
 
+            // Ya migrado: respetar cualquier ajuste manual posterior.
+            if (FindState(machine, "Firearm_Hip") != null &&
+                FindState(machine, "Firearm_Aim") != null &&
+                FindState(machine, "Melee_Hold") != null &&
+                FindState(machine, "ArmedLocomotion") == null &&
+                FindState(machine, "ArmedCrouch") == null &&
+                FindState(machine, "AimLocomotion") == null)
+            {
+                return false;
+            }
+
             Motion hipMotion = FindMotion(
                 machine,
                 "Firearm_Hip",
@@ -428,8 +442,8 @@ namespace ROS.Game.EditorTools
                 90f
             );
 
-            // Grupo visual Melee. Los Motion se dejan configurables en el
-            // Animator; no se inventa un clip ni un layer por cuchillo/martillo/etc.
+            // Grupo visual Melee. Los Motion quedan configurables en el Animator;
+            // no se crea KnifeLayer/HammerLayer/ChickenLayer.
             AnimatorState meleeHold = AddState(
                 machine,
                 "Melee_Hold",
@@ -466,7 +480,6 @@ namespace ROS.Game.EditorTools
 
             machine.defaultState = empty;
 
-            // NONE -> FIREARM / MELEE.
             AddBoolAndIntTransition(
                 empty,
                 firearmHip,
@@ -489,7 +502,6 @@ namespace ROS.Game.EditorTools
             AddBoolTransition(firearmHip, empty, "UpperBodyArmed", false, 0.08f);
             AddBoolTransition(meleeHold, empty, "UpperBodyArmed", false, 0.08f);
 
-            // Cambiar de categoria no requiere otro layer.
             AddIntTransition(
                 firearmHip,
                 meleeHold,
@@ -581,9 +593,8 @@ namespace ROS.Game.EditorTools
         }
 
         /// <summary>
-        /// Crea un sub-state machine visible para que los ataques melee de
-        /// cuerpo completo tengan su sitio sin crear KnifeLayer/HammerLayer/etc.
-        /// No conecta ataques sin Motion para evitar activar un Override vacio.
+        /// Crea un sub-state machine visible para ataques melee de cuerpo completo.
+        /// No conecta estados sin Motion para evitar activar un Override vacio.
         /// </summary>
         private static bool EnsureMeleeFullBodyArea(AnimatorController controller)
         {
