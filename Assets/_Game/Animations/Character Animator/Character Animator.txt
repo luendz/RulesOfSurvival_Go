@@ -1,0 +1,95 @@
+Character Animator
+│
+├── 01. Locomotion
+│   ├── Idle
+│   ├── Walk
+│   │   ├── Forward
+│   │   ├── Backward
+│   │   ├── Left
+│   │   └── Right
+│   ├── Run
+│   │   ├── Forward
+│   │   ├── Backward
+│   │   ├── Left
+│   │   └── Right
+│   ├── Sprint
+│   ├── Crouch
+│   │   ├── Crouch Enter
+│   │   ├── Crouch Idle
+│   │   ├── Crouch Walk Forward
+│   │   ├── Crouch Walk Backward
+│   │   ├── Crouch Walk Left
+│   │   ├── Crouch Walk Right
+│   │   └── Crouch Exit
+│   └── Turn
+│       ├── Turn Left
+│       └── Turn Right
+│
+├── 02. Jump / Air
+│   ├── Jump Start
+│   ├── Jump Loop
+│   ├── Fall
+│   └── Land
+│
+├── 03. Parachute
+│   ├── Plane Jump
+│   ├── Free Fall
+│   ├── Free Fall Left
+│   ├── Free Fall Right
+│   ├── Parachute Open
+│   ├── Parachute Glide
+│   ├── Parachute Turn Left
+│   ├── Parachute Turn Right
+│   └── Parachute Landing
+│
+├── 04. Interaction
+│   ├── Take Item
+│   ├── Pickup Weapon
+│   ├── Pickup Ammo
+│   ├── Pickup Consumable
+│   ├── Loot
+│   ├── Open Door
+│   ├── Close Door
+│   └── Interact
+│
+├── 05. Consumables / Healing
+│   ├── Drink
+│   ├── Eat
+│   ├── Bandage
+│   ├── First Aid
+│   ├── Medkit
+│   └── Boost
+│
+├── 06. Weapons
+│   ├── Equip
+│   ├── Unequip
+│   ├── Idle Weapon
+│   ├── Aim
+│   ├── Fire
+│   ├── Reload
+│   ├── Weapon Switch
+│   └── Put Weapon On Back
+│
+├── 07. Lean
+│   ├── Lean Left
+│   ├── Lean Right
+│   └── Lean Center
+│
+├── 08. Emotes
+│   ├── Emote 01
+│   ├── Emote 02
+│   ├── Emote 03
+│   └── ...
+│
+├── 09. Damage
+│   ├── Hit Front
+│   ├── Hit Back
+│   ├── Hit Left
+│   └── Hit Right
+│
+└── 10. Death / Downed
+    ├── Knocked Down
+    ├── Downed Idle
+    ├── Downed Crawl
+    ├── Revive
+    └── Death
