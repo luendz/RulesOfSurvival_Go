@@ -69,6 +69,7 @@ namespace ROS.Game.Animation
         [SerializeField] private bool debugReloading;
         [SerializeField] private bool debugWeaponSwitching;
         [SerializeField] private bool debugGesturePlaying;
+        [SerializeField] private bool debugConsolidatedUpperBody;
         [SerializeField] private float debugCombatLayerWeight;
         [SerializeField] private float debugActionsLayerWeight;
         [SerializeField] private float debugWeaponActionsLayerWeight;
@@ -180,7 +181,7 @@ namespace ROS.Game.Animation
             SetLayerWeight(_gestureLayer, 0f);
             SetLayerWeight(_legacyCrouchAimLayer, 0f);
 
-            UpdateDebug(false, false, false, false, false, false, 0f, 0f, 0f);
+            UpdateDebug(false, false, false, false, false, false, false, 0f, 0f, 0f);
         }
 
         private void UpdateMovement()
@@ -224,6 +225,7 @@ namespace ROS.Game.Animation
             bool reloading = hasWeapon && IsReloading();
             bool switchingWeapon = equipment != null && equipment.IsSwitchingWeapon;
             bool gesturePlaying = gestureController != null && gestureController.IsPlaying;
+            bool consolidatedUpperBody = _upperBodyCombatLayer >= 0;
 
             if (_consumable == null)
                 _consumable = GetComponentInParent<ConsumableController>();
@@ -235,12 +237,7 @@ namespace ROS.Game.Animation
             animator.SetBool(Crouch, motor.IsCrouching);
             animator.SetBool(Prone, motor.IsProne);
 
-            // Aim nunca vuelve a tomar la capa Locomotion de cuerpo completo.
-            // El parametro legado se mantiene en false para que BT_AimLocomotion
-            // no sustituya piernas/cadera. UpperBodyAim conduce la capa nueva.
-            SetBoolIfPresent(Aim, false);
-
-            bool upperBodyAimActive =
+            bool canAimUpperBody =
                 aiming &&
                 !healing &&
                 !reloading &&
@@ -248,7 +245,25 @@ namespace ROS.Game.Animation
                 !gesturePlaying &&
                 !motor.IsProne;
 
-            SetBoolIfPresent(UpperBodyAim, upperBodyAimActive);
+            bool legacyCrouchAim =
+                !consolidatedUpperBody &&
+                canAimUpperBody &&
+                motor.IsCrouching;
+
+            if (consolidatedUpperBody)
+            {
+                // La capa base nunca cambia a BT_AimLocomotion full-body.
+                SetBoolIfPresent(Aim, false);
+                SetBoolIfPresent(UpperBodyAim, canAimUpperBody);
+            }
+            else
+            {
+                // Fallback de migracion: hasta que Unity materialice la nueva
+                // capa, conserva el comportamiento anterior sin perder Aim.
+                SetBoolIfPresent(Aim, canAimUpperBody && !legacyCrouchAim);
+                SetBoolIfPresent(UpperBodyAim, legacyCrouchAim);
+            }
+
             SetBoolIfPresent(HasRifle, hasWeapon);
             SetBoolIfPresent(Reloading, reloading);
             SetBoolIfPresent(Healing, healing);
@@ -258,9 +273,10 @@ namespace ROS.Game.Animation
                 airborneDrop ? parachute.VerticalSpeed : motor.Velocity.y
             );
 
-            float combatWeight = upperBodyAimActive
-                ? upperBodyCombatWeight
-                : 0f;
+            float combatWeight =
+                consolidatedUpperBody && canAimUpperBody
+                    ? upperBodyCombatWeight
+                    : 0f;
 
             float actionsWeight =
                 !gesturePlaying && (healing || pickupAction)
@@ -282,9 +298,11 @@ namespace ROS.Game.Animation
             if (!gesturePlaying)
                 SetLayerWeight(_gestureLayer, 0f);
 
-            // Migracion: si una escena/controller aun conserva la capa vieja,
-            // nunca debe competir con UpperBodyCombat.
-            SetLayerWeight(_legacyCrouchAimLayer, 0f);
+            // La capa vieja solo participa como fallback antes de materializar.
+            SetLayerWeight(
+                _legacyCrouchAimLayer,
+                legacyCrouchAim ? upperBodyCombatWeight : 0f
+            );
 
             UpdateDebug(
                 hasWeapon,
@@ -293,6 +311,7 @@ namespace ROS.Game.Animation
                 reloading,
                 switchingWeapon,
                 gesturePlaying,
+                consolidatedUpperBody,
                 combatWeight,
                 actionsWeight,
                 weaponActionsWeight
@@ -433,6 +452,7 @@ namespace ROS.Game.Animation
             bool reloading,
             bool switchingWeapon,
             bool gesturePlaying,
+            bool consolidatedUpperBody,
             float combatWeight,
             float actionsWeight,
             float weaponActionsWeight
@@ -444,6 +464,7 @@ namespace ROS.Game.Animation
             debugReloading = reloading;
             debugWeaponSwitching = switchingWeapon;
             debugGesturePlaying = gesturePlaying;
+            debugConsolidatedUpperBody = consolidatedUpperBody;
             debugCombatLayerWeight = combatWeight;
             debugActionsLayerWeight = actionsWeight;
             debugWeaponActionsLayerWeight = weaponActionsWeight;
