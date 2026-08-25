@@ -153,7 +153,10 @@ namespace ROS.Game.Gameplay
                     yield break;
                 }
 
-                if (_activeDef.cancelOnMove)
+                // Las curas ROS se pueden utilizar mientras el jugador se mueve.
+                // Se conserva cancelOnMove para consumibles no curativos futuros,
+                // pero nunca cancela una accion cuyo efecto restaura vida.
+                if (_activeDef.cancelOnMove && _activeDef.healAmount <= 0f)
                 {
                     Vector3 delta = transform.position - startPos;
                     delta.y = 0f;
@@ -175,6 +178,7 @@ namespace ROS.Game.Gameplay
             _isUsing = false;
             _activeDef = null;
             _activeItem = null;
+            _useRoutine = null;
             SetBarVisible(false);
         }
 
