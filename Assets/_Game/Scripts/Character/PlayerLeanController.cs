@@ -40,6 +40,10 @@ namespace ROS.Game.Character
         [Tooltip("En el aire el lean puede centrarse temporalmente. Al volver al suelo recupera el lado elegido.")]
         [SerializeField] private bool cancelWhileAirborne = true;
 
+        [Tooltip("Tiempo que debe permanecer realmente en el aire antes de ocultar el lean. Evita perderlo por falsos frames de Grounded al caminar/correr por desniveles.")]
+        [Min(0f)]
+        [SerializeField] private float airborneSuppressDelay = 0.12f;
+
         [Tooltip("Durante recarga el lean puede centrarse temporalmente. Al terminar recupera el lado elegido.")]
         [SerializeField] private bool cancelWhileReloading = true;
 
@@ -77,6 +81,7 @@ namespace ROS.Game.Character
         private Transform _spine;
         private Transform _chest;
         private Transform _upperChest;
+        private float _ungroundedTime;
 
         private void Awake()
         {
@@ -89,6 +94,7 @@ namespace ROS.Game.Character
             State = PlayerLeanState.Center;
             CurrentLean = 0f;
             IsTemporarilySuppressed = false;
+            _ungroundedTime = 0f;
         }
 
         private void Update()
@@ -99,6 +105,7 @@ namespace ROS.Game.Character
             {
                 SetCenter();
                 IsTemporarilySuppressed = false;
+                _ungroundedTime = 0f;
                 UpdateLeanValue(0f);
                 return;
             }
@@ -111,6 +118,8 @@ namespace ROS.Game.Character
             {
                 ToggleRight();
             }
+
+            UpdateGroundedGraceTimer();
 
             // Solo estados que realmente invalidan el lean borran la selección.
             // Caminar, correr, apuntar, un frame sin Grounded o una recarga NO
@@ -157,6 +166,17 @@ namespace ROS.Game.Character
             );
         }
 
+        private void UpdateGroundedGraceTimer()
+        {
+            if (motor == null || motor.IsGrounded)
+            {
+                _ungroundedTime = 0f;
+                return;
+            }
+
+            _ungroundedTime += Time.deltaTime;
+        }
+
         private bool ShouldClearLeanState()
         {
             if (health != null && !health.IsAlive)
@@ -188,10 +208,14 @@ namespace ROS.Game.Character
 
             if (motor != null)
             {
-                // CharacterController.isGrounded puede fluctuar un frame al
-                // bajar pendientes o superar escalones. Nunca borramos State;
-                // como máximo ocultamos el lean durante ese instante.
-                if (cancelWhileAirborne && !motor.IsGrounded)
+                // CharacterController.isGrounded puede fluctuar uno o varios
+                // frames al bajar pendientes o superar escalones. Esperamos un
+                // pequeño margen antes de considerar que realmente está en aire.
+                if (
+                    cancelWhileAirborne &&
+                    !motor.IsGrounded &&
+                    _ungroundedTime >= airborneSuppressDelay
+                )
                 {
                     return true;
                 }
