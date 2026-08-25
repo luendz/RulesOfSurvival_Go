@@ -25,7 +25,7 @@ namespace ROS.Game.Editor
             EditorApplication.delayCall += ConfigureIfNeeded;
         }
 
-        [MenuItem("Tools/Rules of Survival/Configurar sistema de gestos")]
+        [UnityEditor.MenuItem("Tools/Rules of Survival/Configurar sistema de gestos")]
         public static void ConfigureFromMenu()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
