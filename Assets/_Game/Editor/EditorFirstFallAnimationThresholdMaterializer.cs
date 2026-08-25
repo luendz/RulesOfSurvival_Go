@@ -21,6 +21,14 @@ namespace ROS.Game.EditorTools
 
         static EditorFirstFallAnimationThresholdMaterializer()
         {
+            // Segundo delay: deja que los materializadores que reconstruyen capas
+            // terminen primero y aplica ShouldFall sobre el grafo definitivo.
+            EditorApplication.delayCall += ScheduleAfterAnimatorMaterializers;
+        }
+
+        private static void ScheduleAfterAnimatorMaterializers()
+        {
+            EditorApplication.delayCall -= Materialize;
             EditorApplication.delayCall += Materialize;
         }
 
