@@ -24,6 +24,7 @@ namespace ROS.Game.Gameplay
         private ConsumableDefinition _defaultHealDef;
 
         [Header("Physical HUD References")]
+        [SerializeField] private bool showHud = true;
         [SerializeField] private GameObject barRoot;
         [SerializeField] private RectTransform fill;
         [SerializeField] private Text label;
@@ -64,6 +65,17 @@ namespace ROS.Game.Gameplay
                     CancelUse();
                 else
                     TryUseFirstHealing();
+            }
+        }
+
+        public void SetHudEnabled(bool enabled)
+        {
+            showHud = enabled;
+            if (!showHud)
+            {
+                barRoot = null;
+                fill = null;
+                label = null;
             }
         }
 
@@ -123,7 +135,7 @@ namespace ROS.Game.Gameplay
             _damagedDuringUse = false;
 
             ResolvePhysicalHud();
-            if (label != null)
+            if (showHud && label != null)
                 label.text = $"Usando {item.displayName}…";
 
             SetFill(0f);
@@ -218,6 +230,9 @@ namespace ROS.Game.Gameplay
 
         private void ResolvePhysicalHud()
         {
+            if (!showHud)
+                return;
+
             if (barRoot != null && fill != null && label != null)
                 return;
 
@@ -247,6 +262,9 @@ namespace ROS.Game.Gameplay
 
         private void SetBarVisible(bool visible)
         {
+            if (!showHud)
+                return;
+
             ResolvePhysicalHud();
             if (barRoot != null && barRoot.activeSelf != visible)
                 barRoot.SetActive(visible);
@@ -254,6 +272,9 @@ namespace ROS.Game.Gameplay
 
         private void SetFill(float t)
         {
+            if (!showHud)
+                return;
+
             if (fill == null)
             {
                 ResolvePhysicalHud();
