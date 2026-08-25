@@ -3,6 +3,7 @@ using ROS.Game.BattleRoyale;
 using ROS.Game.Character;
 using ROS.Game.Combat;
 using ROS.Game.Core;
+using ROS.Game.Gameplay;
 using ROS.Game.Input;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
@@ -22,11 +23,20 @@ namespace ROS.Game.AI
             Plane,
             AirDrop,
             SeekWeapon,
+            SeekAmmo,
             SeekLoot,
             MoveToSafeZone,
+            Heal,
             Combat,
             Roam,
             Dead
+        }
+
+        private enum LootIntent
+        {
+            General,
+            Weapon,
+            Ammo
         }
 
         private const float PerceptionDistance = 28f;
@@ -37,14 +47,23 @@ namespace ROS.Game.AI
         private const float MaxShootInterval = 1.35f;
         private const float ArmedLootSearchDistance = 34f;
         private const float UnarmedLootSearchDistance = 72f;
+        private const float AmmoLootSearchDistance = 62f;
         private const float LootPickupDistance = 1.35f;
         private const float LootTargetAbandonDistance = 95f;
         private const float BotWeaponDamageScale = 0.20f;
+        private const float HealHealthRatio = 0.58f;
+        private const float HealThreatDistance = 18f;
+        private const int LowReserveAmmo = 30;
+        private const float SafeZoneDestinationRefreshSeconds = 2.5f;
+        private const float HealRetrySeconds = 1.5f;
 
         [Header("Runtime AI Debug")]
         [SerializeField] private BotState state = BotState.Plane;
         [SerializeField] private string targetName = string.Empty;
         [SerializeField] private string lootTargetName = string.Empty;
+        [SerializeField] private bool debugHasWeapon;
+        [SerializeField] private bool debugHasUsableAmmo;
+        [SerializeField] private bool debugEnemyThreatNearby;
 
         private PlayerInputReader _input;
         private PlayerMotor _motor;
@@ -52,6 +71,7 @@ namespace ROS.Game.AI
         private WeaponEquipmentController _equipment;
         private PlayerLootEquipment _lootEquipment;
         private InventoryComponent _inventory;
+        private ConsumableController _consumables;
         private Health _health;
         private AirplaneController _airplane;
         private BattleRoyaleManager _matchManager;
@@ -59,13 +79,19 @@ namespace ROS.Game.AI
         private Transform _controlFrame;
         private Health _target;
         private LootPickup _lootTarget;
+        private LootIntent _lootIntent;
         private Vector3 _landingTarget;
         private Vector3 _roamTarget;
+        private Vector3 _safeZoneDestination;
         private float _jumpProgress;
         private float _nextThinkTime;
         private float _nextShootTime;
+        private float _nextSafeZoneDestinationRefresh;
+        private float _nextHealAttemptTime;
         private float _strafePhase;
         private bool _jumped;
+        private bool _hasSafeZoneDestination;
+        private bool _enemyThreatNearby;
         private System.Random _random;
 
         public int BotIndex { get; private set; }
@@ -116,6 +142,7 @@ namespace ROS.Game.AI
             _jumpProgress = Mathf.Clamp01(jumpProgress);
             _random = new System.Random(5107 + botIndex * 7919);
             _strafePhase = NextFloat(0f, Mathf.PI * 2f);
+            _hasSafeZoneDestination = false;
 
             EnsureReferences();
             _input.EnableExternalControl();
@@ -139,6 +166,9 @@ namespace ROS.Game.AI
             _jumped = false;
             _target = null;
             _lootTarget = null;
+            _lootIntent = LootIntent.General;
+            _enemyThreatNearby = false;
+            _hasSafeZoneDestination = false;
             state = BotState.Plane;
             _parachute.PrepareForPlane();
             transform.SetParent(passengerAnchor, false);
@@ -233,40 +263,76 @@ namespace ROS.Game.AI
                 Think(gameplayActive);
             }
 
-            // La zona tiene prioridad absoluta cuando el bot está fuera.
+            // La zona siempre gana a loot, combate y curacion estacionaria.
             if (_safeZone != null && _safeZone.IsOutside(transform.position))
             {
                 state = BotState.MoveToSafeZone;
-                MoveToward(GetSafeZoneDestination(), true);
+                MoveToward(GetCachedSafeZoneDestination(), true);
                 return;
             }
 
-            // Un bot desarmado no persigue enemigos: primero busca un arma.
-            if (!HasUsableWeapon())
+            // Si una cura real ya esta en curso, el bot se queda quieto para no
+            // exponerse innecesariamente. El propio ConsumableController la cancela
+            // si recibe daño cuando la definicion asi lo indica.
+            if (_consumables != null && _consumables.IsUsing)
+            {
+                state = BotState.Heal;
+                StopControl();
+                return;
+            }
+
+            if (ShouldStartHealing() && TryStartHealing())
+            {
+                state = BotState.Heal;
+                StopControl();
+                return;
+            }
+
+            bool hasWeapon = HasAnyCombatWeapon();
+            bool hasUsableAmmo = HasUsableWeapon();
+
+            if (!hasWeapon)
             {
                 state = BotState.SeekWeapon;
-                if (UpdateLootMovement())
+                if (UpdateLootMovement(LootIntent.Weapon))
                     return;
 
                 MoveToward(_roamTarget, true);
                 return;
             }
 
-            // Si ya tiene arma, recoge loot valioso antes de vagar sin objetivo.
-            if (_lootTarget != null && IsLootTargetStillValid(_lootTarget))
+            if (!hasUsableAmmo)
             {
-                // Ante un enemigo cercano, el combate gana sobre loot secundario.
-                if (!(gameplayActive && _target != null && _target.IsAlive))
+                state = _lootIntent == LootIntent.Weapon
+                    ? BotState.SeekWeapon
+                    : BotState.SeekAmmo;
+
+                if (UpdateLootMovement(_lootIntent == LootIntent.Weapon
+                        ? LootIntent.Weapon
+                        : LootIntent.Ammo))
                 {
-                    state = BotState.SeekLoot;
-                    if (UpdateLootMovement())
-                        return;
+                    return;
                 }
+
+                MoveToward(_roamTarget, true);
+                return;
             }
 
-            if (gameplayActive &&
-                _target != null &&
-                _target.IsAlive)
+            // Loot secundario solo gana si no hay enemigo utilizable a la vista.
+            if (_lootTarget != null && IsLootTargetStillValid(_lootTarget) &&
+                !(gameplayActive && _target != null && _target.IsAlive))
+            {
+                state = _lootIntent == LootIntent.Ammo
+                    ? BotState.SeekAmmo
+                    : _lootIntent == LootIntent.Weapon
+                        ? BotState.SeekWeapon
+                        : BotState.SeekLoot;
+
+                if (UpdateLootMovement(_lootIntent))
+                    return;
+            }
+
+            if (gameplayActive && _target != null && _target.IsAlive)
             {
                 state = BotState.Combat;
                 UpdateCombat(_target);
@@ -282,23 +348,58 @@ namespace ROS.Game.AI
 
         private void Think(bool gameplayActive)
         {
-            bool hasWeapon = HasUsableWeapon();
+            bool hasWeapon = HasAnyCombatWeapon();
+            bool hasUsableAmmo = HasUsableWeapon();
+
+            debugHasWeapon = hasWeapon;
+            debugHasUsableAmmo = hasUsableAmmo;
 
             if (_safeZone != null && _safeZone.IsOutside(transform.position))
             {
                 _target = null;
+                _enemyThreatNearby = false;
+                RefreshSafeZoneDestination(false);
                 return;
             }
 
-            _target = gameplayActive && hasWeapon
+            _hasSafeZoneDestination = false;
+
+            Health perceivedEnemy = gameplayActive
                 ? FindNearestEnemy()
                 : null;
 
-            if (_lootTarget == null || !IsLootTargetStillValid(_lootTarget))
-                _lootTarget = FindBestLootTarget(hasWeapon);
+            _enemyThreatNearby = perceivedEnemy != null &&
+                PlanarDistanceTo(perceivedEnemy.transform.position) <= HealThreatDistance;
+            debugEnemyThreatNearby = _enemyThreatNearby;
 
-            // Si está desarmado y no encontró loot en el radio actual,
-            // cambia de zona de exploración para continuar buscando.
+            _target = gameplayActive && hasUsableAmmo
+                ? perceivedEnemy
+                : null;
+
+            if (!hasWeapon)
+            {
+                AcquireLootTarget(LootIntent.Weapon);
+            }
+            else if (!hasUsableAmmo)
+            {
+                AcquireLootTarget(LootIntent.Ammo);
+
+                // Si no existe municion compatible cerca, otra arma con cargador
+                // es mejor que quedarse corriendo indefinidamente sin poder disparar.
+                if (_lootTarget == null)
+                    AcquireLootTarget(LootIntent.Weapon);
+            }
+            else if (_target == null && NeedsAmmoSupply())
+            {
+                AcquireLootTarget(LootIntent.Ammo);
+                if (_lootTarget == null)
+                    AcquireLootTarget(LootIntent.General);
+            }
+            else if (_lootTarget == null || !IsLootTargetStillValid(_lootTarget))
+            {
+                AcquireLootTarget(LootIntent.General);
+            }
+
             if (!hasWeapon && _lootTarget == null &&
                 PlanarDistanceTo(_roamTarget) < 5f)
             {
@@ -306,11 +407,19 @@ namespace ROS.Game.AI
             }
         }
 
-        private bool UpdateLootMovement()
+        private void AcquireLootTarget(LootIntent intent)
         {
-            if (_lootTarget == null || !IsLootTargetStillValid(_lootTarget))
+            _lootIntent = intent;
+            _lootTarget = FindBestLootTarget(intent);
+        }
+
+        private bool UpdateLootMovement(LootIntent intent)
+        {
+            if (_lootTarget == null ||
+                !IsLootTargetStillValid(_lootTarget) ||
+                _lootIntent != intent)
             {
-                _lootTarget = FindBestLootTarget(HasUsableWeapon());
+                AcquireLootTarget(intent);
                 if (_lootTarget == null)
                     return false;
             }
@@ -338,7 +447,7 @@ namespace ROS.Game.AI
             return true;
         }
 
-        private LootPickup FindBestLootTarget(bool hasWeapon)
+        private LootPickup FindBestLootTarget(LootIntent intent)
         {
             LootPickup[] pickups = FindObjectsByType<LootPickup>(
                 FindObjectsSortMode.None
@@ -346,15 +455,29 @@ namespace ROS.Game.AI
 
             LootPickup best = null;
             float bestScore = float.MinValue;
-            float maxDistance = hasWeapon
-                ? ArmedLootSearchDistance
-                : UnarmedLootSearchDistance;
+            bool hasWeapon = HasAnyCombatWeapon();
+            float maxDistance = intent switch
+            {
+                LootIntent.Weapon => UnarmedLootSearchDistance,
+                LootIntent.Ammo => AmmoLootSearchDistance,
+                _ => hasWeapon ? ArmedLootSearchDistance : UnarmedLootSearchDistance
+            };
 
             for (int i = 0; i < pickups.Length; i++)
             {
                 LootPickup pickup = pickups[i];
                 if (pickup == null || pickup.IsConsumed || pickup.Item == null)
                     continue;
+
+                InventoryItemDefinition item = pickup.Item;
+                if (intent == LootIntent.Weapon && item.itemType != ItemType.Weapon)
+                    continue;
+                if (intent == LootIntent.Ammo &&
+                    (item.itemType != ItemType.Ammo ||
+                     !HasWeaponUsingAmmo(item.ammoType)))
+                {
+                    continue;
+                }
 
                 float distance = PlanarDistanceTo(pickup.transform.position);
                 if (distance > maxDistance)
@@ -363,7 +486,7 @@ namespace ROS.Game.AI
                 if (!pickup.CanInteract(gameObject))
                     continue;
 
-                float score = ScoreLoot(pickup.Item, distance, hasWeapon);
+                float score = ScoreLoot(item, distance, hasWeapon, intent);
                 if (score <= bestScore)
                     continue;
 
@@ -377,10 +500,16 @@ namespace ROS.Game.AI
         private float ScoreLoot(
             InventoryItemDefinition item,
             float distance,
-            bool hasWeapon
+            bool hasWeapon,
+            LootIntent intent
         )
         {
             float score = 1000f - distance * 8f;
+
+            if (intent == LootIntent.Weapon && item.itemType == ItemType.Weapon)
+                score += 16000f;
+            else if (intent == LootIntent.Ammo && item.itemType == ItemType.Ammo)
+                score += 16000f;
 
             switch (item.itemType)
             {
@@ -402,7 +531,7 @@ namespace ROS.Game.AI
                     }
                     else
                     {
-                        score += 550f;
+                        score += 850f;
                     }
                     break;
 
@@ -410,25 +539,23 @@ namespace ROS.Game.AI
                     if (HasWeaponUsingAmmo(item.ammoType))
                     {
                         int amount = GetAmmoAmount(item.ammoType);
-                        score += amount < 45 ? 6500f : 2600f;
+                        score += amount < LowReserveAmmo ? 7200f : 2600f;
                     }
                     else
                     {
-                        score += hasWeapon ? 250f : 1200f;
+                        score += hasWeapon ? 100f : 500f;
                     }
                     break;
 
                 case ItemType.Armor:
                 case ItemType.Helmet:
                 case ItemType.Backpack:
-                    score += 2800f;
+                    score += 3200f;
                     break;
 
                 case ItemType.Healing:
-                    float healthRatio = _health != null && _health.MaxHealth > 0f
-                        ? _health.CurrentHealth / _health.MaxHealth
-                        : 1f;
-                    score += healthRatio < 0.65f ? 4200f : 1500f;
+                    float healthRatio = GetHealthRatio();
+                    score += healthRatio < 0.65f ? 5200f : 1700f;
                     break;
 
                 case ItemType.Throwable:
@@ -494,6 +621,77 @@ namespace ROS.Game.AI
             return total;
         }
 
+        private bool NeedsAmmoSupply()
+        {
+            if (_equipment == null)
+                return false;
+
+            for (int slot = 1; slot <= 3; slot++)
+            {
+                WeaponController weapon = _equipment.GetWeaponForSlot(slot);
+                if (weapon == null || weapon.Definition == null)
+                    continue;
+
+                AmmoType ammoType = weapon.Definition.ammoType;
+                if (ammoType == AmmoType.None)
+                    continue;
+
+                if (GetAmmoAmount(ammoType) < LowReserveAmmo)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool HasHealingItem()
+        {
+            if (_inventory == null)
+                return false;
+
+            foreach (InventoryStack stack in _inventory.Stacks)
+            {
+                if (stack == null || stack.item == null || stack.amount <= 0 ||
+                    stack.item.itemType != ItemType.Healing)
+                {
+                    continue;
+                }
+
+                ConsumableDefinition def = stack.item.consumableDefinition;
+                if (def == null || def.healAmount > 0f)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private float GetHealthRatio()
+        {
+            return _health != null && _health.MaxHealth > 0f
+                ? _health.CurrentHealth / _health.MaxHealth
+                : 1f;
+        }
+
+        private bool ShouldStartHealing()
+        {
+            return _consumables != null &&
+                   !_consumables.IsUsing &&
+                   Time.time >= _nextHealAttemptTime &&
+                   GetHealthRatio() <= HealHealthRatio &&
+                   !_enemyThreatNearby &&
+                   HasHealingItem();
+        }
+
+        private bool TryStartHealing()
+        {
+            _nextHealAttemptTime = Time.time + HealRetrySeconds;
+            if (_consumables == null || !_consumables.TryUseFirstHealing())
+                return false;
+
+            _target = null;
+            _lootTarget = null;
+            return true;
+        }
+
         private bool IsLootTargetStillValid(LootPickup pickup)
         {
             if (pickup == null || pickup.IsConsumed || pickup.Item == null)
@@ -507,11 +705,13 @@ namespace ROS.Game.AI
 
         private void UpdateCombat(Health target)
         {
-            WeaponController weapon = ResolveWeapon();
-            if (weapon == null)
+            WeaponController weapon = ResolveBestWeapon();
+            if (weapon == null || weapon.Definition == null)
             {
                 _target = null;
-                _lootTarget = FindBestLootTarget(false);
+                AcquireLootTarget(HasAnyCombatWeapon()
+                    ? LootIntent.Ammo
+                    : LootIntent.Weapon);
                 return;
             }
 
@@ -539,8 +739,24 @@ namespace ROS.Game.AI
                 false
             );
 
-            if (!hasLineOfSight || Time.time < _nextShootTime)
+            if (weapon.AmmoInMagazine <= 0)
+            {
+                if (weapon.ReserveAmmo > 0)
+                    weapon.TryReload();
+                else
+                {
+                    _target = null;
+                    AcquireLootTarget(LootIntent.Ammo);
+                }
                 return;
+            }
+
+            if (weapon.IsReloading ||
+                !hasLineOfSight ||
+                Time.time < _nextShootTime)
+            {
+                return;
+            }
 
             Vector3 dispersion = new Vector3(
                 NextFloat(-0.42f, 0.42f),
@@ -557,20 +773,60 @@ namespace ROS.Game.AI
 
         private void EnsureBestWeaponEquipped()
         {
-            if (_equipment == null)
-                return;
+            ResolveBestWeapon();
+        }
 
-            if (_equipment.EquippedWeapon != null)
-                return;
+        private WeaponController ResolveBestWeapon()
+        {
+            if (_equipment == null)
+                return null;
+
+            WeaponController best = null;
+            int bestSlot = 0;
+            int bestScore = int.MinValue;
 
             for (int slot = 1; slot <= 3; slot++)
             {
-                if (_equipment.HasWeaponInSlot(slot))
-                {
-                    _equipment.EquipSlot(slot);
-                    return;
-                }
+                WeaponController weapon = _equipment.GetWeaponForSlot(slot);
+                if (weapon == null || weapon.Definition == null)
+                    continue;
+
+                int score = 0;
+                if (weapon.AmmoInMagazine > 0)
+                    score += 2000 + weapon.AmmoInMagazine;
+                else if (weapon.ReserveAmmo > 0)
+                    score += 1000 + Mathf.Min(weapon.ReserveAmmo, 300);
+
+                if (weapon.Definition.family != WeaponFamily.Pistol)
+                    score += 120;
+
+                if (score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                best = weapon;
+                bestSlot = slot;
             }
+
+            if (best != null && _equipment.EquippedWeapon != best)
+                _equipment.EquipSlot(bestSlot);
+
+            return best;
+        }
+
+        private bool HasAnyCombatWeapon()
+        {
+            if (_equipment == null)
+                return false;
+
+            for (int slot = 1; slot <= 3; slot++)
+            {
+                WeaponController weapon = _equipment.GetWeaponForSlot(slot);
+                if (weapon != null && weapon.Definition != null)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool HasUsableWeapon()
@@ -689,16 +945,16 @@ namespace ROS.Game.AI
             return true;
         }
 
-        private WeaponController ResolveWeapon()
-        {
-            EnsureBestWeaponEquipped();
-            return _equipment != null ? _equipment.EquippedWeapon : null;
-        }
-
-        private Vector3 GetSafeZoneDestination()
+        private void RefreshSafeZoneDestination(bool force)
         {
             if (_safeZone == null)
-                return _roamTarget;
+                return;
+
+            if (!force && _hasSafeZoneDestination &&
+                Time.time < _nextSafeZoneDestinationRefresh)
+            {
+                return;
+            }
 
             Vector3 center = _safeZone.Center;
             float radius = Mathf.Max(4f, _safeZone.Radius * 0.55f);
@@ -710,11 +966,24 @@ namespace ROS.Game.AI
                 offset.Normalize();
             offset *= radius * NextFloat(0.1f, 0.75f);
 
-            return new Vector3(
+            _safeZoneDestination = new Vector3(
                 center.x + offset.x,
                 center.y,
                 center.z + offset.y
             );
+            _hasSafeZoneDestination = true;
+            _nextSafeZoneDestinationRefresh =
+                Time.time + SafeZoneDestinationRefreshSeconds;
+        }
+
+        private Vector3 GetCachedSafeZoneDestination()
+        {
+            if (!_hasSafeZoneDestination)
+                RefreshSafeZoneDestination(true);
+
+            return _hasSafeZoneDestination
+                ? _safeZoneDestination
+                : _roamTarget;
         }
 
         private Vector3 RandomMapPoint()
@@ -791,6 +1060,9 @@ namespace ROS.Game.AI
                     ? _lootTarget.Item.displayName
                     : _lootTarget.gameObject.name
                 : string.Empty;
+            debugHasWeapon = HasAnyCombatWeapon();
+            debugHasUsableAmmo = HasUsableWeapon();
+            debugEnemyThreatNearby = _enemyThreatNearby;
         }
 
         private float NextFloat(float minimum, float maximum)
@@ -824,6 +1096,9 @@ namespace ROS.Game.AI
 
             if (_inventory == null)
                 _inventory = GetComponent<InventoryComponent>();
+
+            if (_consumables == null)
+                _consumables = GetComponent<ConsumableController>();
 
             if (_health == null)
                 _health = GetComponent<Health>();
