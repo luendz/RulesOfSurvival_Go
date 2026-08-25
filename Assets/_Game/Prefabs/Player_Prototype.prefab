@@ -622,28 +622,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6eb0d6268167ae94580ceb6e73b5ff5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Animation.PlayerAnimatorDriver
-  animator: {fileID: 6143050866421091856}
-  motor: {fileID: 5854610856599264315}
-  input: {fileID: 3875897436019806596}
-  equipment: {fileID: 7000000000000000001}
-  health: {fileID: 0}
-  parachute: {fileID: 0}
-  gestureController: {fileID: 0}
-  dampTime: 0.12
-  upperBodyCombatWeight: 1
-  actionsUpperBodyWeight: 1
-  weaponActionsUpperBodyWeight: 1
-  pickupUpperBodyDuration: 0.65
-  debugHasWeapon: 0
-  debugAiming: 0
-  debugHealing: 0
-  debugReloading: 0
-  debugWeaponSwitching: 0
-  debugGesturePlaying: 0
-  debugConsolidatedUpperBody: 0
-  debugCombatLayerWeight: 0
-  debugActionsLayerWeight: 0
-  debugWeaponActionsLayerWeight: 0
 --- !u!1 &7083389995347421912
 GameObject:
   m_ObjectHideFlags: 0
