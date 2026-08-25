@@ -28,6 +28,8 @@ MonoBehaviour:
   weaponPrefab: {fileID: 7918620637925781262, guid: 42703fa12d0944844a65cb2b757802dc, type: 3}
   preferredWeaponSlot: 1
   icon: {fileID: 21300000, guid: 6e528c6b37a7b4d48bb8281b1b4eae17, type: 3}
+  nearbySecondaryText: Sniper Rifle
+  nearbySecondaryIcon: {fileID: 0}
   worldModel: {fileID: 919132149155446097, guid: e95be2ccdc0344a4ba5c8e7327cb0cf7, type: 3}
   worldOffset: {x: 0, y: 0.28, z: 0}
   worldEulerAngles: {x: 1.246, y: -88.748, z: 89.526}

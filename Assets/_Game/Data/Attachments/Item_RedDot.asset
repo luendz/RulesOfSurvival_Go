@@ -28,6 +28,8 @@ MonoBehaviour:
   weaponPrefab: {fileID: 0}
   preferredWeaponSlot: 0
   icon: {fileID: 21300000, guid: 4e9012bb8ee10244aa2e0deffb47b49b, type: 3}
+  nearbySecondaryText: Attachment
+  nearbySecondaryIcon: {fileID: 0}
   worldModel: {fileID: 0}
   worldOffset: {x: 0, y: 0, z: 0}
   worldEulerAngles: {x: 0, y: 0, z: 0}
