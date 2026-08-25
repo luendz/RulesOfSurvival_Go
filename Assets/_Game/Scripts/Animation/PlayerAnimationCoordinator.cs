@@ -58,7 +58,7 @@ namespace ROS.Game.Animation
 
         [Header("Airborne / Fall")]
         [Tooltip("Distancia real que debe descender desde el punto mas alto antes de entrar a Fall. Un salto corto puede ir directamente de Jump a Landing.")]
-        [SerializeField, Min(0.05f)] private float fallAnimationDistance = 0.85f;
+        [SerializeField, Min(0.05f)] private float fallAnimationDistance = 1.50f;
         [Tooltip("Velocidad vertical minima de descenso requerida para activar Fall.")]
         [SerializeField] private float fallAnimationMinDownVelocity = -0.2f;
 

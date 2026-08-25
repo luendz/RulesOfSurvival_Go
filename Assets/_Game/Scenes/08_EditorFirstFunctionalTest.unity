@@ -14998,6 +14998,8 @@ MonoBehaviour:
   consumable: {fileID: 2016612348}
   gestureController: {fileID: 0}
   movementDampTime: 0.12
+  fallAnimationDistance: 1.5
+  fallAnimationMinDownVelocity: -0.2
   aimPitchRange: 70
   pickupUpperBodyDuration: 0.65
   debugUpperBodyArmed: 0
@@ -15009,6 +15011,11 @@ MonoBehaviour:
   debugFullBodyOverride: 0
   debugReloadSpeed: 1
   debugAimPitch: 0
+  debugAirbornePeakY: 0
+  debugFallDistance: 0
+  debugShouldFall: 0
+  debugWeaponCategory: 0
+  debugWeaponStyle: 0
 --- !u!114 &2016612354
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21969,7 +21976,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -148.1, y: -26.7}
+  m_AnchoredPosition: {x: -148.09998, y: -26.699951}
   m_SizeDelta: {x: 205, y: 39}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4132183254292265924
