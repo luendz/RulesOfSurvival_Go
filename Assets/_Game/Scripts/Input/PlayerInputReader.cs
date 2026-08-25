@@ -344,6 +344,20 @@ namespace ROS.Game.Input
             ApplyCursorState();
         }
 
+        /// <summary>
+        /// Permite que otra interacción (por ejemplo NearbyLoot) reclame la rueda
+        /// del mouse en el mismo frame. Al bloquear se consume cualquier cambio de
+        /// arma ya leído por Update(), evitando que selección de loot y cambio de
+        /// arma ocurran simultáneamente.
+        /// </summary>
+        public void SetWeaponScrollBlocked(bool blocked, bool consumeCurrentScroll = true)
+        {
+            WeaponScrollBlocked = blocked;
+
+            if (blocked && consumeCurrentScroll)
+                WeaponScrollDirection = 0;
+        }
+
         public void EnableExternalControl()
         {
             UsesExternalControl = true;

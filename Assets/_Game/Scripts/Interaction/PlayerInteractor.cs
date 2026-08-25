@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using ROS.Game.Input;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ROS.Game.Interaction
 {
+    [DefaultExecutionOrder(-90)]
     public sealed class PlayerInteractor : MonoBehaviour
     {
         [Header("References")]
@@ -20,6 +22,7 @@ namespace ROS.Game.Interaction
             new Collider[128];
 
         private IInteractable _current;
+        private IInteractable _wheelSelected;
 
         private readonly List<IInteractable> _nearby =
             new List<IInteractable>();
@@ -56,8 +59,33 @@ namespace ROS.Game.Interaction
 
         private void Update()
         {
-            _current =
+            IInteractable nearest =
                 FindNearestInteractable();
+
+            bool hasNearby = _nearby.Count > 0;
+
+            // Mientras haya objetos interactuables cercanos, la rueda pertenece
+            // a la selección de loot y no al cambio de arma. Se consume también
+            // cualquier scroll de arma que PlayerInputReader haya leído antes en
+            // este mismo frame.
+            if (input != null)
+                input.SetWeaponScrollBlocked(hasNearby, hasNearby);
+
+            if (!hasNearby)
+            {
+                _wheelSelected = null;
+                _current = null;
+                return;
+            }
+
+            if (!IsAlive(_wheelSelected) || !_nearby.Contains(_wheelSelected))
+                _wheelSelected = nearest;
+
+            _current = IsAlive(_wheelSelected)
+                ? _wheelSelected
+                : nearest;
+
+            HandleWheelSelection();
 
             IInteractable interactable =
                 Current;
@@ -80,6 +108,33 @@ namespace ROS.Game.Interaction
             Interacted?.Invoke(interactable);
 
             _current = null;
+            _wheelSelected = null;
+        }
+
+        private void HandleWheelSelection()
+        {
+            if (_nearby.Count <= 1 || Mouse.current == null)
+                return;
+
+            float scrollY = Mouse.current.scroll.ReadValue().y;
+            if (Mathf.Abs(scrollY) <= 0.01f)
+                return;
+
+            int currentIndex = _nearby.IndexOf(_wheelSelected);
+            if (currentIndex < 0)
+                currentIndex = 0;
+
+            int direction = scrollY > 0.01f ? -1 : 1;
+            int nextIndex = currentIndex + direction;
+
+            while (nextIndex < 0)
+                nextIndex += _nearby.Count;
+
+            while (nextIndex >= _nearby.Count)
+                nextIndex -= _nearby.Count;
+
+            _wheelSelected = _nearby[nextIndex];
+            _current = _wheelSelected;
         }
 
         private IInteractable FindNearestInteractable()
@@ -245,6 +300,12 @@ namespace ROS.Game.Interaction
             }
 
             return null;
+        }
+
+        private void OnDisable()
+        {
+            if (input != null)
+                input.SetWeaponScrollBlocked(false, false);
         }
 
         private void OnDrawGizmosSelected()
