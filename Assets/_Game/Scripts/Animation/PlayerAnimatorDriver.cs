@@ -45,6 +45,9 @@ namespace ROS.Game.Animation
         private static readonly int Aim =
             Animator.StringToHash("Aim");
 
+        private static readonly int UpperBodyAim =
+            Animator.StringToHash("UpperBodyAim");
+
         private static readonly int VerticalVelocity =
             Animator.StringToHash("VerticalVelocity");
 
@@ -63,7 +66,7 @@ namespace ROS.Game.Animation
         private static readonly int Healing =
             Animator.StringToHash("Healing");
 
-        private PlayerInteractor    _interactor;
+        private PlayerInteractor _interactor;
         private ConsumableController _consumable;
 
         private void Awake()
@@ -101,7 +104,6 @@ namespace ROS.Game.Animation
             _interactor = GetComponentInParent<PlayerInteractor>();
             if (_interactor != null)
                 _interactor.Interacted += OnInteracted;
-
         }
 
         private void OnDestroy()
@@ -151,6 +153,7 @@ namespace ROS.Game.Animation
             animator.SetFloat(MoveY, 0f);
             animator.SetFloat(Speed, 0f);
             animator.SetBool(Aim, false);
+            SetBoolIfPresent(UpperBodyAim, false);
             animator.SetBool(Reloading, false);
             SetBoolIfPresent(Healing, false);
             SetBoolIfPresent(Dead, true);
@@ -292,9 +295,25 @@ namespace ROS.Game.Animation
                 motor.IsProne
             );
 
+            bool aimActive = IsAimActive();
+            bool crouchUpperBodyAim =
+                aimActive &&
+                motor.IsCrouching &&
+                !motor.IsProne &&
+                equipment != null &&
+                equipment.HasEquippedWeapon;
+
+            // Mientras estamos agachados, la capa base NO entra en la
+            // locomocion full-body de Aim. Crouch conserva pelvis/piernas y el
+            // apuntado se reproduce en la capa CrouchAimUpperBody.
             animator.SetBool(
                 Aim,
-                IsAimActive()
+                aimActive && !crouchUpperBodyAim
+            );
+
+            SetBoolIfPresent(
+                UpperBodyAim,
+                crouchUpperBodyAim
             );
 
             animator.SetBool(
