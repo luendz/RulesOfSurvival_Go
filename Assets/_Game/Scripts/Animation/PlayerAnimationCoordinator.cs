@@ -1,6 +1,7 @@
 using System;
 using ROS.Game.Character;
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using ROS.Game.Gameplay;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
