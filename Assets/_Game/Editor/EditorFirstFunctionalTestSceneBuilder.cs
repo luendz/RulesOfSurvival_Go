@@ -27,7 +27,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += EnsureFunctionalTestScene;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Create Or Repair Functional Test Scene")]
         public static void EnsureFunctionalTestScene()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
