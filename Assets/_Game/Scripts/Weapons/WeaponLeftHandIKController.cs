@@ -64,8 +64,7 @@ namespace ROS.Game.Weapons
                 equipment.WeaponHolstered -= OnWeaponHolstered;
             }
 
-            if (leftHandConstraint != null)
-                leftHandConstraint.weight = 0f;
+            ForceReleaseIk();
         }
 
         private void LateUpdate()
@@ -88,14 +87,19 @@ namespace ROS.Game.Weapons
                 hasValidTarget &&
                 combatState == PlayerCombatState.Aiming;
 
-            float targetWeight = shouldUseIk ? aimingWeight : 0f;
-            UpdateWeight(targetWeight);
+            // Si ya no existe arma equipada no hacemos blend-out: soltamos la
+            // mano inmediatamente. Esto evita que durante unos frames una mano
+            // siga intentando alcanzar el socket de un arma ya guardada.
+            if (_activeWeapon == null)
+                ForceReleaseIk();
+            else
+                UpdateWeight(shouldUseIk ? aimingWeight : 0f);
 
             debugWeaponEquipped = _activeWeapon != null;
             debugActiveWeapon = _activeWeapon != null ? _activeWeapon.name : string.Empty;
             debugHasLeftHandTarget = _activeTarget != null;
             debugCombatState = combatState;
-            debugTargetWeight = targetWeight;
+            debugTargetWeight = shouldUseIk ? aimingWeight : 0f;
             debugCurrentWeight = leftHandConstraint != null ? leftHandConstraint.weight : 0f;
         }
 
@@ -112,7 +116,7 @@ namespace ROS.Game.Weapons
 
         private void OnWeaponHolstered(WeaponController weapon, int slot)
         {
-            RefreshActiveWeapon();
+            SetActiveWeapon(null);
         }
 
         private void RefreshActiveWeapon()
@@ -124,6 +128,12 @@ namespace ROS.Game.Weapons
         {
             _activeWeapon = weapon;
             _activeTarget = ResolveLeftHandTarget(weapon);
+
+            if (_activeWeapon == null)
+            {
+                ForceReleaseIk();
+                return;
+            }
 
             if (_activeTarget != null && ikProxy != null)
             {
@@ -162,6 +172,12 @@ namespace ROS.Game.Weapons
                 _activeTarget.position,
                 _activeTarget.rotation
             );
+        }
+
+        private void ForceReleaseIk()
+        {
+            if (leftHandConstraint != null)
+                leftHandConstraint.weight = 0f;
         }
 
         private void UpdateWeight(float targetWeight)
