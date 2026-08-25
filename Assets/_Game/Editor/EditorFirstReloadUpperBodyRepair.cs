@@ -4,11 +4,17 @@ using UnityEngine;
 
 namespace ROS.Game.EditorTools
 {
+    [InitializeOnLoad]
     public static class EditorFirstReloadUpperBodyRepair
     {
         private const string ControllerPath = "Assets/_Game/Animations/AC_Player_Prototype.controller";
         private const string StandingPath = "Assets/_Game/Animations/Characters/MainCharacter/Locomotion/Rifle/RifleReloadStandingHip.fbx";
         private const string CrouchPath = "Assets/_Game/Animations/Characters/MainCharacter/Locomotion/Rifle/RifleReloadCrouchHip.fbx";
+
+        static EditorFirstReloadUpperBodyRepair()
+        {
+            EditorApplication.delayCall += () => Repair();
+        }
 
         public static bool Repair()
         {
