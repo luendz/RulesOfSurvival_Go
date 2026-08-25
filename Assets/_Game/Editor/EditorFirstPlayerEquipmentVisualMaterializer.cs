@@ -123,6 +123,8 @@ namespace ROS.Game.EditorTools
 
             GameObject root = new GameObject(name);
             root.transform.SetParent(socket, false);
+            if (name.StartsWith("Backpack_"))
+                root.transform.localPosition = new Vector3(0f, 0f, -0.18f);
 
             GameObject model = null;
             if (item != null && item.worldModel != null)
@@ -146,7 +148,7 @@ namespace ROS.Game.EditorTools
             {
                 model.name = "Model";
                 model.transform.localPosition = Vector3.zero;
-                model.transform.localRotation = Quaternion.identity;
+                model.transform.localRotation = Quaternion.Euler(item.worldEulerAngles);
                 if (item.worldScale.sqrMagnitude > .0001f) model.transform.localScale = item.worldScale;
             }
 
