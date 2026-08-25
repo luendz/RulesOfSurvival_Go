@@ -11,17 +11,16 @@ using UnityEngine.SceneManagement;
 namespace ROS.Game.EditorTools
 {
     /// <summary>
-    /// Migra el Animator del jugador a una composición clara y editable:
+    /// Materializa de forma idempotente la arquitectura final del Animator:
+    /// 0 Locomotion
+    /// 1 WeaponUpperBody      (Override + upper-body mask)
+    /// 2 UpperBodyActions     (Override + upper-body mask)
+    /// 3 AimRecoil            (Additive + upper-body mask)
+    /// 4 FullBodyOverride     (Override, sin máscara)
     ///
-    /// Locomotion       -> cuerpo completo, sin arma.
-    /// UpperBodyCombat  -> postura de arma / Aim, solo cintura hacia arriba.
-    /// UpperBodyActions -> Heal / Reload / Switch / Pickup, solo arriba.
-    /// Gestures         -> permanece full-body.
-    /// Lean             -> PlayerLeanRigApplier lo aplica al final de la pose.
-    ///
-    /// El materializador crea las nuevas capas una única vez. Si ya existen,
-    /// no reconstruye sus estados para conservar cualquier ajuste manual hecho
-    /// después desde el Animator de Unity.
+    /// Los clips existentes se reutilizan; no se fabrican motions nuevos.
+    /// Las capas legacy quedan fuera de controller.layers y dejan de participar
+    /// en la evaluación, aunque sus sub-assets históricos puedan permanecer.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorFirstUnifiedAnimationMaterializer
@@ -44,8 +43,22 @@ namespace ROS.Game.EditorTools
         private const string WeaponSwitchPath =
             "Assets/_Game/Animations/Characters/MainCharacter/Locomotion/Rifle/RifleSwitch_UpperBody.fbx";
 
-        private const string PickupPath =
-            "Assets/_Game/Animations/Character/Locomotion/Ch28_nonPBR@Taking Item.fbx";
+        private static readonly string[] UpperBodyGestureStates =
+        {
+            "Gesture_Salute",
+            "Gesture_Talking_On_Phone",
+            "Gesture_Waving_Gesture"
+        };
+
+        private static readonly string[] FullBodyGestureStates =
+        {
+            "Gesture_Dancing",
+            "Gesture_Fishing_Cast",
+            "Gesture_Hip_Hop_Dancing",
+            "Gesture_Joyful_Jump",
+            "Gesture_Opening",
+            "Gesture_Rumba_Dancing"
+        };
 
         static EditorFirstUnifiedAnimationMaterializer()
         {
@@ -65,20 +78,23 @@ namespace ROS.Game.EditorTools
             {
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
-
                 Debug.Log(
-                    "[Editor First] Animacion consolidada: Locomotion + " +
-                    "UpperBodyCombat + UpperBodyActions. Reload usa clips reales " +
-                    "de pie/agachado y el PlayerAnimationCoordinator es la fuente unica."
+                    "[Editor First] Animator consolidado en 5 capas: " +
+                    "Locomotion, WeaponUpperBody, UpperBodyActions, AimRecoil y FullBodyOverride."
                 );
             }
+        }
+
+        internal static void ScheduleMaterialize()
+        {
+            EditorApplication.delayCall -= Materialize;
+            EditorApplication.delayCall += Materialize;
         }
 
         public static bool EnsureAnimatorArchitecture()
         {
             AnimatorController controller =
                 AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
-
             AvatarMask upperBodyMask =
                 AssetDatabase.LoadAssetAtPath<AvatarMask>(UpperBodyMaskPath);
 
@@ -91,451 +107,579 @@ namespace ROS.Game.EditorTools
                 return false;
             }
 
-            // Capturamos motions ya probados antes de desactivar las capas legacy.
-            Motion rifleLocomotion = FindState(controller, "BT_RifleLocomotion")?.motion;
-            Motion rifleCrouch = FindState(controller, "BT_RifleCrouch")?.motion;
-            Motion aimLocomotion = FindState(controller, "BT_AimLocomotion")?.motion;
-            Motion healing = FindState(controller, "Healing")?.motion;
-            Motion takingItem = FindState(controller, "TakingItem")?.motion;
+            EnsureParameters(controller);
 
-            AnimationClip reloadStanding = LoadFirstAnimationClip(ReloadStandingPath);
-            AnimationClip reloadCrouch = LoadFirstAnimationClip(ReloadCrouchPath);
-            AnimationClip weaponSwitch = LoadFirstAnimationClip(WeaponSwitchPath);
-            AnimationClip pickup = LoadFirstAnimationClip(PickupPath);
+            AnimatorControllerLayer locomotion =
+                FindLayer(controller, PlayerAnimationCoordinator.LocomotionLayerName);
+            if (locomotion == null)
+            {
+                Debug.LogError(
+                    "[Editor First] El Animator no contiene Locomotion. Se cancela la migración para no perder la locomoción base."
+                );
+                return false;
+            }
 
-            if (takingItem == null)
-                takingItem = pickup;
+            if (HasExactFinalLayerOrder(controller))
+            {
+                bool changed = ConfigureFinalLayerSettings(controller, upperBodyMask);
+                if (changed)
+                {
+                    EditorUtility.SetDirty(controller);
+                    AssetDatabase.SaveAssets();
+                }
+                return changed;
+            }
 
+            // Capturar Motion references antes de retirar las capas legacy.
+            Motion armedLocomotion = FindMotion(
+                controller,
+                "ArmedLocomotion",
+                "BT_RifleLocomotion"
+            );
+            Motion armedCrouch = FindMotion(
+                controller,
+                "ArmedCrouch",
+                "BT_RifleCrouch"
+            );
+            Motion aimLocomotion = FindMotion(
+                controller,
+                "AimLocomotion",
+                "BT_AimLocomotion"
+            );
+            Motion healing = FindMotion(controller, "Healing");
+            Motion takingItem = FindMotion(controller, "TakingItem");
+
+            AnimationClip reloadStanding =
+                FindMotion(controller, "ReloadStanding") as AnimationClip ??
+                LoadFirstAnimationClip(ReloadStandingPath);
+            AnimationClip reloadCrouch =
+                FindMotion(controller, "ReloadCrouch") as AnimationClip ??
+                LoadFirstAnimationClip(ReloadCrouchPath);
+            AnimationClip weaponSwitch =
+                FindMotion(controller, "WeaponSwitch", "RifleSwitch_UpperBody") as AnimationClip ??
+                LoadFirstAnimationClip(WeaponSwitchPath);
+
+            Dictionary<string, Motion> gestureMotions =
+                CaptureGestureMotions(controller);
+
+            AnimatorControllerLayer weaponLayer = CreateWeaponUpperBodyLayer(
+                controller,
+                upperBodyMask,
+                armedLocomotion,
+                armedCrouch,
+                aimLocomotion,
+                reloadStanding,
+                reloadCrouch,
+                weaponSwitch
+            );
+
+            AnimatorControllerLayer actionsLayer = CreateUpperBodyActionsLayer(
+                controller,
+                upperBodyMask,
+                healing,
+                takingItem,
+                gestureMotions
+            );
+
+            AnimatorControllerLayer aimRecoilLayer = CreateEmptyLayer(
+                controller,
+                PlayerAnimationCoordinator.AimRecoilLayerName,
+                upperBodyMask,
+                AnimatorLayerBlendingMode.Additive,
+                0f,
+                false
+            );
+
+            AnimatorControllerLayer fullBodyLayer = CreateFullBodyOverrideLayer(
+                controller,
+                gestureMotions
+            );
+
+            locomotion.name = PlayerAnimationCoordinator.LocomotionLayerName;
+            locomotion.avatarMask = null;
+            locomotion.defaultWeight = 1f;
+            locomotion.blendingMode = AnimatorLayerBlendingMode.Override;
+            locomotion.iKPass = false;
+
+            controller.layers = new[]
+            {
+                locomotion,
+                weaponLayer,
+                actionsLayer,
+                aimRecoilLayer,
+                fullBodyLayer
+            };
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+            return true;
+        }
+
+        private static void EnsureParameters(AnimatorController controller)
+        {
+            EnsureParameter(controller, "UpperBodyArmed", AnimatorControllerParameterType.Bool);
+            EnsureParameter(controller, "UpperBodyAim", AnimatorControllerParameterType.Bool);
+            EnsureParameter(controller, "Reloading", AnimatorControllerParameterType.Bool);
+            EnsureParameter(controller, "ReloadSpeed", AnimatorControllerParameterType.Float);
+            EnsureParameter(controller, "Healing", AnimatorControllerParameterType.Bool);
+            EnsureParameter(controller, "AimPitch", AnimatorControllerParameterType.Float);
+            EnsureParameter(controller, "Crouch", AnimatorControllerParameterType.Bool);
+            EnsureParameter(controller, "WeaponSwitch", AnimatorControllerParameterType.Trigger);
+            EnsureParameter(controller, "PickupItem", AnimatorControllerParameterType.Trigger);
+        }
+
+        private static AnimatorControllerLayer CreateWeaponUpperBodyLayer(
+            AnimatorController controller,
+            AvatarMask mask,
+            Motion armedLocomotion,
+            Motion armedCrouch,
+            Motion aimLocomotion,
+            AnimationClip reloadStanding,
+            AnimationClip reloadCrouch,
+            AnimationClip weaponSwitch)
+        {
+            AnimatorControllerLayer layer = CreateLayer(
+                controller,
+                PlayerAnimationCoordinator.WeaponUpperBodyLayerName,
+                mask,
+                AnimatorLayerBlendingMode.Override,
+                1f,
+                true
+            );
+
+            AnimatorStateMachine machine = layer.stateMachine;
+            AnimatorState empty = AddState(machine, "Empty", null, 220f, 20f);
+            AnimatorState armed = AddState(machine, "ArmedLocomotion", armedLocomotion, 500f, -120f);
+            AnimatorState crouch = AddState(
+                machine,
+                "ArmedCrouch",
+                armedCrouch != null ? armedCrouch : armedLocomotion,
+                500f,
+                20f
+            );
+            AnimatorState aim = AddState(machine, "AimLocomotion", aimLocomotion, 780f, -40f);
+            AnimatorState reloadStandingState = AddState(
+                machine,
+                "ReloadStanding",
+                reloadStanding,
+                760f,
+                120f
+            );
+            AnimatorState reloadCrouchState = AddState(
+                machine,
+                "ReloadCrouch",
+                reloadCrouch != null ? reloadCrouch : reloadStanding,
+                760f,
+                230f
+            );
+            AnimatorState switchState = AddState(
+                machine,
+                "WeaponSwitch",
+                weaponSwitch,
+                500f,
+                250f
+            );
+
+            machine.defaultState = empty;
+
+            AddTransition(empty, armed, 0.08f,
+                Condition("UpperBodyArmed", true), Condition("Crouch", false));
+            AddTransition(empty, crouch, 0.08f,
+                Condition("UpperBodyArmed", true), Condition("Crouch", true));
+            AddTransition(armed, empty, 0.08f, Condition("UpperBodyArmed", false));
+            AddTransition(crouch, empty, 0.08f, Condition("UpperBodyArmed", false));
+
+            AddTransition(armed, crouch, 0.08f,
+                Condition("Crouch", true), Condition("UpperBodyAim", false));
+            AddTransition(crouch, armed, 0.08f,
+                Condition("Crouch", false), Condition("UpperBodyAim", false));
+
+            AddTransition(armed, aim, 0.05f, Condition("UpperBodyAim", true));
+            AddTransition(crouch, aim, 0.05f, Condition("UpperBodyAim", true));
+            AddTransition(aim, armed, 0.05f,
+                Condition("UpperBodyAim", false), Condition("Crouch", false));
+            AddTransition(aim, crouch, 0.05f,
+                Condition("UpperBodyAim", false), Condition("Crouch", true));
+            AddTransition(aim, empty, 0.05f, Condition("UpperBodyArmed", false));
+
+            if (reloadStanding != null)
+            {
+                reloadStandingState.speedParameterActive = true;
+                reloadStandingState.speedParameter = "ReloadSpeed";
+                AnimatorStateTransition transition = machine.AddAnyStateTransition(reloadStandingState);
+                ConfigureTransition(transition, 0.05f);
+                transition.AddCondition(AnimatorConditionMode.If, 0f, "Reloading");
+                transition.AddCondition(AnimatorConditionMode.IfNot, 0f, "Crouch");
+                AddTransition(reloadStandingState, armed, 0.05f,
+                    Condition("Reloading", false), Condition("UpperBodyArmed", true));
+                AddTransition(reloadStandingState, empty, 0.05f,
+                    Condition("Reloading", false), Condition("UpperBodyArmed", false));
+            }
+
+            if (reloadCrouchState.motion != null)
+            {
+                reloadCrouchState.speedParameterActive = true;
+                reloadCrouchState.speedParameter = "ReloadSpeed";
+                AnimatorStateTransition transition = machine.AddAnyStateTransition(reloadCrouchState);
+                ConfigureTransition(transition, 0.05f);
+                transition.AddCondition(AnimatorConditionMode.If, 0f, "Reloading");
+                transition.AddCondition(AnimatorConditionMode.If, 0f, "Crouch");
+                AddTransition(reloadCrouchState, crouch, 0.05f,
+                    Condition("Reloading", false), Condition("UpperBodyArmed", true));
+                AddTransition(reloadCrouchState, empty, 0.05f,
+                    Condition("Reloading", false), Condition("UpperBodyArmed", false));
+            }
+
+            if (weaponSwitch != null)
+            {
+                AnimatorStateTransition transition = machine.AddAnyStateTransition(switchState);
+                ConfigureTransition(transition, 0.04f);
+                transition.AddCondition(AnimatorConditionMode.If, 0f, "WeaponSwitch");
+                AddExitTimeTransition(switchState, empty, 0.95f, 0.06f);
+            }
+
+            return layer;
+        }
+
+        private static AnimatorControllerLayer CreateUpperBodyActionsLayer(
+            AnimatorController controller,
+            AvatarMask mask,
+            Motion healingMotion,
+            Motion takingItemMotion,
+            Dictionary<string, Motion> gestures)
+        {
+            AnimatorControllerLayer layer = CreateLayer(
+                controller,
+                PlayerAnimationCoordinator.UpperBodyActionsLayerName,
+                mask,
+                AnimatorLayerBlendingMode.Override,
+                1f,
+                true
+            );
+
+            AnimatorStateMachine machine = layer.stateMachine;
+            AnimatorState empty = AddState(machine, "Empty", null, 220f, 20f);
+            machine.defaultState = empty;
+
+            AnimatorState healing = AddState(machine, "Healing", healingMotion, 520f, -100f);
+            if (healingMotion != null)
+            {
+                AnimatorStateTransition healTransition = machine.AddAnyStateTransition(healing);
+                ConfigureTransition(healTransition, 0.06f);
+                healTransition.AddCondition(AnimatorConditionMode.If, 0f, "Healing");
+                AddTransition(healing, empty, 0.06f, Condition("Healing", false));
+            }
+
+            AnimatorState takingItem = AddState(machine, "TakingItem", takingItemMotion, 520f, 40f);
+            if (takingItemMotion != null)
+            {
+                AnimatorStateTransition pickupTransition = machine.AddAnyStateTransition(takingItem);
+                ConfigureTransition(pickupTransition, 0.05f);
+                pickupTransition.AddCondition(AnimatorConditionMode.If, 0f, "PickupItem");
+                AddExitTimeTransition(takingItem, empty, 0.95f, 0.06f);
+            }
+
+            for (int i = 0; i < UpperBodyGestureStates.Length; i++)
+            {
+                string stateName = UpperBodyGestureStates[i];
+                gestures.TryGetValue(stateName, out Motion motion);
+                AddGestureState(machine, empty, stateName, motion, 620f, 180f + i * 100f);
+            }
+
+            return layer;
+        }
+
+        private static AnimatorControllerLayer CreateFullBodyOverrideLayer(
+            AnimatorController controller,
+            Dictionary<string, Motion> gestures)
+        {
+            AnimatorControllerLayer layer = CreateLayer(
+                controller,
+                PlayerAnimationCoordinator.FullBodyOverrideLayerName,
+                null,
+                AnimatorLayerBlendingMode.Override,
+                0f,
+                false
+            );
+
+            AnimatorStateMachine machine = layer.stateMachine;
+            AnimatorState empty = AddState(machine, "Empty", null, 220f, 20f);
+            machine.defaultState = empty;
+
+            for (int i = 0; i < FullBodyGestureStates.Length; i++)
+            {
+                string stateName = FullBodyGestureStates[i];
+                gestures.TryGetValue(stateName, out Motion motion);
+                AddGestureState(
+                    machine,
+                    empty,
+                    stateName,
+                    motion,
+                    560f + (i % 2) * 300f,
+                    -180f + (i / 2) * 130f
+                );
+            }
+
+            return layer;
+        }
+
+        private static AnimatorControllerLayer CreateEmptyLayer(
+            AnimatorController controller,
+            string name,
+            AvatarMask mask,
+            AnimatorLayerBlendingMode blendingMode,
+            float defaultWeight,
+            bool ikPass)
+        {
+            AnimatorControllerLayer layer = CreateLayer(
+                controller,
+                name,
+                mask,
+                blendingMode,
+                defaultWeight,
+                ikPass
+            );
+            AnimatorState empty = AddState(layer.stateMachine, "Empty", null, 250f, 20f);
+            layer.stateMachine.defaultState = empty;
+            return layer;
+        }
+
+        private static AnimatorControllerLayer CreateLayer(
+            AnimatorController controller,
+            string name,
+            AvatarMask mask,
+            AnimatorLayerBlendingMode blendingMode,
+            float defaultWeight,
+            bool ikPass)
+        {
+            AnimatorStateMachine machine = new AnimatorStateMachine { name = name };
+            AssetDatabase.AddObjectToAsset(machine, controller);
+
+            return new AnimatorControllerLayer
+            {
+                name = name,
+                stateMachine = machine,
+                avatarMask = mask,
+                defaultWeight = defaultWeight,
+                blendingMode = blendingMode,
+                iKPass = ikPass
+            };
+        }
+
+        private static AnimatorState AddState(
+            AnimatorStateMachine machine,
+            string name,
+            Motion motion,
+            float x,
+            float y)
+        {
+            AnimatorState state = machine.AddState(name, new Vector3(x, y, 0f));
+            state.motion = motion;
+            state.writeDefaultValues = false;
+            return state;
+        }
+
+        private static void AddGestureState(
+            AnimatorStateMachine machine,
+            AnimatorState empty,
+            string stateName,
+            Motion motion,
+            float x,
+            float y)
+        {
+            if (motion == null)
+                return;
+
+            AnimatorState state = AddState(machine, stateName, motion, x, y);
+            state.tag = "Gesture";
+            state.speed = 1f;
+            AddExitTimeTransition(state, empty, 0.98f, 0.12f);
+        }
+
+        private static Dictionary<string, Motion> CaptureGestureMotions(
+            AnimatorController controller)
+        {
+            Dictionary<string, Motion> result =
+                new Dictionary<string, Motion>(StringComparer.Ordinal);
+
+            for (int i = 0; i < UpperBodyGestureStates.Length; i++)
+            {
+                Motion motion = FindMotion(controller, UpperBodyGestureStates[i]);
+                if (motion != null)
+                    result[UpperBodyGestureStates[i]] = motion;
+            }
+
+            for (int i = 0; i < FullBodyGestureStates.Length; i++)
+            {
+                Motion motion = FindMotion(controller, FullBodyGestureStates[i]);
+                if (motion != null)
+                    result[FullBodyGestureStates[i]] = motion;
+            }
+
+            return result;
+        }
+
+        private static bool HasExactFinalLayerOrder(AnimatorController controller)
+        {
+            AnimatorControllerLayer[] layers = controller.layers;
+            if (layers.Length != 5)
+                return false;
+
+            return layers[0].name == PlayerAnimationCoordinator.LocomotionLayerName &&
+                   layers[1].name == PlayerAnimationCoordinator.WeaponUpperBodyLayerName &&
+                   layers[2].name == PlayerAnimationCoordinator.UpperBodyActionsLayerName &&
+                   layers[3].name == PlayerAnimationCoordinator.AimRecoilLayerName &&
+                   layers[4].name == PlayerAnimationCoordinator.FullBodyOverrideLayerName;
+        }
+
+        private static bool ConfigureFinalLayerSettings(
+            AnimatorController controller,
+            AvatarMask upperBodyMask)
+        {
+            AnimatorControllerLayer[] layers = controller.layers;
             bool changed = false;
 
-            changed |= EnsureParameter(
-                controller,
-                "UpperBodyArmed",
-                AnimatorControllerParameterType.Bool
-            );
-            changed |= EnsureParameter(
-                controller,
-                "UpperBodyAim",
-                AnimatorControllerParameterType.Bool
-            );
-            changed |= EnsureParameter(
-                controller,
-                "Reloading",
-                AnimatorControllerParameterType.Bool
-            );
-            changed |= EnsureParameter(
-                controller,
-                "ReloadSpeed",
-                AnimatorControllerParameterType.Float
-            );
-            changed |= EnsureParameter(
-                controller,
-                "Healing",
-                AnimatorControllerParameterType.Bool
-            );
-            changed |= EnsureParameter(
-                controller,
-                "AimPitch",
-                AnimatorControllerParameterType.Float
-            );
-            changed |= EnsureParameter(
-                controller,
-                "Crouch",
-                AnimatorControllerParameterType.Bool
-            );
-            changed |= EnsureParameter(
-                controller,
-                "WeaponSwitch",
-                AnimatorControllerParameterType.Trigger
-            );
-            changed |= EnsureParameter(
-                controller,
-                "PickupItem",
-                AnimatorControllerParameterType.Trigger
-            );
-
-            if (FindLayerIndex(controller, PlayerAnimationCoordinator.CombatLayerName) < 0)
-            {
-                CreateCombatLayer(
-                    controller,
-                    upperBodyMask,
-                    rifleLocomotion,
-                    rifleCrouch,
-                    aimLocomotion
-                );
-                changed = true;
-            }
-
-            if (FindLayerIndex(controller, PlayerAnimationCoordinator.ActionsLayerName) < 0)
-            {
-                CreateActionsLayer(
-                    controller,
-                    upperBodyMask,
-                    healing,
-                    reloadStanding,
-                    reloadCrouch,
-                    weaponSwitch,
-                    takingItem
-                );
-                changed = true;
-            }
-
-            // Las capas viejas permanecen dentro del asset como referencia y
-            // para no destruir trabajo anterior, pero ya no participan en la pose.
-            changed |= SetLegacyLayerWeight(controller, "Actions", 0f);
-            changed |= SetLegacyLayerWeight(controller, "WeaponUpperBody", 0f);
-            changed |= SetLegacyLayerWeight(controller, "CrouchAimUpperBody", 0f);
-
-            // Las nuevas capas sí deben empezar activas. Luego el Coordinator
-            // las silencia temporalmente durante Gestures o muerte.
-            changed |= SetLayerWeight(
-                controller,
-                PlayerAnimationCoordinator.CombatLayerName,
-                1f
-            );
-            changed |= SetLayerWeight(
-                controller,
-                PlayerAnimationCoordinator.ActionsLayerName,
-                1f
-            );
+            changed |= ConfigureLayer(
+                layers[0], null, AnimatorLayerBlendingMode.Override, 1f, false);
+            changed |= ConfigureLayer(
+                layers[1], upperBodyMask, AnimatorLayerBlendingMode.Override, 1f, true);
+            changed |= ConfigureLayer(
+                layers[2], upperBodyMask, AnimatorLayerBlendingMode.Override, 1f, true);
+            changed |= ConfigureLayer(
+                layers[3], upperBodyMask, AnimatorLayerBlendingMode.Additive, 0f, false);
+            changed |= ConfigureLayer(
+                layers[4], null, AnimatorLayerBlendingMode.Override, 0f, false);
 
             if (changed)
-            {
-                EditorUtility.SetDirty(controller);
-                AssetDatabase.SaveAssets();
-            }
+                controller.layers = layers;
 
             return changed;
         }
 
-        private static void CreateCombatLayer(
-            AnimatorController controller,
+        private static bool ConfigureLayer(
+            AnimatorControllerLayer layer,
             AvatarMask mask,
-            Motion rifleLocomotion,
-            Motion rifleCrouch,
-            Motion aimLocomotion)
+            AnimatorLayerBlendingMode blendingMode,
+            float defaultWeight,
+            bool ikPass)
         {
-            AnimatorStateMachine machine = new AnimatorStateMachine
+            bool changed = false;
+            if (layer.avatarMask != mask)
             {
-                name = PlayerAnimationCoordinator.CombatLayerName
-            };
-            AssetDatabase.AddObjectToAsset(machine, controller);
-
-            AnimatorControllerLayer layer = new AnimatorControllerLayer
+                layer.avatarMask = mask;
+                changed = true;
+            }
+            if (layer.blendingMode != blendingMode)
             {
-                name = PlayerAnimationCoordinator.CombatLayerName,
-                stateMachine = machine,
-                avatarMask = mask,
-                defaultWeight = 1f,
-                blendingMode = AnimatorLayerBlendingMode.Override,
-                iKPass = true
-            };
-
-            AnimatorState empty = machine.AddState("Empty", new Vector3(250f, 20f));
-            AnimatorState armed = machine.AddState(
-                "ArmedLocomotion",
-                new Vector3(520f, -70f)
-            );
-            AnimatorState crouch = machine.AddState(
-                "ArmedCrouch",
-                new Vector3(520f, 110f)
-            );
-            AnimatorState aim = machine.AddState(
-                "AimLocomotion",
-                new Vector3(800f, 20f)
-            );
-
-            empty.writeDefaultValues = false;
-            armed.writeDefaultValues = false;
-            crouch.writeDefaultValues = false;
-            aim.writeDefaultValues = false;
-
-            armed.motion = rifleLocomotion;
-            crouch.motion = rifleCrouch != null ? rifleCrouch : rifleLocomotion;
-            aim.motion = aimLocomotion;
-            machine.defaultState = empty;
-
-            AddTransition(
-                empty,
-                armed,
-                0.08f,
-                Condition("UpperBodyArmed", true),
-                Condition("Crouch", false)
-            );
-            AddTransition(
-                empty,
-                crouch,
-                0.08f,
-                Condition("UpperBodyArmed", true),
-                Condition("Crouch", true)
-            );
-
-            AddTransition(
-                armed,
-                empty,
-                0.08f,
-                Condition("UpperBodyArmed", false)
-            );
-            AddTransition(
-                crouch,
-                empty,
-                0.08f,
-                Condition("UpperBodyArmed", false)
-            );
-            AddTransition(
-                aim,
-                empty,
-                0.06f,
-                Condition("UpperBodyArmed", false)
-            );
-
-            AddTransition(
-                armed,
-                crouch,
-                0.08f,
-                Condition("Crouch", true),
-                Condition("UpperBodyAim", false)
-            );
-            AddTransition(
-                crouch,
-                armed,
-                0.08f,
-                Condition("Crouch", false),
-                Condition("UpperBodyAim", false)
-            );
-
-            AddTransition(
-                armed,
-                aim,
-                0.06f,
-                Condition("UpperBodyAim", true)
-            );
-            AddTransition(
-                crouch,
-                aim,
-                0.06f,
-                Condition("UpperBodyAim", true)
-            );
-
-            AddTransition(
-                aim,
-                armed,
-                0.06f,
-                Condition("UpperBodyAim", false),
-                Condition("Crouch", false)
-            );
-            AddTransition(
-                aim,
-                crouch,
-                0.06f,
-                Condition("UpperBodyAim", false),
-                Condition("Crouch", true)
-            );
-
-            AppendLayer(controller, layer);
+                layer.blendingMode = blendingMode;
+                changed = true;
+            }
+            if (!Mathf.Approximately(layer.defaultWeight, defaultWeight))
+            {
+                layer.defaultWeight = defaultWeight;
+                changed = true;
+            }
+            if (layer.iKPass != ikPass)
+            {
+                layer.iKPass = ikPass;
+                changed = true;
+            }
+            return changed;
         }
 
-        private static void CreateActionsLayer(
+        private static AnimatorControllerLayer FindLayer(
             AnimatorController controller,
-            AvatarMask mask,
-            Motion healingMotion,
-            AnimationClip reloadStanding,
-            AnimationClip reloadCrouch,
-            AnimationClip weaponSwitch,
-            Motion takingItem)
+            string layerName)
         {
-            AnimatorStateMachine machine = new AnimatorStateMachine
+            AnimatorControllerLayer[] layers = controller.layers;
+            for (int i = 0; i < layers.Length; i++)
             {
-                name = PlayerAnimationCoordinator.ActionsLayerName
-            };
-            AssetDatabase.AddObjectToAsset(machine, controller);
+                if (layers[i].name == layerName)
+                    return layers[i];
+            }
+            return null;
+        }
 
-            AnimatorControllerLayer layer = new AnimatorControllerLayer
+        private static Motion FindMotion(
+            AnimatorController controller,
+            params string[] stateNames)
+        {
+            for (int n = 0; n < stateNames.Length; n++)
             {
-                name = PlayerAnimationCoordinator.ActionsLayerName,
-                stateMachine = machine,
-                avatarMask = mask,
-                defaultWeight = 1f,
-                blendingMode = AnimatorLayerBlendingMode.Override,
-                iKPass = true
-            };
+                AnimatorState state = FindState(controller, stateNames[n]);
+                if (state != null && state.motion != null)
+                    return state.motion;
+            }
+            return null;
+        }
 
-            AnimatorState empty = machine.AddState("Empty", new Vector3(250f, 20f));
-            AnimatorState healing = machine.AddState("Healing", new Vector3(520f, -170f));
-            AnimatorState reloadStandingState = machine.AddState(
-                "ReloadStanding",
-                new Vector3(540f, -40f)
-            );
-            AnimatorState reloadCrouchState = machine.AddState(
-                "ReloadCrouch",
-                new Vector3(540f, 90f)
-            );
-            AnimatorState switchState = machine.AddState(
-                "WeaponSwitch",
-                new Vector3(540f, 220f)
-            );
-            AnimatorState pickupState = machine.AddState(
-                "TakingItem",
-                new Vector3(540f, 340f)
-            );
-
-            empty.writeDefaultValues = false;
-            healing.writeDefaultValues = false;
-            reloadStandingState.writeDefaultValues = false;
-            reloadCrouchState.writeDefaultValues = false;
-            switchState.writeDefaultValues = false;
-            pickupState.writeDefaultValues = false;
-
-            healing.motion = healingMotion;
-            reloadStandingState.motion = reloadStanding;
-            reloadCrouchState.motion = reloadCrouch != null
-                ? reloadCrouch
-                : reloadStanding;
-            switchState.motion = weaponSwitch;
-            pickupState.motion = takingItem;
-
-            reloadStandingState.speedParameterActive = true;
-            reloadStandingState.speedParameter = "ReloadSpeed";
-            reloadCrouchState.speedParameterActive = true;
-            reloadCrouchState.speedParameter = "ReloadSpeed";
-
-            machine.defaultState = empty;
-
-            AnimatorStateTransition healTransition =
-                machine.AddAnyStateTransition(healing);
-            ConfigureTransition(healTransition, 0.08f);
-            healTransition.canTransitionToSelf = false;
-            healTransition.AddCondition(
-                AnimatorConditionMode.If,
-                0f,
-                "Healing"
-            );
-
-            AnimatorStateTransition reloadStandingTransition =
-                machine.AddAnyStateTransition(reloadStandingState);
-            ConfigureTransition(reloadStandingTransition, 0.08f);
-            reloadStandingTransition.canTransitionToSelf = false;
-            reloadStandingTransition.AddCondition(
-                AnimatorConditionMode.If,
-                0f,
-                "Reloading"
-            );
-            reloadStandingTransition.AddCondition(
-                AnimatorConditionMode.IfNot,
-                0f,
-                "Crouch"
-            );
-            reloadStandingTransition.AddCondition(
-                AnimatorConditionMode.IfNot,
-                0f,
-                "Healing"
-            );
-
-            AnimatorStateTransition reloadCrouchTransition =
-                machine.AddAnyStateTransition(reloadCrouchState);
-            ConfigureTransition(reloadCrouchTransition, 0.08f);
-            reloadCrouchTransition.canTransitionToSelf = false;
-            reloadCrouchTransition.AddCondition(
-                AnimatorConditionMode.If,
-                0f,
-                "Reloading"
-            );
-            reloadCrouchTransition.AddCondition(
-                AnimatorConditionMode.If,
-                0f,
-                "Crouch"
-            );
-            reloadCrouchTransition.AddCondition(
-                AnimatorConditionMode.IfNot,
-                0f,
-                "Healing"
-            );
-
-            if (weaponSwitch != null)
+        private static AnimatorState FindState(
+            AnimatorController controller,
+            string stateName)
+        {
+            AnimatorControllerLayer[] layers = controller.layers;
+            for (int i = 0; i < layers.Length; i++)
             {
-                AnimatorStateTransition switchTransition =
-                    machine.AddAnyStateTransition(switchState);
-                ConfigureTransition(switchTransition, 0.05f);
-                switchTransition.canTransitionToSelf = false;
-                switchTransition.AddCondition(
-                    AnimatorConditionMode.If,
-                    0f,
-                    "WeaponSwitch"
-                );
-                switchTransition.AddCondition(
-                    AnimatorConditionMode.IfNot,
-                    0f,
-                    "Healing"
-                );
-                switchTransition.AddCondition(
-                    AnimatorConditionMode.IfNot,
-                    0f,
-                    "Reloading"
-                );
+                AnimatorState found = FindStateRecursive(layers[i].stateMachine, stateName);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
+
+        private static AnimatorState FindStateRecursive(
+            AnimatorStateMachine machine,
+            string stateName)
+        {
+            if (machine == null)
+                return null;
+
+            ChildAnimatorState[] states = machine.states;
+            for (int i = 0; i < states.Length; i++)
+            {
+                if (states[i].state != null && states[i].state.name == stateName)
+                    return states[i].state;
             }
 
-            if (takingItem != null)
+            ChildAnimatorStateMachine[] children = machine.stateMachines;
+            for (int i = 0; i < children.Length; i++)
             {
-                AnimatorStateTransition pickupTransition =
-                    machine.AddAnyStateTransition(pickupState);
-                ConfigureTransition(pickupTransition, 0.05f);
-                pickupTransition.canTransitionToSelf = false;
-                pickupTransition.AddCondition(
-                    AnimatorConditionMode.If,
-                    0f,
-                    "PickupItem"
-                );
-                pickupTransition.AddCondition(
-                    AnimatorConditionMode.IfNot,
-                    0f,
-                    "Healing"
-                );
-                pickupTransition.AddCondition(
-                    AnimatorConditionMode.IfNot,
-                    0f,
-                    "Reloading"
-                );
+                AnimatorState found = FindStateRecursive(children[i].stateMachine, stateName);
+                if (found != null)
+                    return found;
             }
 
-            AddTransition(
-                healing,
-                empty,
-                0.08f,
-                Condition("Healing", false)
-            );
+            return null;
+        }
 
-            AddTransition(
-                reloadStandingState,
-                empty,
-                0.06f,
-                Condition("Reloading", false)
-            );
-            AddTransition(
-                reloadCrouchState,
-                empty,
-                0.06f,
-                Condition("Reloading", false)
-            );
+        private static bool EnsureParameter(
+            AnimatorController controller,
+            string parameterName,
+            AnimatorControllerParameterType type)
+        {
+            AnimatorControllerParameter[] parameters = controller.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].name == parameterName)
+                    return false;
+            }
 
-            AddTransition(
-                reloadStandingState,
-                reloadCrouchState,
-                0.05f,
-                Condition("Reloading", true),
-                Condition("Crouch", true)
-            );
-            AddTransition(
-                reloadCrouchState,
-                reloadStandingState,
-                0.05f,
-                Condition("Reloading", true),
-                Condition("Crouch", false)
-            );
+            controller.AddParameter(parameterName, type);
+            return true;
+        }
 
-            AddExitTimeTransition(switchState, empty, 0.95f, 0.08f);
-            AddExitTimeTransition(pickupState, empty, 0.95f, 0.08f);
-
-            AppendLayer(controller, layer);
+        private static AnimationClip LoadFirstAnimationClip(string assetPath)
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is AnimationClip clip &&
+                    !clip.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase))
+                {
+                    return clip;
+                }
+            }
+            return null;
         }
 
         private static bool MaterializeCoordinatorInFunctionalScene()
@@ -548,10 +692,7 @@ namespace ROS.Game.EditorTools
 
             if (openedTemporarily)
             {
-                scene = EditorSceneManager.OpenScene(
-                    ScenePath,
-                    OpenSceneMode.Additive
-                );
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
             }
 
             if (!scene.IsValid() || !scene.isLoaded)
@@ -583,10 +724,10 @@ namespace ROS.Game.EditorTools
                 changed = true;
             }
 
-            // El driver anterior queda físicamente en la escena como referencia
-            // histórica, pero desactivado. Solo Coordinator escribe el Animator.
+#pragma warning disable CS0618
             PlayerAnimatorDriver[] oldDrivers =
                 player.GetComponentsInChildren<PlayerAnimatorDriver>(true);
+#pragma warning restore CS0618
             for (int i = 0; i < oldDrivers.Length; i++)
             {
                 if (oldDrivers[i] != null && oldDrivers[i].enabled)
@@ -632,142 +773,6 @@ namespace ROS.Game.EditorTools
             }
 
             return fallback;
-        }
-
-        private static bool EnsureParameter(
-            AnimatorController controller,
-            string parameterName,
-            AnimatorControllerParameterType type)
-        {
-            AnimatorControllerParameter[] parameters = controller.parameters;
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                if (parameters[i].name == parameterName)
-                    return false;
-            }
-
-            controller.AddParameter(parameterName, type);
-            return true;
-        }
-
-        private static int FindLayerIndex(
-            AnimatorController controller,
-            string layerName)
-        {
-            AnimatorControllerLayer[] layers = controller.layers;
-            for (int i = 0; i < layers.Length; i++)
-            {
-                if (layers[i].name == layerName)
-                    return i;
-            }
-
-            return -1;
-        }
-
-        private static bool SetLegacyLayerWeight(
-            AnimatorController controller,
-            string layerName,
-            float weight)
-        {
-            return SetLayerWeight(controller, layerName, weight);
-        }
-
-        private static bool SetLayerWeight(
-            AnimatorController controller,
-            string layerName,
-            float weight)
-        {
-            AnimatorControllerLayer[] layers = controller.layers;
-            for (int i = 0; i < layers.Length; i++)
-            {
-                if (layers[i].name != layerName)
-                    continue;
-
-                if (Mathf.Approximately(layers[i].defaultWeight, weight))
-                    return false;
-
-                layers[i].defaultWeight = weight;
-                controller.layers = layers;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static void AppendLayer(
-            AnimatorController controller,
-            AnimatorControllerLayer layer)
-        {
-            List<AnimatorControllerLayer> layers =
-                new List<AnimatorControllerLayer>(controller.layers)
-                {
-                    layer
-                };
-            controller.layers = layers.ToArray();
-        }
-
-        private static AnimatorState FindState(
-            AnimatorController controller,
-            string stateName)
-        {
-            AnimatorControllerLayer[] layers = controller.layers;
-            for (int i = 0; i < layers.Length; i++)
-            {
-                AnimatorState found = FindStateRecursive(
-                    layers[i].stateMachine,
-                    stateName
-                );
-                if (found != null)
-                    return found;
-            }
-
-            return null;
-        }
-
-        private static AnimatorState FindStateRecursive(
-            AnimatorStateMachine machine,
-            string stateName)
-        {
-            if (machine == null)
-                return null;
-
-            ChildAnimatorState[] states = machine.states;
-            for (int i = 0; i < states.Length; i++)
-            {
-                if (states[i].state != null &&
-                    states[i].state.name == stateName)
-                {
-                    return states[i].state;
-                }
-            }
-
-            ChildAnimatorStateMachine[] children = machine.stateMachines;
-            for (int i = 0; i < children.Length; i++)
-            {
-                AnimatorState found = FindStateRecursive(
-                    children[i].stateMachine,
-                    stateName
-                );
-                if (found != null)
-                    return found;
-            }
-
-            return null;
-        }
-
-        private static AnimationClip LoadFirstAnimationClip(string assetPath)
-        {
-            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            for (int i = 0; i < assets.Length; i++)
-            {
-                if (assets[i] is AnimationClip clip &&
-                    !clip.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase))
-                {
-                    return clip;
-                }
-            }
-
-            return null;
         }
 
         private readonly struct TransitionCondition
