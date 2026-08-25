@@ -5,7 +5,7 @@ namespace ROS.Game.EditorTools
 {
     /// <summary>
     /// Compatibilidad con la herramienta anterior. Healing ahora pertenece a
-    /// la arquitectura consolidada de capas Upper Body.
+    /// UpperBodyActions dentro de la arquitectura unificada.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorFirstHealingUpperBodyMaterializer
@@ -21,7 +21,7 @@ namespace ROS.Game.EditorTools
             if (Application.isPlaying || EditorApplication.isCompiling)
                 return;
 
-            EditorFirstAnimationLayerConsolidator.EnsureConsolidatedAnimationLayers();
+            EditorFirstUnifiedAnimationMaterializer.EnsureAnimatorArchitecture();
         }
     }
 }
