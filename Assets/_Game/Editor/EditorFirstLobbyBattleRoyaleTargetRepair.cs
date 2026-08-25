@@ -33,7 +33,6 @@ namespace ROS.Game.EditorTools
             RepairLobbyTarget();
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Fix Lobby BR Target")]
         public static void RepairLobbyTarget()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
