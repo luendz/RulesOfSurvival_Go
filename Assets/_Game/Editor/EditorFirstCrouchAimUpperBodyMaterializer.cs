@@ -15,7 +15,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += EnsureCrouchAimUpperBody;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Configure Crouch Aim Upper Body")]
         public static void EnsureCrouchAimUpperBody()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
