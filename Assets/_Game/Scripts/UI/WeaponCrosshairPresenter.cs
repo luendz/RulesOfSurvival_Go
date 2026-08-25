@@ -28,6 +28,13 @@ namespace ROS.Game.UI
         [SerializeField] private float shotgunMaxHalfGap = 34f;
         [SerializeField] private float spreadForMaxGap = 7f;
 
+        [Header("Reload Timer")]
+        [Tooltip("Velocidad del parpadeo del contador de recarga. El texto permanece exactamente en el centro de la mirilla.")]
+        [Min(0f)]
+        [SerializeField] private float reloadBlinkSpeed = 4.5f;
+        [Range(0f, 1f)]
+        [SerializeField] private float reloadMinimumAlpha = 0.42f;
+
         [Header("Editable View")]
         [SerializeField] private RectTransform root;
         [SerializeField] private RectTransform normalRoot;
@@ -37,6 +44,7 @@ namespace ROS.Game.UI
         [SerializeField] private RectTransform normalDown;
         [SerializeField] private Text shotgunLeft;
         [SerializeField] private Text shotgunRight;
+        [SerializeField] private Text reloadTimerText;
 
         private readonly HashSet<GameObject> _suppressedCrosshairs =
             new HashSet<GameObject>();
@@ -46,11 +54,16 @@ namespace ROS.Game.UI
         private float _currentNormalGap;
         private float _nextResolveTime;
 
+        private WeaponController _trackedReloadWeapon;
+        private float _reloadObservedAt;
+        private float _reloadObservedDuration;
+
         private void Awake()
         {
             BindViewFromHierarchy();
             _currentNormalGap = Mathf.Max(0f, normalMinGap);
             ApplyNormalGap(_currentNormalGap);
+            HideReloadTimer();
         }
 
         [ContextMenu("Rebind Weapon Crosshair")]
@@ -64,6 +77,7 @@ namespace ROS.Game.UI
             normalDown = FindNamed<RectTransform>("NormalDown");
             shotgunLeft = FindNamed<Text>("ShotgunLeft");
             shotgunRight = FindNamed<Text>("ShotgunRight");
+            reloadTimerText = FindNamed<Text>("ReloadTimerText");
         }
 
         private void Update()
@@ -72,7 +86,7 @@ namespace ROS.Game.UI
             {
                 _nextResolveTime = Time.unscaledTime + 0.15f;
                 ResolveLocalEquipment();
-                if (root == null)
+                if (root == null || reloadTimerText == null)
                     BindViewFromHierarchy();
             }
 
@@ -82,6 +96,7 @@ namespace ROS.Game.UI
 
         private void OnDisable()
         {
+            HideReloadTimer();
             RestoreSuppressedCrosshairs();
         }
 
@@ -144,7 +159,10 @@ namespace ROS.Game.UI
             bool hasWeapon = weapon != null && weapon.Definition != null;
             root.gameObject.SetActive(hasWeapon);
             if (!hasWeapon)
+            {
+                HideReloadTimer();
                 return;
+            }
 
             bool isShotgun = weapon.Definition.family == WeaponFamily.Shotgun;
 
@@ -159,6 +177,69 @@ namespace ROS.Game.UI
                 UpdateShotgunCrosshair(weapon);
             else
                 UpdateNormalCrosshair(weapon);
+
+            UpdateReloadTimer(weapon);
+        }
+
+        private void UpdateReloadTimer(WeaponController weapon)
+        {
+            if (reloadTimerText == null || weapon == null)
+            {
+                HideReloadTimer();
+                return;
+            }
+
+            if (!weapon.IsReloading || weapon.ActiveReloadDuration <= 0f)
+            {
+                HideReloadTimer();
+                return;
+            }
+
+            if (_trackedReloadWeapon != weapon ||
+                !reloadTimerText.gameObject.activeSelf)
+            {
+                _trackedReloadWeapon = weapon;
+                _reloadObservedAt = Time.time;
+                _reloadObservedDuration = Mathf.Max(
+                    0.01f,
+                    weapon.ActiveReloadDuration
+                );
+            }
+
+            float elapsed = Mathf.Max(0f, Time.time - _reloadObservedAt);
+            float remaining = Mathf.Max(0f, _reloadObservedDuration - elapsed);
+
+            // Una decimal da lectura clara sin saturar el centro de la reticula.
+            reloadTimerText.text = remaining.ToString("0.0");
+
+            float pulse = 0.5f + 0.5f * Mathf.Sin(
+                Time.unscaledTime * Mathf.Max(0f, reloadBlinkSpeed) * Mathf.PI * 2f
+            );
+            float alpha = Mathf.Lerp(
+                Mathf.Clamp01(reloadMinimumAlpha),
+                1f,
+                pulse
+            );
+
+            Color color = reloadTimerText.color;
+            color.a = alpha;
+            reloadTimerText.color = color;
+
+            if (!reloadTimerText.gameObject.activeSelf)
+                reloadTimerText.gameObject.SetActive(true);
+        }
+
+        private void HideReloadTimer()
+        {
+            _trackedReloadWeapon = null;
+            _reloadObservedAt = 0f;
+            _reloadObservedDuration = 0f;
+
+            if (reloadTimerText == null)
+                return;
+
+            if (reloadTimerText.gameObject.activeSelf)
+                reloadTimerText.gameObject.SetActive(false);
         }
 
         private void UpdateNormalCrosshair(WeaponController weapon)
