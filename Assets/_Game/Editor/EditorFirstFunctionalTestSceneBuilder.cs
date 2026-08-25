@@ -135,6 +135,8 @@ namespace ROS.Game.EditorTools
             EditorFirstHudBehaviorMaterializer.EnsureHudBehaviors();
             EditorFirstWeaponEffectsMaterializer.EnsureEditableWeaponEffects();
             EditorFirstWeaponBackMountMaterializer.ApplyStandardBackMounts();
+            EditorFirstHealingUpperBodyMaterializer.EnsureHealingUpperBody();
+            EditorFirstCrouchAimUpperBodyMaterializer.EnsureCrouchAimUpperBody();
         }
 
         private static void RepairFunctionalComponents()
