@@ -15,7 +15,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += MigrateIfNeeded;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Migrate Legacy Upper Body Layers")]
         public static void MigrateIfNeeded()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
