@@ -9,7 +9,7 @@ namespace ROS.Game.Editor
 {
     public static class EnvironmentWallConverter
     {
-        [MenuItem("ROS Battle Royale/03 - Convertir Placeholders a Muros")]
+        [MenuItem("Rules Of Survival/Tools/Environment/Convertir Placeholders a Muros")]
         public static void ConvertPlaceholders()
         {
             GameObject[] all =
