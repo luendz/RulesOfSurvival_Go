@@ -13,16 +13,18 @@ using UnityEngine;
 namespace ROS.Game.Animation
 {
     /// <summary>
-    /// Fuente única de verdad para parámetros y pesos del Animator del jugador.
+    /// Fuente unica de verdad para parametros y pesos del Animator del jugador.
     ///
     /// Arquitectura final:
-    /// 0 Locomotion       -> locomoción base; cadera/piernas conservan el movimiento.
-    /// 1 WeaponUpperBody  -> armas, postura y Aim del torso (Override + máscara superior).
-    /// 2 UpperBodyActions -> Heal/Reload/Switch/Pickup/gestos de torso (Override + máscara superior).
-    /// 3 AimRecoil        -> AimPitch/Recoil/Lean/offsets (Additive + máscara superior).
-    /// 4 FullBodyOverride -> acciones que explícitamente toman todo el cuerpo.
+    /// 0 Locomotion       -> locomocion base. Sin arma, TODO el cuerpo viene de aqui.
+    /// 1 WeaponUpperBody  -> postura/Aim/Reload/Switch de arma, solo torso.
+    /// 2 UpperBodyActions -> Heal/Pickup/gestos de torso, solo torso.
+    /// 3 AimRecoil        -> AimPitch/Recoil/Lean/offsets aditivos.
+    /// 4 FullBodyOverride -> acciones que explicitamente toman todo el cuerpo.
     ///
-    /// Ningún otro componente debe escribir continuamente los pesos de estas capas.
+    /// Regla importante: una capa Override vacia nunca debe quedarse a peso 1.
+    /// De lo contrario puede neutralizar curvas del torso y dejar brazos/manos
+    /// en una pose incorrecta, especialmente cuando el jugador esta desarmado.
     /// </summary>
     [DefaultExecutionOrder(80)]
     [DisallowMultipleComponent]
@@ -55,11 +57,16 @@ namespace ROS.Game.Animation
         [Header("Aim")]
         [SerializeField, Range(20f, 89f)] private float aimPitchRange = 70f;
 
+        [Header("Actions")]
+        [SerializeField, Min(0.05f)] private float pickupUpperBodyDuration = 0.65f;
+
         [Header("Runtime Debug")]
         [SerializeField] private bool debugUpperBodyArmed;
         [SerializeField] private bool debugUpperBodyAim;
         [SerializeField] private bool debugReloading;
         [SerializeField] private bool debugHealing;
+        [SerializeField] private bool debugWeaponLayerActive;
+        [SerializeField] private bool debugActionsLayerActive;
         [SerializeField] private bool debugFullBodyOverride;
         [SerializeField] private float debugReloadSpeed = 1f;
         [SerializeField] private float debugAimPitch;
@@ -73,6 +80,7 @@ namespace ROS.Game.Animation
         private RuntimeAnimatorController _resolvedController;
         private float _standingReloadClipLength = -1f;
         private float _crouchReloadClipLength = -1f;
+        private float _pickupUpperBodyUntil;
         private bool _manualFullBodyOverride;
         private bool _manualRootMotion;
         private bool _initialApplyRootMotion;
@@ -88,7 +96,7 @@ namespace ROS.Game.Animation
         private static readonly int Dead = Animator.StringToHash("Dead");
         private static readonly int PickupItem = Animator.StringToHash("PickupItem");
 
-        // Parámetros legacy de locomoción armada full-body: quedan siempre apagados.
+        // Parametros legacy de locomocion armada full-body: quedan siempre apagados.
         private static readonly int LegacyHasRifle = Animator.StringToHash("HasRifle");
         private static readonly int LegacyAim = Animator.StringToHash("Aim");
 
@@ -116,6 +124,7 @@ namespace ROS.Game.Animation
             CaptureRootMotionDefault();
             BindInteractor();
             ResolveLayerIndexes(true);
+            ResetUpperLayerWeights();
             ResolveReloadClipLengths();
         }
 
@@ -125,11 +134,13 @@ namespace ROS.Game.Animation
             CaptureRootMotionDefault();
             BindInteractor();
             ResolveLayerIndexes(true);
+            ResetUpperLayerWeights();
         }
 
         private void OnDisable()
         {
             UnbindInteractor();
+            ResetUpperLayerWeights();
             RestoreRootMotionDefault();
         }
 
@@ -166,8 +177,8 @@ namespace ROS.Game.Animation
         }
 
         /// <summary>
-        /// Activa/desactiva una acción explícita de cuerpo completo.
-        /// Root Motion solo se habilita cuando la acción lo solicita expresamente
+        /// Activa/desactiva una accion explicita de cuerpo completo.
+        /// Root Motion solo se habilita cuando la accion lo solicita expresamente
         /// (por ejemplo Vault/Climb); nunca por un gesto normal.
         /// </summary>
         public void SetFullBodyOverride(bool active, bool useRootMotion = false)
@@ -225,7 +236,7 @@ namespace ROS.Game.Animation
                     : motor.Velocity.y
             );
 
-            // La capa base no debe volver a una locomoción armada full-body.
+            // La capa base no debe volver a una locomocion armada full-body.
             SetBoolIfPresent(LegacyHasRifle, false);
             SetBoolIfPresent(LegacyAim, false);
         }
@@ -235,16 +246,22 @@ namespace ROS.Game.Animation
             bool dead = health != null && !health.IsAlive;
             bool gesturing = gestureController != null && gestureController.IsPlaying;
             bool fullBodyGesture = gesturing && gestureController.IsFullBodyGesture;
+            bool upperBodyGesture = gesturing && !fullBodyGesture;
             bool fullBodyOverride = !dead && (_manualFullBodyOverride || fullBodyGesture);
             bool healing = consumable != null && consumable.IsUsing;
+            bool pickupAction = Time.time < _pickupUpperBodyUntil;
 
             WeaponController weapon = equipment != null
                 ? equipment.EquippedWeapon
                 : null;
 
             bool hasWeapon = weapon != null;
+            bool switchingWeapon = equipment != null && equipment.IsSwitchingWeapon;
+            bool equipmentReloading = equipment != null &&
+                                      equipment.CombatState == PlayerCombatState.Reloading;
+
             bool reloading = hasWeapon &&
-                             weapon.IsReloading &&
+                             (weapon.IsReloading || equipmentReloading) &&
                              !healing &&
                              !gesturing &&
                              !fullBodyOverride;
@@ -261,11 +278,23 @@ namespace ROS.Game.Animation
             // Prone conserva temporalmente sus clips full-body hasta contar con
             // una variante de torso dedicada.
             bool armedUpperBody = hasWeapon &&
-                                  !healing &&
-                                  !gesturing &&
                                   !fullBodyOverride &&
                                   !dead &&
                                   !motor.IsProne;
+
+            // WeaponUpperBody solo existe en la pose cuando realmente hay arma
+            // (o un cambio de arma en curso). Sin arma, su peso debe ser cero
+            // para que Idle/Walk/Run de Locomotion controlen tambien brazos/manos.
+            bool weaponLayerActive = !dead &&
+                                     !fullBodyOverride &&
+                                     !motor.IsProne &&
+                                     (hasWeapon || switchingWeapon);
+
+            // UpperBodyActions solo se activa durante una accion real. Un Empty
+            // Override a peso 1 puede congelar/neutralizar el torso.
+            bool actionsLayerActive = !dead &&
+                                      !fullBodyOverride &&
+                                      (healing || upperBodyGesture || pickupAction);
 
             float reloadSpeed = reloading
                 ? ResolveReloadSpeed(weapon, motor.IsCrouching)
@@ -280,12 +309,15 @@ namespace ROS.Game.Animation
             SetFloatIfPresent(ReloadSpeed, reloadSpeed);
             SetFloatIfPresent(AimPitch, aimPitch);
 
-            // Orden real de composición:
+            // Orden real de composicion:
             // Locomotion < WeaponUpperBody < UpperBodyActions < AimRecoil < FullBodyOverride.
             SetLayerWeightSafe(_locomotionLayer, 1f);
-            SetLayerWeightSafe(_weaponUpperBodyLayer, dead || fullBodyOverride ? 0f : 1f);
-            SetLayerWeightSafe(_upperBodyActionsLayer, dead || fullBodyOverride ? 0f : 1f);
-            SetLayerWeightSafe(_aimRecoilLayer, aiming && !dead && !fullBodyOverride ? 1f : 0f);
+            SetLayerWeightSafe(_weaponUpperBodyLayer, weaponLayerActive ? 1f : 0f);
+            SetLayerWeightSafe(_upperBodyActionsLayer, actionsLayerActive ? 1f : 0f);
+            SetLayerWeightSafe(
+                _aimRecoilLayer,
+                aiming && !dead && !fullBodyOverride ? 1f : 0f
+            );
             SetLayerWeightSafe(_fullBodyOverrideLayer, fullBodyOverride ? 1f : 0f);
 
             ApplyRootMotionPolicy();
@@ -294,6 +326,8 @@ namespace ROS.Game.Animation
             debugUpperBodyAim = aiming;
             debugReloading = reloading;
             debugHealing = healing;
+            debugWeaponLayerActive = weaponLayerActive;
+            debugActionsLayerActive = actionsLayerActive;
             debugFullBodyOverride = fullBodyOverride;
             debugReloadSpeed = reloadSpeed;
             debugAimPitch = aimPitch;
@@ -387,6 +421,18 @@ namespace ROS.Game.Animation
             _fullBodyOverrideLayer = animator.GetLayerIndex(FullBodyOverrideLayerName);
         }
 
+        private void ResetUpperLayerWeights()
+        {
+            if (animator == null)
+                return;
+
+            SetLayerWeightSafe(_locomotionLayer, 1f);
+            SetLayerWeightSafe(_weaponUpperBodyLayer, 0f);
+            SetLayerWeightSafe(_upperBodyActionsLayer, 0f);
+            SetLayerWeightSafe(_aimRecoilLayer, 0f);
+            SetLayerWeightSafe(_fullBodyOverrideLayer, 0f);
+        }
+
         private void CaptureRootMotionDefault()
         {
             if (_capturedRootMotion || animator == null)
@@ -439,6 +485,14 @@ namespace ROS.Game.Animation
             animator.SetFloat(parameterHash, value);
         }
 
+        private void SetTriggerIfPresent(int parameterHash)
+        {
+            if (!HasParameter(parameterHash, AnimatorControllerParameterType.Trigger))
+                return;
+
+            animator.SetTrigger(parameterHash);
+        }
+
         private bool HasParameter(int parameterHash, AnimatorControllerParameterType type)
         {
             if (animator == null)
@@ -459,6 +513,8 @@ namespace ROS.Game.Animation
             PlayerInteractor found = GetComponent<PlayerInteractor>();
             if (found == null)
                 found = GetComponentInChildren<PlayerInteractor>(true);
+            if (found == null)
+                found = GetComponentInParent<PlayerInteractor>();
 
             if (found == _interactor)
                 return;
@@ -480,8 +536,11 @@ namespace ROS.Game.Animation
 
         private void OnInteracted(IInteractable interactable)
         {
-            if (animator != null && interactable is LootPickup)
-                animator.SetTrigger(PickupItem);
+            if (animator == null || !(interactable is LootPickup))
+                return;
+
+            _pickupUpperBodyUntil = Time.time + pickupUpperBodyDuration;
+            SetTriggerIfPresent(PickupItem);
         }
 
         private void ResolveReferences()
