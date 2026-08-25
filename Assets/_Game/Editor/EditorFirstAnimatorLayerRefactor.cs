@@ -8,22 +8,25 @@ using UnityEngine;
 namespace ROS.Game.EditorTools
 {
     /// <summary>
-    /// Normaliza el Animator del jugador para que Locomotion sea responsable
-    /// solo del movimiento/postura del cuerpo base y WeaponUpperBody del torso.
+    /// Normaliza el Animator del jugador con una arquitectura extensible:
+    /// - Locomotion: movimiento/postura y flujo Jump/Fall/Landing.
+    /// - WeaponUpperBody: armas de fuego y melee sin crear layers por arma.
+    /// - FullBodyOverride: gestos y espacio reservado para ataques melee completos.
     ///
-    /// Primera fase deliberadamente conservadora:
-    /// - elimina locomocion armada duplicada del layer base;
-    /// - elimina ArmedCrouch del torso porque las piernas ya resuelven Crouch;
-    /// - mantiene ReloadStanding/ReloadCrouch hasta unificar tambien el calculo
-    ///   de duracion de recarga del runtime.
-    ///
-    /// Es idempotente: puede ejecutarse varias veces sin duplicar estados.
+    /// Todo queda materializado como estados/parametros normales del Animator,
+    /// visible y editable desde Unity.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorFirstAnimatorLayerRefactor
     {
         private const string ControllerPath =
             "Assets/_Game/Animations/AC_Player_Prototype.controller";
+
+        private const string ShouldFallParameter = "ShouldFall";
+        private const string WeaponCategoryParameter = "WeaponCategory";
+        private const string WeaponStyleParameter = "WeaponStyle";
+        private const string MeleeAttackParameter = "MeleeAttack";
+        private const string MeleeAttackIndexParameter = "MeleeAttackIndex";
 
         private static readonly HashSet<string> LegacyLocomotionStates =
             new HashSet<string>(StringComparer.Ordinal)
@@ -43,6 +46,14 @@ namespace ROS.Game.EditorTools
 
         static EditorFirstAnimatorLayerRefactor()
         {
+            // Se difiere un tick adicional para ejecutarse despues de los
+            // materializadores legacy que aun reconstruyen partes del Animator.
+            EditorApplication.delayCall += ScheduleAfterLegacyMaterializers;
+        }
+
+        private static void ScheduleAfterLegacyMaterializers()
+        {
+            EditorApplication.delayCall -= Refactor;
             EditorApplication.delayCall += Refactor;
         }
 
@@ -59,8 +70,11 @@ namespace ROS.Game.EditorTools
                 return;
 
             bool changed = false;
+            changed |= EnsureParameters(controller);
             changed |= RefactorLocomotion(controller);
+            changed |= RefactorAirborneFlow(controller);
             changed |= RefactorWeaponUpperBody(controller);
+            changed |= EnsureMeleeFullBodyArea(controller);
             changed |= NormalizeLayerSettings(controller);
 
             if (!changed)
@@ -71,9 +85,63 @@ namespace ROS.Game.EditorTools
             AssetDatabase.Refresh();
 
             Debug.Log(
-                "[Editor First] Animator refactorizado: Locomotion queda libre de estados de arma " +
-                "y WeaponUpperBody usa Empty/Hip/Aim con recargas aisladas en el torso."
+                "[Editor First] Animator refactorizado: flujo Jump/Fall/Landing corregido, " +
+                "WeaponUpperBody preparado para Firearm/Melee y FullBodyOverride preparado para ataques melee."
             );
+        }
+
+        private static bool EnsureParameters(AnimatorController controller)
+        {
+            bool changed = false;
+            changed |= EnsureParameter(
+                controller,
+                ShouldFallParameter,
+                AnimatorControllerParameterType.Bool
+            );
+            changed |= EnsureParameter(
+                controller,
+                WeaponCategoryParameter,
+                AnimatorControllerParameterType.Int
+            );
+            changed |= EnsureParameter(
+                controller,
+                WeaponStyleParameter,
+                AnimatorControllerParameterType.Int
+            );
+            changed |= EnsureParameter(
+                controller,
+                MeleeAttackParameter,
+                AnimatorControllerParameterType.Trigger
+            );
+            changed |= EnsureParameter(
+                controller,
+                MeleeAttackIndexParameter,
+                AnimatorControllerParameterType.Int
+            );
+            return changed;
+        }
+
+        private static bool EnsureParameter(
+            AnimatorController controller,
+            string name,
+            AnimatorControllerParameterType type)
+        {
+            AnimatorControllerParameter[] parameters = controller.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].name != name)
+                    continue;
+
+                if (parameters[i].type == type)
+                    return false;
+
+                controller.RemoveParameter(i);
+                controller.AddParameter(name, type);
+                return true;
+            }
+
+            controller.AddParameter(name, type);
+            return true;
         }
 
         private static bool RefactorLocomotion(AnimatorController controller)
@@ -88,8 +156,6 @@ namespace ROS.Game.EditorTools
 
             bool changed = RemoveLegacyStatesRecursive(layer.stateMachine);
 
-            // La capa base siempre gobierna el cuerpo completo. Las armas se
-            // componen exclusivamente desde las capas superiores.
             if (layer.avatarMask != null)
             {
                 layer.avatarMask = null;
@@ -145,6 +211,143 @@ namespace ROS.Game.EditorTools
             return changed;
         }
 
+        /// <summary>
+        /// Fuerza un flujo aereo determinista:
+        /// salto corto: Jump -> Landing -> BT_Locomotion
+        /// caida real : Jump/Locomotion -> Fall -> Landing -> BT_Locomotion
+        ///
+        /// De esta forma Fall nunca depende de que termine el clip de Jump y
+        /// tampoco puede quedar sin salida al tocar el suelo.
+        /// </summary>
+        private static bool RefactorAirborneFlow(AnimatorController controller)
+        {
+            AnimatorControllerLayer layer = FindLayer(
+                controller,
+                PlayerAnimationCoordinator.LocomotionLayerName
+            );
+
+            if (layer == null || layer.stateMachine == null)
+                return false;
+
+            AnimatorStateMachine machine = layer.stateMachine;
+            AnimatorState jump = FindStateRecursive(machine, "Jump");
+            AnimatorState fall = FindStateRecursive(machine, "Fall");
+            AnimatorState landing = FindStateRecursive(machine, "Landing");
+            AnimatorState locomotion = FindStateRecursive(machine, "BT_Locomotion");
+
+            if (jump == null || fall == null || landing == null || locomotion == null)
+                return false;
+
+            // Rehacer solo el triangulo aereo. No tocamos transiciones de
+            // Locomotion hacia Crouch ni otras posturas.
+            RemoveAllTransitions(jump);
+            RemoveAllTransitions(fall);
+            RemoveAllTransitions(landing);
+
+            AnimatorStateTransition jumpToFall = jump.AddTransition(fall);
+            ConfigureTransition(jumpToFall, 0.05f);
+            jumpToFall.AddCondition(
+                AnimatorConditionMode.If,
+                0f,
+                ShouldFallParameter
+            );
+
+            AnimatorStateTransition jumpToLanding = jump.AddTransition(landing);
+            ConfigureTransition(jumpToLanding, 0.04f);
+            jumpToLanding.AddCondition(
+                AnimatorConditionMode.If,
+                0f,
+                "Grounded"
+            );
+
+            AnimatorStateTransition fallToLanding = fall.AddTransition(landing);
+            ConfigureTransition(fallToLanding, 0.04f);
+            fallToLanding.AddCondition(
+                AnimatorConditionMode.If,
+                0f,
+                "Grounded"
+            );
+
+            AnimatorStateTransition landingToLocomotion = landing.AddTransition(locomotion);
+            ConfigureTransition(landingToLocomotion, 0.08f);
+            landingToLocomotion.hasExitTime = true;
+            landingToLocomotion.exitTime = 0.88f;
+
+            // Si se camina fuera de una plataforma sin haber pasado por Jump,
+            // cualquier transicion existente hacia Fall debe usar ShouldFall.
+            ReplaceTransitionsToFallRecursive(machine, fall, jump);
+
+            jump.writeDefaultValues = false;
+            fall.writeDefaultValues = false;
+            landing.writeDefaultValues = false;
+
+            EditorUtility.SetDirty(jump);
+            EditorUtility.SetDirty(fall);
+            EditorUtility.SetDirty(landing);
+            return true;
+        }
+
+        private static void ReplaceTransitionsToFallRecursive(
+            AnimatorStateMachine machine,
+            AnimatorState fall,
+            AnimatorState jump)
+        {
+            ChildAnimatorState[] states = machine.states;
+            for (int i = 0; i < states.Length; i++)
+            {
+                AnimatorState state = states[i].state;
+                if (state == null || state == fall || state == jump)
+                    continue;
+
+                AnimatorStateTransition[] transitions = state.transitions;
+                for (int j = 0; j < transitions.Length; j++)
+                {
+                    AnimatorStateTransition transition = transitions[j];
+                    if (transition == null || transition.destinationState != fall)
+                        continue;
+
+                    ClearConditions(transition);
+                    ConfigureTransition(transition, 0.05f);
+                    transition.AddCondition(
+                        AnimatorConditionMode.If,
+                        0f,
+                        ShouldFallParameter
+                    );
+                    EditorUtility.SetDirty(transition);
+                }
+            }
+
+            AnimatorStateTransition[] anyTransitions = machine.anyStateTransitions;
+            for (int i = 0; i < anyTransitions.Length; i++)
+            {
+                AnimatorStateTransition transition = anyTransitions[i];
+                if (transition == null || transition.destinationState != fall)
+                    continue;
+
+                ClearConditions(transition);
+                ConfigureTransition(transition, 0.05f);
+                transition.AddCondition(
+                    AnimatorConditionMode.If,
+                    0f,
+                    ShouldFallParameter
+                );
+                EditorUtility.SetDirty(transition);
+            }
+
+            ChildAnimatorStateMachine[] children = machine.stateMachines;
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (children[i].stateMachine != null)
+                {
+                    ReplaceTransitionsToFallRecursive(
+                        children[i].stateMachine,
+                        fall,
+                        jump
+                    );
+                }
+            }
+        }
+
         private static bool RefactorWeaponUpperBody(AnimatorController controller)
         {
             AnimatorControllerLayer layer = FindLayer(
@@ -157,54 +360,97 @@ namespace ROS.Game.EditorTools
 
             AnimatorStateMachine machine = layer.stateMachine;
 
-            // El formato nuevo ya no duplica la postura de brazos por Crouch.
-            if (FindState(machine, "Hip") != null &&
-                FindState(machine, "Aim") != null &&
-                FindState(machine, "ArmedLocomotion") == null &&
-                FindState(machine, "ArmedCrouch") == null &&
-                FindState(machine, "AimLocomotion") == null)
-            {
-                return false;
-            }
-
-            Motion hipMotion = FindMotion(machine, "Hip", "ArmedLocomotion", "ArmedCrouch");
-            Motion aimMotion = FindMotion(machine, "Aim", "AimLocomotion");
-            Motion reloadStandingMotion = FindMotion(machine, "ReloadStanding");
-            Motion reloadCrouchMotion = FindMotion(machine, "ReloadCrouch");
+            Motion hipMotion = FindMotion(
+                machine,
+                "Firearm_Hip",
+                "Hip",
+                "ArmedLocomotion",
+                "ArmedCrouch"
+            );
+            Motion aimMotion = FindMotion(
+                machine,
+                "Firearm_Aim",
+                "Aim",
+                "AimLocomotion"
+            );
+            Motion reloadStandingMotion = FindMotion(
+                machine,
+                "Firearm_ReloadStanding",
+                "ReloadStanding"
+            );
+            Motion reloadCrouchMotion = FindMotion(
+                machine,
+                "Firearm_ReloadCrouch",
+                "ReloadCrouch"
+            );
             Motion switchMotion = FindMotion(machine, "WeaponSwitch");
+            Motion meleeHoldMotion = FindMotion(machine, "Melee_Hold");
+            Motion meleeEquipMotion = FindMotion(machine, "Melee_Equip");
 
             ClearStateMachine(machine);
 
-            AnimatorState empty = machine.AddState("Empty", new Vector3(260f, 80f));
-            AnimatorState hip = machine.AddState("Hip", new Vector3(540f, 20f));
-            AnimatorState aim = machine.AddState("Aim", new Vector3(800f, 20f));
-            AnimatorState reloadStanding = machine.AddState(
-                "ReloadStanding",
-                new Vector3(800f, 160f)
+            AnimatorState empty = AddState(machine, "Empty", null, 240f, 80f);
+
+            // Grupo visual Firearm.
+            AnimatorState firearmHip = AddState(
+                machine,
+                "Firearm_Hip",
+                hipMotion,
+                540f,
+                -80f
             );
-            AnimatorState reloadCrouch = machine.AddState(
-                "ReloadCrouch",
-                new Vector3(800f, 270f)
+            AnimatorState firearmAim = AddState(
+                machine,
+                "Firearm_Aim",
+                aimMotion,
+                820f,
+                -80f
             );
-            AnimatorState weaponSwitch = machine.AddState(
+            AnimatorState reloadStanding = AddState(
+                machine,
+                "Firearm_ReloadStanding",
+                reloadStandingMotion,
+                820f,
+                60f
+            );
+            AnimatorState reloadCrouch = AddState(
+                machine,
+                "Firearm_ReloadCrouch",
+                reloadCrouchMotion != null ? reloadCrouchMotion : reloadStandingMotion,
+                820f,
+                170f
+            );
+            AnimatorState weaponSwitch = AddState(
+                machine,
                 "WeaponSwitch",
-                new Vector3(540f, 210f)
+                switchMotion,
+                540f,
+                90f
             );
 
-            empty.writeDefaultValues = false;
-            hip.writeDefaultValues = false;
-            aim.writeDefaultValues = false;
-            reloadStanding.writeDefaultValues = false;
-            reloadCrouch.writeDefaultValues = false;
-            weaponSwitch.writeDefaultValues = false;
+            // Grupo visual Melee. Los Motion se dejan configurables en el
+            // Animator; no se inventa un clip ni un layer por cuchillo/martillo/etc.
+            AnimatorState meleeHold = AddState(
+                machine,
+                "Melee_Hold",
+                meleeHoldMotion,
+                540f,
+                320f
+            );
+            AnimatorState meleeEquip = AddState(
+                machine,
+                "Melee_Equip",
+                meleeEquipMotion,
+                820f,
+                320f
+            );
 
-            hip.motion = hipMotion;
-            aim.motion = aimMotion;
-            reloadStanding.motion = reloadStandingMotion;
-            reloadCrouch.motion = reloadCrouchMotion != null
-                ? reloadCrouchMotion
-                : reloadStandingMotion;
-            weaponSwitch.motion = switchMotion;
+            firearmHip.tag = "Firearm";
+            firearmAim.tag = "Firearm";
+            reloadStanding.tag = "Firearm";
+            reloadCrouch.tag = "Firearm";
+            meleeHold.tag = "Melee";
+            meleeEquip.tag = "Melee";
 
             if (reloadStanding.motion != null)
             {
@@ -220,13 +466,55 @@ namespace ROS.Game.EditorTools
 
             machine.defaultState = empty;
 
-            // Crouch deja de decidir una pose de arma distinta: solamente cambia
-            // las piernas desde Locomotion. Hip/Aim siguen siendo torso puro.
-            AddBoolTransition(empty, hip, "UpperBodyArmed", true, 0.08f);
-            AddBoolTransition(hip, empty, "UpperBodyArmed", false, 0.08f);
-            AddBoolTransition(hip, aim, "UpperBodyAim", true, 0.05f);
-            AddBoolTransition(aim, hip, "UpperBodyAim", false, 0.05f);
-            AddBoolTransition(aim, empty, "UpperBodyArmed", false, 0.05f);
+            // NONE -> FIREARM / MELEE.
+            AddBoolAndIntTransition(
+                empty,
+                firearmHip,
+                "UpperBodyArmed",
+                true,
+                WeaponCategoryParameter,
+                PlayerAnimationCoordinator.WeaponCategoryFirearm,
+                0.08f
+            );
+            AddBoolAndIntTransition(
+                empty,
+                meleeHold,
+                "UpperBodyArmed",
+                true,
+                WeaponCategoryParameter,
+                PlayerAnimationCoordinator.WeaponCategoryMelee,
+                0.08f
+            );
+
+            AddBoolTransition(firearmHip, empty, "UpperBodyArmed", false, 0.08f);
+            AddBoolTransition(meleeHold, empty, "UpperBodyArmed", false, 0.08f);
+
+            // Cambiar de categoria no requiere otro layer.
+            AddIntTransition(
+                firearmHip,
+                meleeHold,
+                WeaponCategoryParameter,
+                PlayerAnimationCoordinator.WeaponCategoryMelee,
+                0.08f
+            );
+            AddIntTransition(
+                meleeHold,
+                firearmHip,
+                WeaponCategoryParameter,
+                PlayerAnimationCoordinator.WeaponCategoryFirearm,
+                0.08f
+            );
+
+            AddBoolTransition(firearmHip, firearmAim, "UpperBodyAim", true, 0.05f);
+            AddBoolTransition(firearmAim, firearmHip, "UpperBodyAim", false, 0.05f);
+            AddBoolTransition(firearmAim, empty, "UpperBodyArmed", false, 0.05f);
+            AddIntTransition(
+                firearmAim,
+                meleeHold,
+                WeaponCategoryParameter,
+                PlayerAnimationCoordinator.WeaponCategoryMelee,
+                0.05f
+            );
 
             if (reloadStanding.motion != null)
             {
@@ -235,8 +523,13 @@ namespace ROS.Game.EditorTools
                 ConfigureTransition(toReloadStanding, 0.04f);
                 toReloadStanding.AddCondition(AnimatorConditionMode.If, 0f, "Reloading");
                 toReloadStanding.AddCondition(AnimatorConditionMode.IfNot, 0f, "Crouch");
+                toReloadStanding.AddCondition(
+                    AnimatorConditionMode.Equals,
+                    PlayerAnimationCoordinator.WeaponCategoryFirearm,
+                    WeaponCategoryParameter
+                );
 
-                AddBoolTransition(reloadStanding, hip, "Reloading", false, 0.05f);
+                AddBoolTransition(reloadStanding, firearmHip, "Reloading", false, 0.05f);
             }
 
             if (reloadCrouch.motion != null)
@@ -246,8 +539,13 @@ namespace ROS.Game.EditorTools
                 ConfigureTransition(toReloadCrouch, 0.04f);
                 toReloadCrouch.AddCondition(AnimatorConditionMode.If, 0f, "Reloading");
                 toReloadCrouch.AddCondition(AnimatorConditionMode.If, 0f, "Crouch");
+                toReloadCrouch.AddCondition(
+                    AnimatorConditionMode.Equals,
+                    PlayerAnimationCoordinator.WeaponCategoryFirearm,
+                    WeaponCategoryParameter
+                );
 
-                AddBoolTransition(reloadCrouch, hip, "Reloading", false, 0.05f);
+                AddBoolTransition(reloadCrouch, firearmHip, "Reloading", false, 0.05f);
             }
 
             if (switchMotion != null)
@@ -255,13 +553,96 @@ namespace ROS.Game.EditorTools
                 AnimatorStateTransition toSwitch = machine.AddAnyStateTransition(weaponSwitch);
                 ConfigureTransition(toSwitch, 0.04f);
                 toSwitch.AddCondition(AnimatorConditionMode.If, 0f, "WeaponSwitch");
+                toSwitch.AddCondition(
+                    AnimatorConditionMode.Equals,
+                    PlayerAnimationCoordinator.WeaponCategoryFirearm,
+                    WeaponCategoryParameter
+                );
 
-                AnimatorStateTransition switchExit = weaponSwitch.AddTransition(empty);
-                ConfigureTransition(switchExit, 0.06f);
-                switchExit.hasExitTime = true;
-                switchExit.exitTime = 0.95f;
+                AddExitTimeTransition(weaponSwitch, empty, 0.95f, 0.06f);
             }
 
+            if (meleeEquip.motion != null)
+            {
+                AnimatorStateTransition toMeleeEquip =
+                    machine.AddAnyStateTransition(meleeEquip);
+                ConfigureTransition(toMeleeEquip, 0.04f);
+                toMeleeEquip.AddCondition(AnimatorConditionMode.If, 0f, "WeaponSwitch");
+                toMeleeEquip.AddCondition(
+                    AnimatorConditionMode.Equals,
+                    PlayerAnimationCoordinator.WeaponCategoryMelee,
+                    WeaponCategoryParameter
+                );
+
+                AddExitTimeTransition(meleeEquip, meleeHold, 0.95f, 0.06f);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Crea un sub-state machine visible para que los ataques melee de
+        /// cuerpo completo tengan su sitio sin crear KnifeLayer/HammerLayer/etc.
+        /// No conecta ataques sin Motion para evitar activar un Override vacio.
+        /// </summary>
+        private static bool EnsureMeleeFullBodyArea(AnimatorController controller)
+        {
+            AnimatorControllerLayer layer = FindLayer(
+                controller,
+                PlayerAnimationCoordinator.FullBodyOverrideLayerName
+            );
+
+            if (layer == null || layer.stateMachine == null)
+                return false;
+
+            AnimatorStateMachine root = layer.stateMachine;
+            AnimatorStateMachine meleeMachine = FindStateMachine(root, "MeleeAttacks");
+            bool changed = false;
+
+            if (meleeMachine == null)
+            {
+                meleeMachine = root.AddStateMachine(
+                    "MeleeAttacks",
+                    new Vector3(900f, 330f)
+                );
+                changed = true;
+            }
+
+            changed |= EnsurePlaceholderState(
+                meleeMachine,
+                "Attack01",
+                new Vector3(260f, -80f),
+                "Melee"
+            );
+            changed |= EnsurePlaceholderState(
+                meleeMachine,
+                "Attack02",
+                new Vector3(520f, -80f),
+                "Melee"
+            );
+            changed |= EnsurePlaceholderState(
+                meleeMachine,
+                "HeavyAttack",
+                new Vector3(520f, 80f),
+                "Melee"
+            );
+
+            return changed;
+        }
+
+        private static bool EnsurePlaceholderState(
+            AnimatorStateMachine machine,
+            string name,
+            Vector3 position,
+            string tag)
+        {
+            AnimatorState state = FindState(machine, name);
+            if (state != null)
+                return false;
+
+            state = machine.AddState(name, position);
+            state.writeDefaultValues = false;
+            state.tag = tag;
             return true;
         }
 
@@ -333,6 +714,29 @@ namespace ROS.Game.EditorTools
             return null;
         }
 
+        private static AnimatorState FindStateRecursive(
+            AnimatorStateMachine machine,
+            string stateName)
+        {
+            AnimatorState local = FindState(machine, stateName);
+            if (local != null)
+                return local;
+
+            ChildAnimatorStateMachine[] children = machine.stateMachines;
+            for (int i = 0; i < children.Length; i++)
+            {
+                AnimatorStateMachine child = children[i].stateMachine;
+                if (child == null)
+                    continue;
+
+                AnimatorState found = FindStateRecursive(child, stateName);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
+        }
+
         private static AnimatorState FindState(AnimatorStateMachine machine, string stateName)
         {
             ChildAnimatorState[] states = machine.states;
@@ -346,18 +750,60 @@ namespace ROS.Game.EditorTools
             return null;
         }
 
+        private static AnimatorStateMachine FindStateMachine(
+            AnimatorStateMachine parent,
+            string name)
+        {
+            ChildAnimatorStateMachine[] children = parent.stateMachines;
+            for (int i = 0; i < children.Length; i++)
+            {
+                AnimatorStateMachine machine = children[i].stateMachine;
+                if (machine != null && machine.name == name)
+                    return machine;
+            }
+
+            return null;
+        }
+
         private static Motion FindMotion(
             AnimatorStateMachine machine,
             params string[] stateNames)
         {
             for (int i = 0; i < stateNames.Length; i++)
             {
-                AnimatorState state = FindState(machine, stateNames[i]);
+                AnimatorState state = FindStateRecursive(machine, stateNames[i]);
                 if (state != null && state.motion != null)
                     return state.motion;
             }
 
             return null;
+        }
+
+        private static AnimatorState AddState(
+            AnimatorStateMachine machine,
+            string name,
+            Motion motion,
+            float x,
+            float y)
+        {
+            AnimatorState state = machine.AddState(name, new Vector3(x, y));
+            state.motion = motion;
+            state.writeDefaultValues = false;
+            return state;
+        }
+
+        private static void RemoveAllTransitions(AnimatorState state)
+        {
+            AnimatorStateTransition[] transitions = state.transitions;
+            for (int i = transitions.Length - 1; i >= 0; i--)
+                state.RemoveTransition(transitions[i]);
+        }
+
+        private static void ClearConditions(AnimatorStateTransition transition)
+        {
+            AnimatorCondition[] conditions = transition.conditions;
+            for (int i = conditions.Length - 1; i >= 0; i--)
+                transition.RemoveCondition(conditions[i]);
         }
 
         private static void AddBoolTransition(
@@ -374,6 +820,57 @@ namespace ROS.Game.EditorTools
                 0f,
                 parameter
             );
+        }
+
+        private static void AddIntTransition(
+            AnimatorState source,
+            AnimatorState destination,
+            string parameter,
+            int value,
+            float duration)
+        {
+            AnimatorStateTransition transition = source.AddTransition(destination);
+            ConfigureTransition(transition, duration);
+            transition.AddCondition(
+                AnimatorConditionMode.Equals,
+                value,
+                parameter
+            );
+        }
+
+        private static void AddBoolAndIntTransition(
+            AnimatorState source,
+            AnimatorState destination,
+            string boolParameter,
+            bool boolValue,
+            string intParameter,
+            int intValue,
+            float duration)
+        {
+            AnimatorStateTransition transition = source.AddTransition(destination);
+            ConfigureTransition(transition, duration);
+            transition.AddCondition(
+                boolValue ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot,
+                0f,
+                boolParameter
+            );
+            transition.AddCondition(
+                AnimatorConditionMode.Equals,
+                intValue,
+                intParameter
+            );
+        }
+
+        private static void AddExitTimeTransition(
+            AnimatorState source,
+            AnimatorState destination,
+            float exitTime,
+            float duration)
+        {
+            AnimatorStateTransition transition = source.AddTransition(destination);
+            ConfigureTransition(transition, duration);
+            transition.hasExitTime = true;
+            transition.exitTime = exitTime;
         }
 
         private static void ConfigureTransition(
