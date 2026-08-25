@@ -56,17 +56,13 @@ namespace ROS.Game.Parachute
         private void Start()
         {
             if (startOnStart)
-            {
                 BeginSequence();
-            }
         }
 
         private void Update()
         {
             if (!SequenceRunning)
-            {
                 return;
-            }
 
             if (!_flightStarted)
             {
@@ -76,17 +72,13 @@ namespace ROS.Game.Parachute
                 );
 
                 if (WarmupRemaining <= 0f)
-                {
                     BeginFlight();
-                }
 
                 return;
             }
 
             if (HasJumped)
-            {
                 return;
-            }
 
             bool jumpPressed = input != null &&
                                (input.InteractPressed ||
@@ -145,9 +137,7 @@ namespace ROS.Game.Parachute
             AttachPlayerToPlane();
 
             if (matchManager != null)
-            {
                 matchManager.BeginWarmup();
-            }
 
             SequenceStarted?.Invoke();
             return true;
@@ -179,9 +169,7 @@ namespace ROS.Game.Parachute
             _flightStarted = true;
 
             if (matchManager != null)
-            {
                 matchManager.BeginPlanePhase();
-            }
 
             airplane.BeginFlight(
                 routeStart,
@@ -198,12 +186,21 @@ namespace ROS.Game.Parachute
             player.localRotation = Quaternion.identity;
         }
 
+        private void HandleRouteCompleted()
+        {
+            // Último punto válido para abandonar el avión. Si el jugador no
+            // saltó manualmente/automáticamente, se lo expulsa antes del tramo
+            // de salida para que nunca quede pegado al avión fuera del mapa.
+            if (!HasJumped)
+                TryJump();
+        }
+
         private void HandleFlightFinished()
         {
+            // Fallback defensivo por si otro flujo termina el vuelo sin haber
+            // emitido RouteCompleted.
             if (!HasJumped)
-            {
                 TryJump();
-            }
         }
 
         private void HandleLanding()
@@ -211,9 +208,7 @@ namespace ROS.Game.Parachute
             SequenceRunning = false;
 
             if (matchManager != null)
-            {
                 matchManager.BeginGameplay();
-            }
 
             SequenceCompleted?.Invoke();
         }
@@ -222,6 +217,8 @@ namespace ROS.Game.Parachute
         {
             if (airplane != null)
             {
+                airplane.RouteCompleted -= HandleRouteCompleted;
+                airplane.RouteCompleted += HandleRouteCompleted;
                 airplane.FlightFinished -= HandleFlightFinished;
                 airplane.FlightFinished += HandleFlightFinished;
             }
@@ -237,13 +234,12 @@ namespace ROS.Game.Parachute
         {
             if (airplane != null)
             {
+                airplane.RouteCompleted -= HandleRouteCompleted;
                 airplane.FlightFinished -= HandleFlightFinished;
             }
 
             if (playerParachute != null)
-            {
                 playerParachute.Landed -= HandleLanding;
-            }
         }
 
         private void OnDestroy()
