@@ -13,27 +13,30 @@ using UnityEngine;
 namespace ROS.Game.Animation
 {
     /// <summary>
-    /// Fuente única de verdad para los parámetros del Animator del jugador.
+    /// Fuente única de verdad para parámetros y pesos del Animator del jugador.
     ///
-    /// Arquitectura:
-    /// - Locomotion (base): cuerpo completo sin arma. Conserva el movimiento
-    ///   natural de piernas, cadera, columna y brazos.
-    /// - UpperBodyCombat: solo torso/brazos. Superpone postura de arma y Aim
-    ///   sin sustituir la locomoción de la parte baja.
-    /// - UpperBodyActions: solo torso/brazos. Healing, Reload y WeaponSwitch.
-    /// - Lean continúa aplicándose al final por PlayerLeanRigApplier como
-    ///   modificación aditiva de la pose evaluada.
-    /// - Gestures es full-body y temporalmente silencia las capas superiores.
+    /// Arquitectura final:
+    /// 0 Locomotion       -> locomoción base; cadera/piernas conservan el movimiento.
+    /// 1 WeaponUpperBody  -> armas, postura y Aim del torso (Override + máscara superior).
+    /// 2 UpperBodyActions -> Heal/Reload/Switch/Pickup/gestos de torso (Override + máscara superior).
+    /// 3 AimRecoil        -> AimPitch/Recoil/Lean/offsets (Additive + máscara superior).
+    /// 4 FullBodyOverride -> acciones que explícitamente toman todo el cuerpo.
     ///
-    /// Los parámetros legacy HasRifle/Aim se fuerzan a false para impedir que
-    /// la capa base vuelva a entrar en locomociones armadas full-body.
+    /// Ningún otro componente debe escribir continuamente los pesos de estas capas.
     /// </summary>
     [DefaultExecutionOrder(80)]
     [DisallowMultipleComponent]
     public sealed class PlayerAnimationCoordinator : MonoBehaviour
     {
-        public const string CombatLayerName = "UpperBodyCombat";
-        public const string ActionsLayerName = "UpperBodyActions";
+        public const string LocomotionLayerName = "Locomotion";
+        public const string WeaponUpperBodyLayerName = "WeaponUpperBody";
+        public const string UpperBodyActionsLayerName = "UpperBodyActions";
+        public const string AimRecoilLayerName = "AimRecoil";
+        public const string FullBodyOverrideLayerName = "FullBodyOverride";
+
+        // Alias de compatibilidad para herramientas Editor First antiguas.
+        public const string CombatLayerName = WeaponUpperBodyLayerName;
+        public const string ActionsLayerName = UpperBodyActionsLayerName;
 
         [Header("References")]
         [SerializeField] private Animator animator;
@@ -57,14 +60,23 @@ namespace ROS.Game.Animation
         [SerializeField] private bool debugUpperBodyAim;
         [SerializeField] private bool debugReloading;
         [SerializeField] private bool debugHealing;
+        [SerializeField] private bool debugFullBodyOverride;
         [SerializeField] private float debugReloadSpeed = 1f;
         [SerializeField] private float debugAimPitch;
 
         private PlayerInteractor _interactor;
-        private int _combatLayer = -1;
-        private int _actionsLayer = -1;
+        private int _locomotionLayer = -1;
+        private int _weaponUpperBodyLayer = -1;
+        private int _upperBodyActionsLayer = -1;
+        private int _aimRecoilLayer = -1;
+        private int _fullBodyOverrideLayer = -1;
+        private RuntimeAnimatorController _resolvedController;
         private float _standingReloadClipLength = -1f;
         private float _crouchReloadClipLength = -1f;
+        private bool _manualFullBodyOverride;
+        private bool _manualRootMotion;
+        private bool _initialApplyRootMotion;
+        private bool _capturedRootMotion;
 
         private static readonly int MoveX = Animator.StringToHash("MoveX");
         private static readonly int MoveY = Animator.StringToHash("MoveY");
@@ -76,11 +88,10 @@ namespace ROS.Game.Animation
         private static readonly int Dead = Animator.StringToHash("Dead");
         private static readonly int PickupItem = Animator.StringToHash("PickupItem");
 
-        // Parámetros legacy de la capa base. Se mantienen siempre apagados.
+        // Parámetros legacy de locomoción armada full-body: quedan siempre apagados.
         private static readonly int LegacyHasRifle = Animator.StringToHash("HasRifle");
         private static readonly int LegacyAim = Animator.StringToHash("Aim");
 
-        // Parámetros de la arquitectura consolidada.
         private static readonly int UpperBodyArmed = Animator.StringToHash("UpperBodyArmed");
         private static readonly int UpperBodyAim = Animator.StringToHash("UpperBodyAim");
         private static readonly int Reloading = Animator.StringToHash("Reloading");
@@ -88,28 +99,44 @@ namespace ROS.Game.Animation
         private static readonly int Healing = Animator.StringToHash("Healing");
         private static readonly int AimPitch = Animator.StringToHash("AimPitch");
 
+        public bool IsFullBodyOverrideActive
+        {
+            get
+            {
+                bool gestureFullBody = gestureController != null &&
+                                       gestureController.IsPlaying &&
+                                       gestureController.IsFullBodyGesture;
+                return _manualFullBodyOverride || gestureFullBody;
+            }
+        }
+
         private void Awake()
         {
             ResolveReferences();
+            CaptureRootMotionDefault();
             BindInteractor();
-            ResolveLayerIndexes();
+            ResolveLayerIndexes(true);
             ResolveReloadClipLengths();
         }
 
         private void OnEnable()
         {
             ResolveReferences();
+            CaptureRootMotionDefault();
             BindInteractor();
+            ResolveLayerIndexes(true);
         }
 
         private void OnDisable()
         {
             UnbindInteractor();
+            RestoreRootMotionDefault();
         }
 
         private void OnDestroy()
         {
             UnbindInteractor();
+            RestoreRootMotionDefault();
         }
 
         private void Reset()
@@ -132,10 +159,22 @@ namespace ROS.Game.Animation
             if (animator == null || motor == null || input == null)
                 return;
 
-            ResolveLayerIndexes();
+            ResolveLayerIndexes(false);
             UpdateMovementParameters();
             UpdateBaseStateParameters();
-            UpdateUpperBodyParameters();
+            UpdateUpperBodyParametersAndLayers();
+        }
+
+        /// <summary>
+        /// Activa/desactiva una acción explícita de cuerpo completo.
+        /// Root Motion solo se habilita cuando la acción lo solicita expresamente
+        /// (por ejemplo Vault/Climb); nunca por un gesto normal.
+        /// </summary>
+        public void SetFullBodyOverride(bool active, bool useRootMotion = false)
+        {
+            _manualFullBodyOverride = active;
+            _manualRootMotion = active && useRootMotion;
+            ApplyRootMotionPolicy();
         }
 
         private void UpdateMovementParameters()
@@ -160,8 +199,6 @@ namespace ROS.Game.Animation
             if (motor.IsCrouching || motor.IsProne)
                 return 0.33f;
 
-            // Aim ya no obliga a reproducir Walk. La parte inferior mantiene
-            // Walk/Run según el movimiento real mientras el torso apunta.
             if (input.SprintHeld && move.y > 0.25f)
                 return 1f;
 
@@ -188,16 +225,17 @@ namespace ROS.Game.Animation
                     : motor.Velocity.y
             );
 
-            // Fundamental para la consolidación: la capa Base solo resuelve
-            // locomoción. Armas y Aim se componen en UpperBodyCombat.
+            // La capa base no debe volver a una locomoción armada full-body.
             SetBoolIfPresent(LegacyHasRifle, false);
             SetBoolIfPresent(LegacyAim, false);
         }
 
-        private void UpdateUpperBodyParameters()
+        private void UpdateUpperBodyParametersAndLayers()
         {
             bool dead = health != null && !health.IsAlive;
             bool gesturing = gestureController != null && gestureController.IsPlaying;
+            bool fullBodyGesture = gesturing && gestureController.IsFullBodyGesture;
+            bool fullBodyOverride = !dead && (_manualFullBodyOverride || fullBodyGesture);
             bool healing = consumable != null && consumable.IsUsing;
 
             WeaponController weapon = equipment != null
@@ -205,18 +243,29 @@ namespace ROS.Game.Animation
                 : null;
 
             bool hasWeapon = weapon != null;
-            bool reloading = hasWeapon && weapon.IsReloading && !healing && !gesturing;
+            bool reloading = hasWeapon &&
+                             weapon.IsReloading &&
+                             !healing &&
+                             !gesturing &&
+                             !fullBodyOverride;
+
             bool aiming = hasWeapon &&
                           !reloading &&
                           !healing &&
                           !gesturing &&
+                          !fullBodyOverride &&
                           !motor.IsProne &&
                           equipment != null &&
                           equipment.CombatState == PlayerCombatState.Aiming;
 
-            // Prone conserva por ahora su locomoción full-body existente. No se
-            // mezcla con la nueva capa hasta tener clips prone de torso dedicados.
-            bool armedUpperBody = hasWeapon && !gesturing && !dead && !motor.IsProne;
+            // Prone conserva temporalmente sus clips full-body hasta contar con
+            // una variante de torso dedicada.
+            bool armedUpperBody = hasWeapon &&
+                                  !healing &&
+                                  !gesturing &&
+                                  !fullBodyOverride &&
+                                  !dead &&
+                                  !motor.IsProne;
 
             float reloadSpeed = reloading
                 ? ResolveReloadSpeed(weapon, motor.IsCrouching)
@@ -227,20 +276,25 @@ namespace ROS.Game.Animation
             SetBoolIfPresent(UpperBodyArmed, armedUpperBody);
             SetBoolIfPresent(UpperBodyAim, aiming);
             SetBoolIfPresent(Reloading, reloading);
-            SetBoolIfPresent(Healing, healing && !gesturing && !dead);
+            SetBoolIfPresent(Healing, healing && !gesturing && !fullBodyOverride && !dead);
             SetFloatIfPresent(ReloadSpeed, reloadSpeed);
             SetFloatIfPresent(AimPitch, aimPitch);
 
-            // Los gestos son full-body. Mientras uno se reproduce, ninguna capa
-            // de torso puede sobrescribir brazos, pecho o cabeza.
-            float upperBodyWeight = dead || gesturing ? 0f : 1f;
-            SetLayerWeightSafe(_combatLayer, upperBodyWeight);
-            SetLayerWeightSafe(_actionsLayer, upperBodyWeight);
+            // Orden real de composición:
+            // Locomotion < WeaponUpperBody < UpperBodyActions < AimRecoil < FullBodyOverride.
+            SetLayerWeightSafe(_locomotionLayer, 1f);
+            SetLayerWeightSafe(_weaponUpperBodyLayer, dead || fullBodyOverride ? 0f : 1f);
+            SetLayerWeightSafe(_upperBodyActionsLayer, dead || fullBodyOverride ? 0f : 1f);
+            SetLayerWeightSafe(_aimRecoilLayer, aiming && !dead && !fullBodyOverride ? 1f : 0f);
+            SetLayerWeightSafe(_fullBodyOverrideLayer, fullBodyOverride ? 1f : 0f);
+
+            ApplyRootMotionPolicy();
 
             debugUpperBodyArmed = armedUpperBody;
             debugUpperBodyAim = aiming;
             debugReloading = reloading;
             debugHealing = healing;
+            debugFullBodyOverride = fullBodyOverride;
             debugReloadSpeed = reloadSpeed;
             debugAimPitch = aimPitch;
         }
@@ -265,9 +319,7 @@ namespace ROS.Game.Animation
             );
         }
 
-        private float ResolveReloadSpeed(
-            WeaponController weapon,
-            bool crouching)
+        private float ResolveReloadSpeed(WeaponController weapon, bool crouching)
         {
             if (weapon == null || weapon.ActiveReloadDuration <= 0.01f)
                 return 1f;
@@ -281,8 +333,6 @@ namespace ROS.Game.Animation
             if (clipLength <= 0.01f)
                 return 1f;
 
-            // Animator speed = duración del clip / duración real del arma.
-            // Así el movimiento visual termina junto con la recarga real.
             return Mathf.Clamp(
                 clipLength / weapon.ActiveReloadDuration,
                 0.2f,
@@ -320,22 +370,57 @@ namespace ROS.Game.Animation
             }
         }
 
-        private void ResolveLayerIndexes()
+        private void ResolveLayerIndexes(bool force)
         {
             if (animator == null)
                 return;
 
-            if (_combatLayer < 0)
-                _combatLayer = animator.GetLayerIndex(CombatLayerName);
+            RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+            if (!force && controller == _resolvedController)
+                return;
 
-            if (_actionsLayer < 0)
-                _actionsLayer = animator.GetLayerIndex(ActionsLayerName);
+            _resolvedController = controller;
+            _locomotionLayer = animator.GetLayerIndex(LocomotionLayerName);
+            _weaponUpperBodyLayer = animator.GetLayerIndex(WeaponUpperBodyLayerName);
+            _upperBodyActionsLayer = animator.GetLayerIndex(UpperBodyActionsLayerName);
+            _aimRecoilLayer = animator.GetLayerIndex(AimRecoilLayerName);
+            _fullBodyOverrideLayer = animator.GetLayerIndex(FullBodyOverrideLayerName);
+        }
+
+        private void CaptureRootMotionDefault()
+        {
+            if (_capturedRootMotion || animator == null)
+                return;
+
+            _initialApplyRootMotion = animator.applyRootMotion;
+            _capturedRootMotion = true;
+        }
+
+        private void ApplyRootMotionPolicy()
+        {
+            if (animator == null)
+                return;
+
+            CaptureRootMotionDefault();
+            animator.applyRootMotion = _manualFullBodyOverride && _manualRootMotion
+                ? true
+                : _initialApplyRootMotion;
+        }
+
+        private void RestoreRootMotionDefault()
+        {
+            if (animator != null && _capturedRootMotion)
+                animator.applyRootMotion = _initialApplyRootMotion;
         }
 
         private void SetLayerWeightSafe(int index, float value)
         {
-            if (index >= 0 && index < animator.layerCount)
-                animator.SetLayerWeight(index, value);
+            if (animator == null || index < 0 || index >= animator.layerCount)
+                return;
+
+            float clamped = Mathf.Clamp01(value);
+            if (!Mathf.Approximately(animator.GetLayerWeight(index), clamped))
+                animator.SetLayerWeight(index, clamped);
         }
 
         private void SetBoolIfPresent(int parameterHash, bool value)
@@ -354,18 +439,16 @@ namespace ROS.Game.Animation
             animator.SetFloat(parameterHash, value);
         }
 
-        private bool HasParameter(
-            int parameterHash,
-            AnimatorControllerParameterType type)
+        private bool HasParameter(int parameterHash, AnimatorControllerParameterType type)
         {
+            if (animator == null)
+                return false;
+
             AnimatorControllerParameter[] parameters = animator.parameters;
             for (int i = 0; i < parameters.Length; i++)
             {
-                if (parameters[i].nameHash == parameterHash &&
-                    parameters[i].type == type)
-                {
+                if (parameters[i].nameHash == parameterHash && parameters[i].type == type)
                     return true;
-                }
             }
 
             return false;

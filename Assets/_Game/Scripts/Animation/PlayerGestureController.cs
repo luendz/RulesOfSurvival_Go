@@ -13,8 +13,11 @@ namespace ROS.Game.Animation
     [DefaultExecutionOrder(-20)]
     public sealed class PlayerGestureController : MonoBehaviour
     {
-        public const string GestureLayerName = "Gestures";
-        public const string GestureIdleState = "GestureIdle";
+        // Compatibilidad: los gestos full-body viven ahora en FullBodyOverride.
+        public const string GestureLayerName = PlayerAnimationCoordinator.FullBodyOverrideLayerName;
+        public const string UpperBodyGestureLayerName = PlayerAnimationCoordinator.UpperBodyActionsLayerName;
+        public const string FullBodyGestureLayerName = PlayerAnimationCoordinator.FullBodyOverrideLayerName;
+        public const string GestureIdleState = "Empty";
 
         [Header("References")]
         [SerializeField] private Animator animator;
@@ -26,20 +29,15 @@ namespace ROS.Game.Animation
         [SerializeField] private ConsumableController consumable;
 
         [Header("Gesture")]
-        [SerializeField, Min(0f)]
-        private float transitionDuration = 0.12f;
-
-        [SerializeField, Min(0f)]
-        private float aimCancelTransitionDuration = 0.02f;
-
-        [SerializeField, Min(0f)]
-        private float movementCancelThreshold = 0.18f;
-
-        [SerializeField, Min(0f)]
-        private float combatInputGraceTime = 0.18f;
+        [SerializeField, Min(0f)] private float transitionDuration = 0.12f;
+        [SerializeField, Min(0f)] private float aimCancelTransitionDuration = 0.02f;
+        [SerializeField, Min(0f)] private float movementCancelThreshold = 0.18f;
+        [SerializeField, Min(0f)] private float combatInputGraceTime = 0.18f;
 
         public bool IsPlaying { get; private set; }
+        public bool IsFullBodyGesture { get; private set; }
         public string CurrentGesture { get; private set; }
+        public string CurrentGestureLayerName { get; private set; }
 
         public bool CanPlayGesture
         {
@@ -56,8 +54,6 @@ namespace ROS.Game.Animation
                 if (!motor.IsGrounded || motor.IsCrouching || motor.IsProne)
                     return false;
 
-                // El propio gesto bloquea el movimiento. Ese bloqueo no debe
-                // impedir cambiar directamente a otro gesto mientras reproduce.
                 if (motor.ExternalMovementLocked && !IsPlaying)
                     return false;
 
@@ -74,34 +70,30 @@ namespace ROS.Game.Animation
                     return false;
                 }
 
-                return ResolveGestureLayer();
+                return ResolveLayer(UpperBodyGestureLayerName) >= 0 ||
+                       ResolveLayer(FullBodyGestureLayerName) >= 0;
             }
         }
 
         public event Action<string> GestureStarted;
         public event Action<string> GestureEnded;
 
-        private int _gestureLayerIndex = -1;
+        private int _activeLayerIndex = -1;
         private float _ignoreIdleUntil;
         private float _ignoreCombatInputUntil;
         private bool _warnedMissingLayer;
+        private bool _movementLockedByGesture;
         private int _weaponSlotBeforeGesture;
-
-        private static readonly int GestureIdleHash =
-            Animator.StringToHash(GestureIdleState);
 
         private void Awake()
         {
             EnsureReferences();
-            ResolveGestureLayer();
         }
 
         private void OnDisable()
         {
             if (IsPlaying)
-            {
                 FinishGesture();
-            }
         }
 
         private void Update()
@@ -117,8 +109,7 @@ namespace ROS.Game.Animation
                 return;
             }
 
-            // Apuntar tiene prioridad absoluta: debe cortar el gesto casi al
-            // instante para devolver control de combate al jugador.
+            // Apuntar tiene prioridad absoluta y corta el gesto casi al instante.
             if (HasAimCancelInput())
             {
                 CancelGesture(aimCancelTransitionDuration);
@@ -131,7 +122,7 @@ namespace ROS.Game.Animation
                 return;
             }
 
-            if (animator == null || !ResolveGestureLayer())
+            if (animator == null || !ResolveActiveLayer())
             {
                 FinishGesture();
                 return;
@@ -140,35 +131,38 @@ namespace ROS.Game.Animation
             if (Time.unscaledTime < _ignoreIdleUntil)
                 return;
 
-            AnimatorStateInfo state =
-                animator.GetCurrentAnimatorStateInfo(_gestureLayerIndex);
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(_activeLayerIndex);
+            int emptyHash = Animator.StringToHash(GestureIdleState);
 
-            if (!animator.IsInTransition(_gestureLayerIndex) &&
-                state.shortNameHash == GestureIdleHash)
+            if (!animator.IsInTransition(_activeLayerIndex) &&
+                state.shortNameHash == emptyHash)
             {
                 FinishGesture();
             }
         }
 
-        public bool TryPlayGesture(
-            string animatorStateName,
-            string displayName = null
-        )
+        public bool TryPlayGesture(string animatorStateName, string displayName = null)
         {
-            if (string.IsNullOrWhiteSpace(animatorStateName) ||
-                !CanPlayGesture)
+            if (string.IsNullOrWhiteSpace(animatorStateName) || !CanPlayGesture)
+                return false;
+
+            bool fullBody = IsFullBodyGestureState(animatorStateName);
+            string targetLayerName = fullBody
+                ? FullBodyGestureLayerName
+                : UpperBodyGestureLayerName;
+
+            int targetLayer = ResolveLayer(targetLayerName);
+            if (targetLayer < 0)
             {
+                WarnMissingLayer(targetLayerName);
                 return false;
             }
 
-            int stateHash = Animator.StringToHash(
-                $"{GestureLayerName}.{animatorStateName}"
-            );
-
-            if (!animator.HasState(_gestureLayerIndex, stateHash))
+            int stateHash = Animator.StringToHash($"{targetLayerName}.{animatorStateName}");
+            if (!animator.HasState(targetLayer, stateHash))
             {
                 Debug.LogWarning(
-                    $"Gesture state '{animatorStateName}' was not found in layer '{GestureLayerName}'.",
+                    $"Gesture state '{animatorStateName}' was not found in layer '{targetLayerName}'.",
                     this
                 );
                 return false;
@@ -178,37 +172,36 @@ namespace ROS.Game.Animation
             bool switchingGesture = IsPlaying;
 
             if (!switchingGesture)
-            {
                 StoreAndHolsterWeapon();
-                motor.SetExternalMovementLocked(true);
-            }
 
-            animator.SetLayerWeight(_gestureLayerIndex, 1f);
-            animator.CrossFade(
-                stateHash,
-                transitionDuration,
-                _gestureLayerIndex,
-                0f
-            );
+            UpdateMovementLock(fullBody);
 
+            _activeLayerIndex = targetLayer;
+            CurrentGestureLayerName = targetLayerName;
+            IsFullBodyGesture = fullBody;
             IsPlaying = true;
             CurrentGesture = string.IsNullOrWhiteSpace(displayName)
                 ? animatorStateName
                 : displayName;
 
+            // PlayerAnimationCoordinator es quien decide el LayerWeight.
+            animator.CrossFade(
+                stateHash,
+                transitionDuration,
+                targetLayer,
+                0f
+            );
+
             _ignoreIdleUntil =
                 Time.unscaledTime + Mathf.Max(0.08f, transitionDuration);
 
-            // Esta gracia protege principalmente el clic izquierdo usado para
-            // confirmar una opción del menú radial. Apuntar NO usa esta gracia.
+            // Protege el clic izquierdo usado para confirmar el menú radial.
+            // Aim no usa esta gracia porque siempre tiene prioridad.
             _ignoreCombatInputUntil =
                 Time.unscaledTime + Mathf.Max(0.08f, combatInputGraceTime);
 
-            if (switchingGesture &&
-                !string.IsNullOrWhiteSpace(previousGesture))
-            {
+            if (switchingGesture && !string.IsNullOrWhiteSpace(previousGesture))
                 GestureEnded?.Invoke(previousGesture);
-            }
 
             GestureStarted?.Invoke(CurrentGesture);
             return true;
@@ -224,24 +217,38 @@ namespace ROS.Game.Animation
             if (!IsPlaying)
                 return;
 
-            if (animator != null && ResolveGestureLayer())
+            if (animator != null && ResolveActiveLayer())
             {
                 int idleHash = Animator.StringToHash(
-                    $"{GestureLayerName}.{GestureIdleState}"
+                    $"{CurrentGestureLayerName}.{GestureIdleState}"
                 );
 
-                if (animator.HasState(_gestureLayerIndex, idleHash))
+                if (animator.HasState(_activeLayerIndex, idleHash))
                 {
                     animator.CrossFade(
                         idleHash,
                         Mathf.Max(0f, cancelTransitionDuration),
-                        _gestureLayerIndex,
+                        _activeLayerIndex,
                         0f
                     );
                 }
             }
 
             FinishGesture();
+        }
+
+        private static bool IsFullBodyGestureState(string animatorStateName)
+        {
+            // Estos tres clips pueden componerse con las piernas en locomoción.
+            switch (animatorStateName)
+            {
+                case "Gesture_Salute":
+                case "Gesture_Talking_On_Phone":
+                case "Gesture_Waving_Gesture":
+                    return false;
+                default:
+                    return true;
+            }
         }
 
         private void StoreAndHolsterWeapon()
@@ -268,9 +275,19 @@ namespace ROS.Game.Animation
             _weaponSlotBeforeGesture = 0;
 
             if (equipment.HasWeaponInSlot(slotToRestore))
-            {
                 equipment.EquipSlot(slotToRestore);
-            }
+        }
+
+        private void UpdateMovementLock(bool shouldLock)
+        {
+            if (motor == null)
+                return;
+
+            if (_movementLockedByGesture == shouldLock)
+                return;
+
+            motor.SetExternalMovementLocked(shouldLock);
+            _movementLockedByGesture = shouldLock;
         }
 
         private bool CanContinueGesture()
@@ -303,11 +320,14 @@ namespace ROS.Game.Animation
             if (input == null)
                 return false;
 
-            float thresholdSqr =
-                movementCancelThreshold * movementCancelThreshold;
-
-            if (input.Move.sqrMagnitude > thresholdSqr)
-                return true;
+            // Solo los gestos full-body cancelan por movimiento. Los gestos de
+            // torso pueden convivir con Walk/Run y dejan las piernas a Locomotion.
+            if (IsFullBodyGesture)
+            {
+                float thresholdSqr = movementCancelThreshold * movementCancelThreshold;
+                if (input.Move.sqrMagnitude > thresholdSqr)
+                    return true;
+            }
 
             if (input.JumpPressed ||
                 input.CrouchPressed ||
@@ -329,77 +349,82 @@ namespace ROS.Game.Animation
             string finishedGesture = CurrentGesture;
 
             IsPlaying = false;
+            IsFullBodyGesture = false;
             CurrentGesture = null;
+            CurrentGestureLayerName = null;
+            _activeLayerIndex = -1;
 
-            if (motor != null)
-            {
+            if (_movementLockedByGesture && motor != null)
                 motor.SetExternalMovementLocked(false);
-            }
+            _movementLockedByGesture = false;
 
             RestoreWeapon();
 
             if (!string.IsNullOrWhiteSpace(finishedGesture))
-            {
                 GestureEnded?.Invoke(finishedGesture);
-            }
         }
 
-        private bool ResolveGestureLayer()
+        private bool ResolveActiveLayer()
         {
-            if (animator == null)
+            if (animator == null || string.IsNullOrWhiteSpace(CurrentGestureLayerName))
                 return false;
 
-            if (_gestureLayerIndex >= 0 &&
-                _gestureLayerIndex < animator.layerCount &&
-                animator.GetLayerName(_gestureLayerIndex) == GestureLayerName)
+            if (_activeLayerIndex >= 0 &&
+                _activeLayerIndex < animator.layerCount &&
+                animator.GetLayerName(_activeLayerIndex) == CurrentGestureLayerName)
             {
                 return true;
             }
 
-            _gestureLayerIndex =
-                animator.GetLayerIndex(GestureLayerName);
+            _activeLayerIndex = ResolveLayer(CurrentGestureLayerName);
+            return _activeLayerIndex >= 0;
+        }
 
-            if (_gestureLayerIndex >= 0)
-            {
-                _warnedMissingLayer = false;
-                return true;
-            }
+        private int ResolveLayer(string layerName)
+        {
+            if (animator == null || string.IsNullOrWhiteSpace(layerName))
+                return -1;
 
-            if (!_warnedMissingLayer)
-            {
-                Debug.LogWarning(
-                    $"Animator layer '{GestureLayerName}' is missing. " +
-                    "Open the project in Unity so GestureAnimatorConfigurator can configure it.",
-                    this
-                );
-                _warnedMissingLayer = true;
-            }
+            return animator.GetLayerIndex(layerName);
+        }
 
-            return false;
+        private void WarnMissingLayer(string layerName)
+        {
+            if (_warnedMissingLayer)
+                return;
+
+            Debug.LogWarning(
+                $"Animator layer '{layerName}' is missing. Open the project in Unity so the Editor First animation materializer can configure it.",
+                this
+            );
+            _warnedMissingLayer = true;
         }
 
         private void EnsureReferences()
         {
             if (input == null)
-                input = GetComponent<PlayerInputReader>();
+                input = GetComponent<PlayerInputReader>() ?? GetComponentInParent<PlayerInputReader>();
 
             if (motor == null)
-                motor = GetComponent<PlayerMotor>();
+                motor = GetComponent<PlayerMotor>() ?? GetComponentInParent<PlayerMotor>();
 
             if (animator == null)
                 animator = GetComponentInChildren<Animator>(true);
 
             if (equipment == null)
-                equipment = GetComponent<WeaponEquipmentController>();
+                equipment = GetComponent<WeaponEquipmentController>() ??
+                            GetComponentInParent<WeaponEquipmentController>();
 
             if (health == null)
-                health = GetComponent<Health>();
+                health = GetComponent<Health>() ?? GetComponentInParent<Health>();
 
             if (parachute == null)
-                parachute = GetComponent<ParachuteController>();
+                parachute = GetComponent<ParachuteController>() ??
+                            GetComponentInParent<ParachuteController>();
 
             if (consumable == null)
-                consumable = GetComponent<ConsumableController>();
+                consumable = GetComponent<ConsumableController>() ??
+                             GetComponentInParent<ConsumableController>();
         }
     }
 }
