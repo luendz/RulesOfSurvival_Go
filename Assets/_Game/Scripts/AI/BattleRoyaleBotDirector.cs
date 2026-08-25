@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
 using ROS.Game.Core;
+using ROS.Game.Gameplay;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
 using ROS.Game.Inventory;
@@ -244,6 +245,13 @@ namespace ROS.Game.AI
 
             if (botObject.GetComponent<WeaponAmmoConnector>() == null)
                 botObject.AddComponent<WeaponAmmoConnector>();
+
+            ConsumableController consumables =
+                botObject.GetComponent<ConsumableController>();
+            if (consumables == null)
+                consumables = botObject.AddComponent<ConsumableController>();
+            consumables.enabled = true;
+            consumables.SetHudEnabled(false);
 
             DisableAll<CombatFeedbackPresenter>(botObject);
             DisableAll<NearbyLootPresenter>(botObject);
