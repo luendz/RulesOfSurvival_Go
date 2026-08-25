@@ -15,7 +15,7 @@ namespace ROS.Game.EditorTools
 
         static EditorFirstPlayerDebugHealthMaterializer()
         {
-            EditorApplication.delayCall += Materialize;
+            EditorApplication.delayCall += () => Materialize();
         }
 
         public static bool Materialize()
