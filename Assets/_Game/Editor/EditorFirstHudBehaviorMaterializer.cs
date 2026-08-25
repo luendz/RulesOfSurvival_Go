@@ -15,7 +15,6 @@ namespace ROS.Game.EditorTools
             EditorApplication.delayCall += EnsureHudBehaviors;
         }
 
-        [MenuItem("Rules Of Survival/Editor First/Ensure HUD Behaviors On Prefab")]
         public static void EnsureHudBehaviors()
         {
             if (Application.isPlaying || EditorApplication.isCompiling)
