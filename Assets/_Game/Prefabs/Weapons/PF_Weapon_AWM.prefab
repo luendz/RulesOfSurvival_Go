@@ -351,10 +351,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponMount
   handLocalPosition: {x: 0, y: 0, z: 0}
   handLocalEulerAngles: {x: 0, y: 0, z: 0}
-  back01LocalPosition: {x: 0.18, y: 0.05, z: -0.12}
-  back01LocalEulerAngles: {x: 0, y: 0, z: 35}
-  back02LocalPosition: {x: -0.18, y: 0.05, z: -0.12}
-  back02LocalEulerAngles: {x: 0, y: 0, z: -35}
+  back01LocalPosition: {x: 0.01, y: 0.08, z: -0.036}
+  back01LocalEulerAngles: {x: -180, y: -180, z: 50}
+  back02LocalPosition: {x: -0.03, y: 0.133, z: -0.035}
+  back02LocalEulerAngles: {x: -180, y: -180, z: 120}
+  backVisualScale: {x: 40, y: 40, z: 40}
   hipLocalPosition: {x: 0.18, y: -0.05, z: 0}
   hipLocalEulerAngles: {x: 0, y: 0, z: 0}
   muzzlePoint: {fileID: 0}

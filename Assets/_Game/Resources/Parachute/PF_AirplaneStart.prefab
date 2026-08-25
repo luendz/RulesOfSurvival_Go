@@ -177,8 +177,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.World.AirplaneController
   passengerAnchor: {fileID: 0}
-  flightDuration: 45
   passengerOffset: {x: 0, y: -1.6, z: 0}
+  flightDuration: 45
+  exitDistance: 55
+  exitDuration: 4
+  deactivateAfterExit: 1
 --- !u!114 &6411207065091886409
 MonoBehaviour:
   m_ObjectHideFlags: 0
