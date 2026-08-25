@@ -148,6 +148,49 @@ namespace ROS.Game.Combat
             }
         }
 
+        /// <summary>
+        /// Resta vida directamente sin pasar por casco, chaleco ni armadura.
+        /// Se usa para herramientas de prueba como F5 = -5 HP y también deja
+        /// el mismo rastro de DamageResult para que HUD/curación reaccionen.
+        /// </summary>
+        public void ApplyDirectHealthDamage(float amount, GameObject source = null)
+        {
+            if (!IsAlive || amount <= 0f)
+                return;
+
+            float previousHealth = CurrentHealth;
+            float applied = Mathf.Min(amount, CurrentHealth);
+            CurrentHealth = Mathf.Max(0f, CurrentHealth - applied);
+
+            DamageInfo damage = new DamageInfo(
+                applied,
+                transform.position,
+                Vector3.zero,
+                source != null ? source : gameObject,
+                DamageType.Firearm,
+                HitZone.Torso
+            );
+
+            LastDamage = damage;
+            LastDamageResult = new DamageResult(
+                damage,
+                1f,
+                applied,
+                0f,
+                previousHealth - CurrentHealth,
+                CurrentHealth <= 0f
+            );
+
+            HealthChanged?.Invoke(CurrentHealth, maxHealth);
+            Damaged?.Invoke(LastDamageResult);
+
+            if (CurrentHealth <= 0f)
+            {
+                LifeState = PlayerLifeState.Dead;
+                Died?.Invoke(damage);
+            }
+        }
+
         public void Heal(float amount)
         {
             if (!IsAlive || amount <= 0f) return;
