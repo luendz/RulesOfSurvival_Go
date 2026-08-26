@@ -7,8 +7,8 @@ namespace ROS.Game.Lobby
     public sealed class LobbyDirectBRButton : MonoBehaviour
     {
         private const string LobbySceneName = "08_Lobby";
-        private const string BattleRoyaleSceneName = "07_BattleRoyaleTest";
-        private const string DefaultMapName = "Ghillie Island";
+        private const string BattleRoyaleSceneName = "08_EchoValley";
+        private const string DefaultMapName = "Echo Valley";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreateForLobby()
