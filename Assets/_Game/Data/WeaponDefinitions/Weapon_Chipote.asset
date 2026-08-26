@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780d0a94668b4ae4d9234a000990f76e, type: 3}
+  m_Name: Weapon_Chipote
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponDefinition
+  weaponId: weapon_chipote
+  displayName: Chipote
+  family: 6
+  ammoType: 5
+  fireMode: 0
+  animationStyle: 110
+  supportsSingle: 1
+  supportsBurst: 0
+  supportsAuto: 0
+  dataConfidence: 4
+  damage: 45
+  shotsPerSecond: 1.2
+  range: 2.4
+  projectilesPerShot: 1
+  muzzleVelocity: 1
+  gravityScale: 0
+  damageFalloffStart: 2.4
+  damageFalloffEnd: 2.5
+  minimumDamageMultiplier: 1
+  armorPenetration: 0
+  headDamageMultiplier: 1.5
+  torsoDamageMultiplier: 1
+  armDamageMultiplier: 1
+  legDamageMultiplier: 1
+  impactScale: 1
+  bulletHoleScale: 0.05
+  tracerWidth: 0.001
+  impactForce: 10
+  magazineSize: 1
+  startingReserveAmmo: 0
+  reloadTime: 0.1
+  emptyReloadTime: 0.1
+  burstCount: 1
+  verticalRecoil: 0
+  horizontalRecoil: 0
+  recoilReturnSpeed: 0
+  recoilSnappiness: 0
+  recoilKickBack: 0
+  adsRecoilMultiplier: 1
+  crouchRecoilMultiplier: 1
+  movingRecoilMultiplier: 1
+  airborneRecoilMultiplier: 1
+  recoilGrowthPerShot: 0
+  maxRecoilGrowthMultiplier: 1
+  recoilPatternResetDelay: 0
+  recoilPattern: []
+  hipSpreadDegrees: 0
+  adsSpreadDegrees: 0
+  walkSpreadMultiplier: 1
+  runSpreadMultiplier: 1
+  sprintSpreadMultiplier: 1
+  crouchSpreadMultiplier: 1
+  airborneSpreadMultiplier: 1
+  spreadBloomPerShot: 0
+  maxSpreadBloom: 0
+  spreadRecoveryPerSecond: 0
+  spreadDegrees: 0
