@@ -14833,6 +14833,7 @@ MonoBehaviour:
   input: {fileID: 0}
   motor: {fileID: 0}
   equipment: {fileID: 0}
+  animator: {fileID: 0}
   parachuteVisual: {fileID: 544348919}
   freeFallSpeed: 24
   freeFallAcceleration: 18
@@ -14846,6 +14847,7 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  debugParachuteAnimationState: 0
 --- !u!114 &2016612346
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15002,6 +15004,7 @@ MonoBehaviour:
   fallAnimationMinDownVelocity: -0.2
   aimPitchRange: 70
   pickupUpperBodyDuration: 0.65
+  classicFirePulseDuration: 0.08
   debugUpperBodyArmed: 0
   debugUpperBodyAim: 0
   debugReloading: 0
@@ -15016,6 +15019,10 @@ MonoBehaviour:
   debugShouldFall: 0
   debugWeaponCategory: 0
   debugWeaponStyle: 0
+  debugClassicWeaponType: 0
+  debugClassicFiring: 0
+  debugClassicStance: 0
+  debugClassicSprinting: 0
 --- !u!114 &2016612354
 MonoBehaviour:
   m_ObjectHideFlags: 0
