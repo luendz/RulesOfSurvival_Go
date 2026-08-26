@@ -211,7 +211,11 @@ namespace ROS.Game.EditorTools
 
             bool changed = false;
 
-            if (!HasStateTransition(empty, weapon, IsSwitchingWeapon, 1f))
+            if (!HasStateBoolTransition(
+                    empty,
+                    weapon,
+                    IsSwitchingWeapon,
+                    true))
             {
                 AnimatorStateTransition toWeapon = empty.AddTransition(weapon);
                 ConfigureStateTransition(toWeapon, 0.04f);
@@ -258,6 +262,35 @@ namespace ROS.Game.EditorTools
 
                 if (HasCondition(transition.conditions, parameter, threshold))
                     return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasStateBoolTransition(
+            AnimatorState source,
+            AnimatorStateMachine destination,
+            string parameter,
+            bool value)
+        {
+            AnimatorConditionMode expectedMode = value
+                ? AnimatorConditionMode.If
+                : AnimatorConditionMode.IfNot;
+
+            AnimatorStateTransition[] transitions = source.transitions;
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                AnimatorStateTransition transition = transitions[i];
+                if (transition == null || transition.destinationStateMachine != destination)
+                    continue;
+
+                AnimatorCondition[] conditions = transition.conditions;
+                for (int conditionIndex = 0; conditionIndex < conditions.Length; conditionIndex++)
+                {
+                    AnimatorCondition condition = conditions[conditionIndex];
+                    if (condition.parameter == parameter && condition.mode == expectedMode)
+                        return true;
+                }
             }
 
             return false;
