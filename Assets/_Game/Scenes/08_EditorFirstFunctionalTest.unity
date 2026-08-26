@@ -14656,6 +14656,10 @@ PrefabInstance:
       propertyPath: cameraTransform
       value: 
       objectReference: {fileID: 851681086}
+    - target: {fileID: 6143050866421091856, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 29786ae0d686ee8409c06df31003ce95, type: 2}
     - target: {fileID: 6178379935284424678, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       propertyPath: aimCamera
       value: 
@@ -15003,6 +15007,7 @@ MonoBehaviour:
   fallAnimationDistance: 1.5
   fallAnimationMinDownVelocity: -0.2
   aimPitchRange: 70
+  aimYawRange: 70
   pickupUpperBodyDuration: 0.65
   classicFirePulseDuration: 0.08
   debugUpperBodyArmed: 0
@@ -15014,6 +15019,7 @@ MonoBehaviour:
   debugFullBodyOverride: 0
   debugReloadSpeed: 1
   debugAimPitch: 0
+  debugAimYaw: 0
   debugAirbornePeakY: 0
   debugFallDistance: 0
   debugShouldFall: 0
@@ -15023,6 +15029,10 @@ MonoBehaviour:
   debugClassicFiring: 0
   debugClassicStance: 0
   debugClassicSprinting: 0
+  debugClassicAutoRunning: 0
+  debugClassicSwitchingWeapon: 0
+  debugClassicUsingConsumable: 0
+  debugClassicPickingUp: 0
 --- !u!114 &2016612354
 MonoBehaviour:
   m_ObjectHideFlags: 0

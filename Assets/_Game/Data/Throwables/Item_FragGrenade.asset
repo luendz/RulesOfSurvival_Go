@@ -30,7 +30,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 5376cb9a220544b4fbb66d2abd7157a8, type: 3}
   nearbySecondaryText: Throwable
   nearbySecondaryIcon: {fileID: 0}
-  worldModel: {fileID: 0}
+  worldModel: {fileID: 919132149155446097, guid: 1d4b4b0e387930048904a6256b0d0354, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}
   worldEulerAngles: {x: 0, y: 0, z: 0}
   worldScale: {x: 1, y: 1, z: 1}

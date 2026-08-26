@@ -29,8 +29,8 @@ MonoBehaviour:
   preferredWeaponSlot: 0
   icon: {fileID: 21300000, guid: 4e9012bb8ee10244aa2e0deffb47b49b, type: 3}
   nearbySecondaryText: Attachment
-  nearbySecondaryIcon: {fileID: 0}
-  worldModel: {fileID: 0}
+  nearbySecondaryIcon: {fileID: 21300000, guid: 0e5c2192381f37e4cb36b7f20d95b7c4, type: 3}
+  worldModel: {fileID: 919132149155446097, guid: 7a756f9a82d894647b6371b357942474, type: 3}
   worldOffset: {x: 0, y: 0, z: 0}
   worldEulerAngles: {x: 0, y: 0, z: 0}
   worldScale: {x: 1, y: 1, z: 1}
