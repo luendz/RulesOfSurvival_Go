@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Item_Chipote
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Inventory.InventoryItemDefinition
   itemId: weapon_item_chipote
-  displayName: Martillo
+  displayName: Chipote
   itemType: 0
   dataConfidence: 4
   maxStack: 1
