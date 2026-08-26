@@ -43,6 +43,14 @@ namespace ROS.Game.EditorTools
             if (Application.isPlaying || EditorApplication.isCompiling)
                 return;
 
+            // Fuerza la secuencia 01 -> 05 antes de Prone. Todos los pasos son
+            // idempotentes, asi que si ya existen no pisan cambios manuales.
+            EditorFirstRosClassicAnimatorBuilder.CreateIfMissing();
+            EditorFirstRosClassicAnimatorBuilder.BuildWalk8Directions();
+            EditorFirstRosClassicRun2D.Materialize();
+            EditorFirstRosClassicSprint.Materialize();
+            EditorFirstRosClassicCrouch.Materialize();
+
             AnimatorController controller =
                 AssetDatabase.LoadAssetAtPath<AnimatorController>(
                     EditorFirstRosClassicAnimatorBuilder.ControllerPath
