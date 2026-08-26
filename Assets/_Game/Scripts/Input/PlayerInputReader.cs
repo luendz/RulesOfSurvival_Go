@@ -6,12 +6,20 @@ namespace ROS.Game.Input
     [DefaultExecutionOrder(-100)]
     public sealed class PlayerInputReader : MonoBehaviour
     {
+        [Header("Auto Run / Auto Sprint (ROS Classic)")]
+        [Tooltip("Tecla opcional para alternar Auto Run. Key.None deja la activacion sin una tecla fija para no inventar un binding del ROS original; puede activarse desde UI mediante SetAutoRun/ToggleAutoRun.")]
+        [SerializeField] private Key autoRunToggleKey = Key.None;
+
+        [Tooltip("Cancela Auto Run al dar una entrada clara hacia atras. Crouch y Prone tambien lo cancelan para evitar mantener Auto Sprint en posturas incompatibles.")]
+        [SerializeField] private bool cancelAutoRunOnBackwardInput = true;
+
         public Vector2 Move { get; private set; }
         public Vector2 Look { get; private set; }
 
         public bool LookFromMouse { get; private set; }
 
         public bool SprintHeld { get; private set; }
+        public bool AutoRunActive { get; private set; }
         public bool AimHeld { get; private set; }
         public bool FireHeld { get; private set; }
         public bool FreeLookHeld { get; private set; }
@@ -247,6 +255,8 @@ namespace ROS.Game.Input
                 return;
             }
 
+            UpdateAutoRunToggle();
+
             Move =
                 _move.ReadValue<Vector2>();
 
@@ -329,6 +339,14 @@ namespace ROS.Game.Input
             HolsterWeaponPressed =
                 _holsterWeapon.WasPressedThisFrame();
 
+            if (AutoRunActive &&
+                (CrouchPressed ||
+                 PronePressed ||
+                 (cancelAutoRunOnBackwardInput && Move.y < -0.25f)))
+            {
+                SetAutoRun(false);
+            }
+
             UpdateWeaponScroll();
         }
 
@@ -342,6 +360,16 @@ namespace ROS.Game.Input
             }
 
             ApplyCursorState();
+        }
+
+        public void SetAutoRun(bool active)
+        {
+            AutoRunActive = active && !UiBlocked;
+        }
+
+        public void ToggleAutoRun()
+        {
+            SetAutoRun(!AutoRunActive);
         }
 
         /// <summary>
@@ -377,7 +405,8 @@ namespace ROS.Game.Input
             bool aim,
             bool fire = false,
             bool jump = false,
-            bool reload = false
+            bool reload = false,
+            bool autoRun = false
         )
         {
             if (!UsesExternalControl)
@@ -389,6 +418,7 @@ namespace ROS.Game.Input
             Look = Vector2.zero;
             LookFromMouse = false;
             SprintHeld = sprint;
+            AutoRunActive = autoRun;
             AimHeld = aim;
             FireHeld = fire;
             JumpPressed = jump;
@@ -410,6 +440,16 @@ namespace ROS.Game.Input
             WeaponScrollDirection = 0;
         }
 
+        private void UpdateAutoRunToggle()
+        {
+            if (autoRunToggleKey == Key.None || Keyboard.current == null)
+                return;
+
+            var keyControl = Keyboard.current[autoRunToggleKey];
+            if (keyControl != null && keyControl.wasPressedThisFrame)
+                ToggleAutoRun();
+        }
+
         private void ApplyCursorState()
         {
             Cursor.lockState =
@@ -426,6 +466,7 @@ namespace ROS.Game.Input
             Look = Vector2.zero;
             LookFromMouse = false;
             SprintHeld = false;
+            AutoRunActive = false;
             AimHeld = false;
             FireHeld = false;
             FreeLookHeld = false;
