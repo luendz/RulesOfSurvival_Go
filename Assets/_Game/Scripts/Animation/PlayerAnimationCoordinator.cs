@@ -84,7 +84,10 @@ namespace ROS.Game.Animation
         [SerializeField] private float fallAnimationMinDownVelocity = -0.2f;
 
         [Header("Aim")]
+        [Tooltip("Rango vertical provisional usado para normalizar AimPitch a -1..1. Debe calibrarse con referencia visual del ROS clasico; no representa un angulo documentado del juego original.")]
         [SerializeField, Range(20f, 89f)] private float aimPitchRange = 70f;
+        [Tooltip("Rango horizontal provisional usado para normalizar AimYaw a -1..1. Debe calibrarse con referencia visual del ROS clasico; no representa un angulo documentado del juego original.")]
+        [SerializeField, Range(20f, 120f)] private float aimYawRange = 70f;
 
         [Header("Actions")]
         [SerializeField, Min(0.05f)] private float pickupUpperBodyDuration = 0.65f;
@@ -103,6 +106,7 @@ namespace ROS.Game.Animation
         [SerializeField] private bool debugFullBodyOverride;
         [SerializeField] private float debugReloadSpeed = 1f;
         [SerializeField] private float debugAimPitch;
+        [SerializeField] private float debugAimYaw;
         [SerializeField] private float debugAirbornePeakY;
         [SerializeField] private float debugFallDistance;
         [SerializeField] private bool debugShouldFall;
@@ -156,6 +160,7 @@ namespace ROS.Game.Animation
         private static readonly int ReloadSpeed = Animator.StringToHash("ReloadSpeed");
         private static readonly int Healing = Animator.StringToHash("Healing");
         private static readonly int AimPitch = Animator.StringToHash("AimPitch");
+        private static readonly int AimYaw = Animator.StringToHash("AimYaw");
         private static readonly int WeaponCategory = Animator.StringToHash("WeaponCategory");
         private static readonly int WeaponStyle = Animator.StringToHash("WeaponStyle");
 
@@ -216,6 +221,8 @@ namespace ROS.Game.Animation
             SetBoolIfPresent(ClassicIsSwitchingWeapon, false);
             SetBoolIfPresent(ClassicIsUsingConsumable, false);
             SetBoolIfPresent(ClassicIsPickingUp, false);
+            SetFloatIfPresent(AimPitch, 0f);
+            SetFloatIfPresent(AimYaw, 0f);
             ResetUpperLayerWeights();
             RestoreRootMotionDefault();
         }
@@ -470,6 +477,7 @@ namespace ROS.Game.Animation
                 : 1f;
 
             float aimPitch = aiming ? ResolveAimPitch() : 0f;
+            float aimYaw = aiming ? ResolveAimYaw() : 0f;
 
             SetIntegerIfPresent(WeaponCategory, weaponCategory);
             SetIntegerIfPresent(WeaponStyle, weaponStyle);
@@ -479,6 +487,7 @@ namespace ROS.Game.Animation
             SetBoolIfPresent(Healing, healing && !gesturing && !fullBodyOverride && !dead);
             SetFloatIfPresent(ReloadSpeed, reloadSpeed);
             SetFloatIfPresent(AimPitch, aimPitch);
+            SetFloatIfPresent(AimYaw, aimYaw);
 
             SetIntegerIfPresent(ClassicWeaponType, classicWeaponType);
             SetBoolIfPresent(ClassicIsAiming, aiming);
@@ -508,6 +517,7 @@ namespace ROS.Game.Animation
             debugFullBodyOverride = fullBodyOverride;
             debugReloadSpeed = reloadSpeed;
             debugAimPitch = aimPitch;
+            debugAimYaw = aimYaw;
             debugWeaponCategory = weaponCategory;
             debugWeaponStyle = weaponStyle;
             debugClassicWeaponType = classicWeaponType;
@@ -619,6 +629,30 @@ namespace ROS.Game.Animation
 
             return Mathf.Clamp(
                 pitchDegrees / Mathf.Max(1f, aimPitchRange),
+                -1f,
+                1f
+            );
+        }
+
+        private float ResolveAimYaw()
+        {
+            if (aimController == null)
+                return 0f;
+
+            Vector3 direction = aimController.AimDirection;
+            if (direction.sqrMagnitude <= 0.001f)
+                return 0f;
+
+            Vector3 localDirection =
+                transform.InverseTransformDirection(direction.normalized);
+
+            float yawDegrees = Mathf.Atan2(
+                localDirection.x,
+                localDirection.z
+            ) * Mathf.Rad2Deg;
+
+            return Mathf.Clamp(
+                yawDegrees / Mathf.Max(1f, aimYawRange),
                 -1f,
                 1f
             );
