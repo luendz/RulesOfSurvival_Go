@@ -27,7 +27,7 @@ MonoBehaviour:
   weaponDefinition: {fileID: 11400000, guid: 06b9e99d082440338884cfe4600e9400, type: 2}
   weaponPrefab: {fileID: 919132149155446097, guid: a5502cf0700e8fb418ca48fc505166af, type: 3}
   preferredWeaponSlot: 2
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 5c087c227c6254c4aa3135f42e801350, type: 3}
   nearbySecondaryText: Pollo
   nearbySecondaryIcon: {fileID: 0}
   worldModel: {fileID: 919132149155446097, guid: a5502cf0700e8fb418ca48fc505166af, type: 3}

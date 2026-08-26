@@ -669,7 +669,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6159,7 +6159,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.4
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6381,7 +6381,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.1
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.y
@@ -7376,7 +7376,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.y
@@ -8342,7 +8342,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.y
@@ -9547,6 +9547,7 @@ Transform:
   - {fileID: 949210618}
   - {fileID: 49069522}
   - {fileID: 1203725067}
+  - {fileID: 1645080337}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1331682521
@@ -10418,7 +10419,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.7
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.y
@@ -11708,7 +11709,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.6
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
       propertyPath: m_LocalPosition.y
@@ -12099,6 +12100,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1644455511}
   m_CullTransparentMesh: 1
+--- !u!4 &1645080337 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+  m_PrefabInstance: {fileID: 1955921652}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1649310722
 GameObject:
   m_ObjectHideFlags: 0
@@ -14172,6 +14178,83 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1947085779}
   m_CullTransparentMesh: 1
+--- !u!1001 &1955921652
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1314755085}
+    m_Modifications:
+    - target: {fileID: 1322543691170699408, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_Name
+      value: LootPickup_Prototype (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2626329430532096593, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: item
+      value: 
+      objectReference: {fileID: 11400000, guid: c4f2b5bf28634e6eab072f2793cb49fb, type: 2}
+    - target: {fileID: 2626329430532096593, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: amount
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.00002
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.6623
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
 --- !u!1 &1966966743
 GameObject:
   m_ObjectHideFlags: 0
@@ -24108,31 +24191,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.GestureWheelUI
   ringRadius: 250
   selectionDeadZone: 75
-  canvas: {fileID: 320247993157817546}
-  wheelOverlay: {fileID: 1493827153437598384}
-  wheelCenter: {fileID: 8967887982572772653}
-  selectionLabel: {fileID: 7925370783899938304}
-  hintRoot: {fileID: 4465177156151674525}
-  optionImages:
-  - {fileID: 1415014609657671203}
-  - {fileID: 2101597816911266639}
-  - {fileID: 4356138211246172357}
-  - {fileID: 3060687068183839699}
-  - {fileID: 84484377986749246}
-  - {fileID: 2996133048383306603}
-  - {fileID: 3537628410178675674}
-  - {fileID: 1332671129119262963}
-  - {fileID: 6360204296206269964}
-  optionTexts:
-  - {fileID: 4372654369246175393}
-  - {fileID: 954607755193043266}
-  - {fileID: 1235816193102422542}
-  - {fileID: 985997299064967580}
-  - {fileID: 5092907630813128002}
-  - {fileID: 4894342532976117852}
-  - {fileID: 8234857927124852302}
-  - {fileID: 733768770607669051}
-  - {fileID: 4745585310993389245}
+  canvas: {fileID: 0}
+  wheelOverlay: {fileID: 0}
+  wheelCenter: {fileID: 0}
+  selectionLabel: {fileID: 0}
+  hintRoot: {fileID: 0}
+  optionImages: []
+  optionTexts: []
 --- !u!222 &5429629754978652643
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -26903,23 +26968,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.RulesOfSurvivalHUD
   worldCamera: {fileID: 0}
-  minimapCamera: {fileID: 4288763988904507142}
+  minimapCamera: {fileID: 0}
   health: {fileID: 0}
   equipment: {fileID: 0}
   battleRoyale: {fileID: 0}
   interactor: {fileID: 0}
-  canvas: {fileID: 7336571815991305462}
-  compassText: {fileID: 4523618732398542118}
-  killText: {fileID: 3474826159501479045}
-  leftText: {fileID: 4473862153327780119}
-  distanceText: {fileID: 7263876496949067847}
-  playerNameText: {fileID: 1911219688791988270}
-  healthFill: {fileID: 565113365936834293}
-  armorFill: {fileID: 8926149575045462893}
-  healthValueText: {fileID: 6001948019265945547}
-  zoneText: {fileID: 1571115307574804072}
+  canvas: {fileID: 0}
+  compassText: {fileID: 0}
+  killText: {fileID: 0}
+  leftText: {fileID: 0}
+  distanceText: {fileID: 0}
+  playerNameText: {fileID: 0}
+  healthFill: {fileID: 0}
+  armorFill: {fileID: 0}
+  healthValueText: {fileID: 0}
+  zoneText: {fileID: 0}
   interactionText: {fileID: 0}
-  lootPanel: {fileID: 834422837945762308}
+  lootPanel: {fileID: 0}
   lootRows:
   - {fileID: 0}
   - {fileID: 0}
@@ -26928,20 +26993,20 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  minimapPlayerArrow: {fileID: 2911968489392764602}
+  minimapPlayerArrow: {fileID: 0}
   weaponSlots:
-  - background: {fileID: 7135699121374384292}
-    slot: {fileID: 1044240692549700945}
-    name: {fileID: 8495465505459305263}
-    ammo: {fileID: 1090421321465496089}
-  - background: {fileID: 3106108872119327254}
-    slot: {fileID: 916829733315587616}
-    name: {fileID: 8835905963237791191}
-    ammo: {fileID: 844560260472937334}
-  - background: {fileID: 3969836044144117546}
-    slot: {fileID: 2035557087879368705}
-    name: {fileID: 8249855478451700241}
-    ammo: {fileID: 7231915853995646211}
+  - background: {fileID: 0}
+    slot: {fileID: 0}
+    name: {fileID: 0}
+    ammo: {fileID: 0}
+  - background: {fileID: 0}
+    slot: {fileID: 0}
+    name: {fileID: 0}
+    ammo: {fileID: 0}
+  - background: {fileID: 0}
+    slot: {fileID: 0}
+    name: {fileID: 0}
+    ammo: {fileID: 0}
 --- !u!114 &7469101424219793866
 MonoBehaviour:
   m_ObjectHideFlags: 0
