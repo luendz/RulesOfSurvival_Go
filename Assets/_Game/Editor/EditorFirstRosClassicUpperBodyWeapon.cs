@@ -17,9 +17,10 @@ namespace ROS.Game.EditorTools
     /// Estos numeros son una convencion del proyecto, no valores documentados
     /// del Rules of Survival original.
     ///
-    /// Los motions de Rifle se recuperan del AC_Player_Prototype cuando existen
-    /// (Firearm_Hip, Firearm_Aim y Firearm_ReloadStanding/Crouch). No se inventan
-    /// clips para Pistol/Shotgun/Sniper/Throwable ni para ataques que no existan.
+    /// UpperBody_Weapon conserva solo la pose permanente del arma, Aim y Fire.
+    /// Reload/Switch/Consumables/Interaction pertenecen a UpperBody_Actions.
+    /// Los motions de Rifle Hip/Aim se recuperan del AC_Player_Prototype cuando
+    /// existen. No se inventan clips para familias que todavia no los tengan.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorFirstRosClassicUpperBodyWeapon
@@ -52,8 +53,6 @@ namespace ROS.Game.EditorTools
             if (Application.isPlaying || EditorApplication.isCompiling)
                 return;
 
-            // Garantiza 01 -> 07. Todos los pasos anteriores son idempotentes y
-            // respetan cualquier ajuste manual ya materializado.
             EditorFirstRosClassicAirborne.Materialize();
 
             AnimatorController controller =
@@ -74,8 +73,6 @@ namespace ROS.Game.EditorTools
 
             AnimatorStateMachine root = weaponLayer.stateMachine;
 
-            // Ya materializado: no reconstruir para no pisar motions/transiciones
-            // que el usuario haya ajustado manualmente desde Unity.
             if (FindChildStateMachine(root, "Rifle") != null &&
                 FindChildStateMachine(root, "Melee") != null &&
                 FindChildStateMachine(root, "Throwable") != null)
@@ -86,7 +83,6 @@ namespace ROS.Game.EditorTools
             EnsureParameter(controller, "WeaponType", AnimatorControllerParameterType.Int);
             EnsureParameter(controller, "IsAiming", AnimatorControllerParameterType.Bool);
             EnsureParameter(controller, "IsFiring", AnimatorControllerParameterType.Bool);
-            EnsureParameter(controller, "IsReloading", AnimatorControllerParameterType.Bool);
 
             AnimatorController prototype =
                 AssetDatabase.LoadAssetAtPath<AnimatorController>(PrototypeControllerPath);
@@ -101,20 +97,6 @@ namespace ROS.Game.EditorTools
                 prototype,
                 "Firearm_Aim",
                 "AimLocomotion"
-            );
-            Motion rifleReloadMotion = FindMotionRecursive(
-                prototype,
-                "Firearm_ReloadStanding",
-                "ReloadStanding",
-                "RifleReload Standing Hip",
-                "RifleReloadStandingHip"
-            );
-            Motion rifleReloadCrouchMotion = FindMotionRecursive(
-                prototype,
-                "Firearm_ReloadCrouch",
-                "ReloadCrouch",
-                "RifleReload Crouch Hip",
-                "RifleReloadCrouchHip"
             );
             Motion meleeIdleMotion = FindMotionRecursive(
                 prototype,
@@ -137,13 +119,11 @@ namespace ROS.Game.EditorTools
                 "Rifle",
                 rifleIdleMotion,
                 rifleAimMotion,
-                rifleReloadMotion,
                 new Vector3(460f, -260f, 0f)
             );
             AnimatorStateMachine pistol = CreateFirearmFamily(
                 root,
                 "Pistol",
-                null,
                 null,
                 null,
                 new Vector3(700f, -260f, 0f)
@@ -153,13 +133,11 @@ namespace ROS.Game.EditorTools
                 "Shotgun",
                 null,
                 null,
-                null,
                 new Vector3(940f, -260f, 0f)
             );
             AnimatorStateMachine sniper = CreateFirearmFamily(
                 root,
                 "Sniper",
-                null,
                 null,
                 null,
                 new Vector3(1180f, -260f, 0f)
@@ -204,8 +182,6 @@ namespace ROS.Game.EditorTools
                 WeaponThrowable
             };
 
-            // Cambio directo entre familias. WeaponType solo decide la familia;
-            // Aim/Fire/Reload siguen siendo estados internos del torso.
             for (int from = 0; from < families.Length; from++)
             {
                 for (int to = 0; to < families.Length; to++)
@@ -232,7 +208,8 @@ namespace ROS.Game.EditorTools
             Debug.Log(
                 "[ROS Classic Animator] UpperBody_Weapon creado: " +
                 "Unarmed/Rifle/Pistol/Shotgun/Sniper/Melee/Throwable. " +
-                "Base_Locomotion permanece independiente."
+                "La capa contiene pose/Aim/Fire; las acciones temporales quedan " +
+                "reservadas para UpperBody_Actions."
             );
 
             if (rifleIdleMotion == null || rifleAimMotion == null)
@@ -241,14 +218,6 @@ namespace ROS.Game.EditorTools
                     "[ROS Classic Animator] No se pudieron recuperar todas las " +
                     "poses Rifle Hip/Aim del AC_Player_Prototype. Los estados " +
                     "faltantes quedan Motion=None para asignarlos manualmente."
-                );
-            }
-
-            if (rifleReloadMotion == null && rifleReloadCrouchMotion == null)
-            {
-                Debug.LogWarning(
-                    "[ROS Classic Animator] Rifle Reload queda Motion=None porque " +
-                    "no se encontro una recarga reutilizable en el Animator anterior."
                 );
             }
 
@@ -294,7 +263,6 @@ namespace ROS.Game.EditorTools
             string familyName,
             Motion idleMotion,
             Motion aimMotion,
-            Motion reloadMotion,
             Vector3 position)
         {
             AnimatorStateMachine machine = root.AddStateMachine(familyName, position);
@@ -320,19 +288,8 @@ namespace ROS.Game.EditorTools
                 760f,
                 -70f
             );
-            AnimatorState reload = AddState(
-                machine,
-                familyName + " Reload",
-                reloadMotion,
-                500f,
-                100f
-            );
 
             machine.defaultState = idle;
-
-            AddBoolTransition(idle, reload, "IsReloading", true, 0.04f);
-            AddBoolTransition(aim, reload, "IsReloading", true, 0.04f);
-            AddBoolTransition(fire, reload, "IsReloading", true, 0.03f);
 
             AddBoolTransition(idle, aim, "IsAiming", true, 0.06f);
             AddBoolTransition(aim, idle, "IsAiming", false, 0.06f);
@@ -344,23 +301,11 @@ namespace ROS.Game.EditorTools
             ConfigureTransition(fireToAim, 0.03f);
             fireToAim.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsFiring");
             fireToAim.AddCondition(AnimatorConditionMode.If, 0f, "IsAiming");
-            fireToAim.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsReloading");
 
             AnimatorStateTransition fireToIdle = fire.AddTransition(idle);
             ConfigureTransition(fireToIdle, 0.03f);
             fireToIdle.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsFiring");
             fireToIdle.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsAiming");
-            fireToIdle.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsReloading");
-
-            AnimatorStateTransition reloadToAim = reload.AddTransition(aim);
-            ConfigureTransition(reloadToAim, 0.05f);
-            reloadToAim.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsReloading");
-            reloadToAim.AddCondition(AnimatorConditionMode.If, 0f, "IsAiming");
-
-            AnimatorStateTransition reloadToIdle = reload.AddTransition(idle);
-            ConfigureTransition(reloadToIdle, 0.05f);
-            reloadToIdle.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsReloading");
-            reloadToIdle.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsAiming");
 
             return machine;
         }
@@ -389,8 +334,6 @@ namespace ROS.Game.EditorTools
             AddState(machine, "Heavy Attack", null, 520f, 100f);
             machine.defaultState = idle;
 
-            // IsFiring se usa como ataque primario movil. Heavy Attack queda sin
-            // condicion hasta definir una entrada propia; no inventamos un trigger.
             AddBoolTransition(idle, light, "IsFiring", true, 0.03f);
             AddBoolTransition(light, idle, "IsFiring", false, 0.04f);
 
@@ -410,8 +353,6 @@ namespace ROS.Game.EditorTools
             AddState(machine, "Throw Cancel", null, 500f, 160f);
             machine.defaultState = idle;
 
-            // No se conectan Ready/Cancel con parametros inventados. El bloque
-            // queda visible y listo para la fase especifica de Throwables.
             return machine;
         }
 
