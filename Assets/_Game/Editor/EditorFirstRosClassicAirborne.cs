@@ -151,8 +151,10 @@ namespace ROS.Game.EditorTools
                 "VerticalVelocity"
             );
 
-            // Grounded -> Airborne al perder suelo. La Entry interna decide si
-            // fue un salto ascendente o una caida desde borde.
+            ConfigureGroundedExitPath(grounded);
+
+            // Grounded sale primero por su Exit y el root selecciona Airborne.
+            // Esto conserva la jerarquia Grounded/Airborne y evita Any State.
             AnimatorTransition groundedToAirborne =
                 root.AddStateMachineTransition(grounded, airborne);
             groundedToAirborne.AddCondition(
@@ -215,6 +217,7 @@ namespace ROS.Game.EditorTools
             EditorUtility.SetDirty(fall);
             EditorUtility.SetDirty(land);
             EditorUtility.SetDirty(airborne);
+            EditorUtility.SetDirty(grounded);
             EditorUtility.SetDirty(root);
             EditorUtility.SetDirty(controller);
 
@@ -266,6 +269,117 @@ namespace ROS.Game.EditorTools
                     "para una fase posterior de Land Soft / Normal / Hard."
                 );
             }
+        }
+
+        /// <summary>
+        /// Grounded contiene sub-state machines (Standing/Crouch/Prone). Para
+        /// saltar a un state machine hermano, primero cada postura debe salir a
+        /// Grounded/Exit y despues Grounded sale al root. No usamos Any State,
+        /// porque podria reentrar Airborne mientras IsGrounded siga en false.
+        /// </summary>
+        private static void ConfigureGroundedExitPath(AnimatorStateMachine grounded)
+        {
+            ChildAnimatorStateMachine[] stanceChildren = grounded.stateMachines;
+            for (int i = 0; i < stanceChildren.Length; i++)
+            {
+                AnimatorStateMachine stance = stanceChildren[i].stateMachine;
+                if (stance == null || !IsGroundedStanceMachine(stance.name))
+                    continue;
+
+                AddAirborneExitToLeafStates(stance);
+                GuardGroundedStateMachineTransitions(grounded, stance);
+
+                AnimatorTransition stanceToGroundedExit =
+                    grounded.AddStateMachineExitTransition(stance);
+                stanceToGroundedExit.AddCondition(
+                    AnimatorConditionMode.IfNot,
+                    0f,
+                    "IsGrounded"
+                );
+            }
+        }
+
+        private static bool IsGroundedStanceMachine(string name)
+        {
+            return name == "Standing" || name == "Crouch" || name == "Prone";
+        }
+
+        private static void AddAirborneExitToLeafStates(AnimatorStateMachine machine)
+        {
+            ChildAnimatorState[] states = machine.states;
+            for (int i = 0; i < states.Length; i++)
+            {
+                AnimatorState state = states[i].state;
+                if (state == null)
+                    continue;
+
+                AnimatorStateTransition exit = state.AddExitTransition();
+                ConfigureTransition(exit, 0.02f);
+                exit.AddCondition(
+                    AnimatorConditionMode.IfNot,
+                    0f,
+                    "IsGrounded"
+                );
+                EditorUtility.SetDirty(state);
+            }
+
+            ChildAnimatorStateMachine[] children = machine.stateMachines;
+            for (int i = 0; i < children.Length; i++)
+            {
+                AnimatorStateMachine child = children[i].stateMachine;
+                if (child != null)
+                    AddAirborneExitToLeafStates(child);
+            }
+        }
+
+        /// <summary>
+        /// Si el jugador cambia Stance exactamente al perder el suelo, Airborne
+        /// debe tener prioridad. Agregamos IsGrounded=true a las transiciones
+        /// Standing/Crouch/Prone para que solo compitan mientras hay suelo.
+        /// </summary>
+        private static void GuardGroundedStateMachineTransitions(
+            AnimatorStateMachine grounded,
+            AnimatorStateMachine source)
+        {
+            AnimatorTransition[] transitions =
+                grounded.GetStateMachineTransitions(source);
+
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                AnimatorTransition transition = transitions[i];
+                if (transition == null || transition.isExit)
+                    continue;
+
+                if (!HasCondition(
+                        transition.conditions,
+                        "IsGrounded",
+                        AnimatorConditionMode.If))
+                {
+                    transition.AddCondition(
+                        AnimatorConditionMode.If,
+                        0f,
+                        "IsGrounded"
+                    );
+                    EditorUtility.SetDirty(transition);
+                }
+            }
+        }
+
+        private static bool HasCondition(
+            AnimatorCondition[] conditions,
+            string parameter,
+            AnimatorConditionMode mode)
+        {
+            for (int i = 0; i < conditions.Length; i++)
+            {
+                if (conditions[i].parameter == parameter &&
+                    conditions[i].mode == mode)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static AnimatorControllerLayer FindLayer(
