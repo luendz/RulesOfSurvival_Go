@@ -82,11 +82,17 @@ namespace ROS.Game.Character
         private Transform _chest;
         private Transform _upperChest;
         private float _ungroundedTime;
+        private RuntimeAnimatorController _cachedAnimatorController;
+        private bool _hasLeanAnimatorParameter;
+
+        private static readonly int LeanAnimatorParameter =
+            Animator.StringToHash("Lean");
 
         private void Awake()
         {
             EnsureReferences();
             CacheHumanoidBones();
+            RefreshLeanAnimatorParameter();
         }
 
         private void OnEnable()
@@ -95,6 +101,13 @@ namespace ROS.Game.Character
             CurrentLean = 0f;
             IsTemporarilySuppressed = false;
             _ungroundedTime = 0f;
+            PushLeanToAnimator();
+        }
+
+        private void OnDisable()
+        {
+            CurrentLean = 0f;
+            PushLeanToAnimator();
         }
 
         private void Update()
@@ -107,6 +120,7 @@ namespace ROS.Game.Character
                 IsTemporarilySuppressed = false;
                 _ungroundedTime = 0f;
                 UpdateLeanValue(0f);
+                PushLeanToAnimator();
                 return;
             }
 
@@ -136,6 +150,7 @@ namespace ROS.Game.Character
                 : ResolveObstructedTarget(TargetLean);
 
             UpdateLeanValue(target);
+            PushLeanToAnimator();
         }
 
         public void ToggleLeft()
@@ -164,6 +179,52 @@ namespace ROS.Game.Character
                 target,
                 leanSpeed * Time.deltaTime
             );
+        }
+
+        private void PushLeanToAnimator()
+        {
+            if (animator == null)
+                return;
+
+            RefreshLeanAnimatorParameter();
+            if (!_hasLeanAnimatorParameter)
+                return;
+
+            animator.SetFloat(
+                LeanAnimatorParameter,
+                Mathf.Clamp(CurrentLean, -1f, 1f)
+            );
+        }
+
+        private void RefreshLeanAnimatorParameter()
+        {
+            if (animator == null)
+            {
+                _cachedAnimatorController = null;
+                _hasLeanAnimatorParameter = false;
+                return;
+            }
+
+            RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+            if (controller == _cachedAnimatorController)
+                return;
+
+            _cachedAnimatorController = controller;
+            _hasLeanAnimatorParameter = false;
+
+            if (controller == null)
+                return;
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].nameHash == LeanAnimatorParameter &&
+                    parameters[i].type == AnimatorControllerParameterType.Float)
+                {
+                    _hasLeanAnimatorParameter = true;
+                    break;
+                }
+            }
         }
 
         private void UpdateGroundedGraceTimer()
@@ -357,6 +418,7 @@ namespace ROS.Game.Character
 
             if (animator == null || !animator.isHuman)
             {
+                Animator previousAnimator = animator;
                 Animator[] animators = GetComponentsInChildren<Animator>(true);
 
                 foreach (Animator candidate in animators)
@@ -366,6 +428,12 @@ namespace ROS.Game.Character
                         animator = candidate;
                         break;
                     }
+                }
+
+                if (animator != previousAnimator)
+                {
+                    _cachedAnimatorController = null;
+                    _hasLeanAnimatorParameter = false;
                 }
             }
         }
