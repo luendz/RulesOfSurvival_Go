@@ -32,6 +32,11 @@ namespace ROS.Game.Character
         [Range(0.1f, 1f)]
         [SerializeField] private float healingSpeedMultiplier = 0.5f;
 
+        [Header("Reload Movement (ROS Classic)")]
+        [Tooltip("Multiplicador provisional de desplazamiento durante la recarga. ROS clasico permite continuar moviendose, incluso desde Sprint, pero a velocidad reducida. Debe calibrarse con gameplay original.")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float reloadMovementSpeedMultiplier = 0.65f;
+
         [Header("Stances")]
         [SerializeField] private float standingHeight = 1.8f;
         [SerializeField] private float crouchingHeight = 1.25f;
@@ -54,6 +59,8 @@ namespace ROS.Game.Character
         }
 
         public float HealingSpeedMultiplier => healingSpeedMultiplier;
+
+        public float ReloadMovementSpeedMultiplier => reloadMovementSpeedMultiplier;
 
         public bool ExternalMovementLocked =>
             _externalMovementLocked;
@@ -294,12 +301,6 @@ namespace ROS.Game.Character
 
         private void HandleMovement()
         {
-            if (IsReloading())
-            {
-                HandleReloadMovementLock();
-                return;
-            }
-
             Vector2 input =
                 Vector2.ClampMagnitude(
                     _input.Move,
@@ -342,7 +343,7 @@ namespace ROS.Game.Character
 
             // locomotionSpeed representa el gait elegido por el jugador y se
             // conserva para el Animator (Walk/Run/Sprint). finalSpeed aplica
-            // modificadores de gameplay, como la penalizacion durante la cura.
+            // modificadores de gameplay como curacion y recarga.
             float locomotionSpeed =
                 ResolveSpeed(input);
 
@@ -373,17 +374,27 @@ namespace ROS.Game.Character
 
         private float ApplyMovementSpeedModifiers(float baseSpeed)
         {
+            float finalSpeed = baseSpeed;
+
             if (IsHealing)
             {
-                return baseSpeed *
-                       Mathf.Clamp(
-                           healingSpeedMultiplier,
-                           0.1f,
-                           1f
-                       );
+                finalSpeed *= Mathf.Clamp(
+                    healingSpeedMultiplier,
+                    0.1f,
+                    1f
+                );
             }
 
-            return baseSpeed;
+            if (IsReloading())
+            {
+                finalSpeed *= Mathf.Clamp(
+                    reloadMovementSpeedMultiplier,
+                    0.1f,
+                    1f
+                );
+            }
+
+            return finalSpeed;
         }
 
         private void HandleExternalMovementLock()
@@ -410,41 +421,6 @@ namespace ROS.Game.Character
                     : IsCrouching
                         ? PlayerMovementState.Crouching
                         : PlayerMovementState.Idle;
-        }
-
-        private void HandleReloadMovementLock()
-        {
-            // Durante la recarga:
-            // - sin desplazamiento
-            // - sin sprint
-            // - sin salto
-            // - sin cambiar crouch/prone
-            //
-            // La gravedad sigue activa para mantener
-            // al CharacterController correctamente
-            // apoyado sobre el suelo.
-
-            if (_controller.isGrounded &&
-                _velocity.y < 0f)
-            {
-                _velocity.y =
-                    groundedGravity;
-            }
-
-            _velocity.y +=
-                gravity *
-                Time.deltaTime;
-
-            _controller.Move(
-                Vector3.up *
-                _velocity.y *
-                Time.deltaTime
-            );
-
-            MovementState =
-                IsCrouching
-                    ? PlayerMovementState.Crouching
-                    : PlayerMovementState.Idle;
         }
 
         private Vector3 ResolveFreeLookMovement(
@@ -552,7 +528,8 @@ namespace ROS.Game.Character
 
             if (_input.JumpPressed &&
                 _controller.isGrounded &&
-                !IsProne)
+                !IsProne &&
+                !IsReloading())
             {
                 _velocity.y =
                     Mathf.Sqrt(
