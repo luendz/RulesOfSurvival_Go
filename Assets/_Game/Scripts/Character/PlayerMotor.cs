@@ -95,23 +95,27 @@ namespace ROS.Game.Character
             }
         }
 
-        public Vector3 Velocity => _velocity;
-
-        public Vector2 MoveInput
+        public bool IsAutoRunning
         {
             get
             {
                 EnsureReferences();
-
-                return _input != null
-                    ? _input.Move
-                    : Vector2.zero;
+                return _input != null && _input.AutoRunActive;
             }
         }
+
+        public Vector3 Velocity => _velocity;
+
+        /// <summary>
+        /// Input efectivo usado por el motor. Durante Auto Run incluye el avance
+        /// automatico y por eso tambien es la fuente correcta para el Animator.
+        /// </summary>
+        public Vector2 MoveInput => _effectiveMoveInput;
 
         private CharacterController _controller;
         private PlayerInputReader _input;
         private Vector3 _velocity;
+        private Vector2 _effectiveMoveInput;
         private bool _externalMovementLocked;
 
         private void Awake()
@@ -171,6 +175,7 @@ namespace ROS.Game.Character
 
             if (locked)
             {
+                _effectiveMoveInput = Vector2.zero;
                 MovementState =
                     IsProne
                         ? PlayerMovementState.Prone
@@ -187,6 +192,7 @@ namespace ROS.Game.Character
             if (_controller == null ||
                 _input == null)
             {
+                _effectiveMoveInput = Vector2.zero;
                 return;
             }
 
@@ -307,6 +313,9 @@ namespace ROS.Game.Character
                     1f
                 );
 
+            input = ResolveAutoRunInput(input);
+            _effectiveMoveInput = input;
+
             Vector3 camForward =
                 cameraTransform != null
                     ? cameraTransform.forward
@@ -372,6 +381,22 @@ namespace ROS.Game.Character
             );
         }
 
+        private Vector2 ResolveAutoRunInput(Vector2 input)
+        {
+            if (_input == null ||
+                !_input.AutoRunActive ||
+                IsCrouching ||
+                IsProne)
+            {
+                return input;
+            }
+
+            // Auto Run aporta avance automatico, pero mantiene el eje lateral
+            // del jugador para permitir correcciones de direccion.
+            input.y = Mathf.Max(input.y, 1f);
+            return Vector2.ClampMagnitude(input, 1f);
+        }
+
         private float ApplyMovementSpeedModifiers(float baseSpeed)
         {
             float finalSpeed = baseSpeed;
@@ -399,6 +424,8 @@ namespace ROS.Game.Character
 
         private void HandleExternalMovementLock()
         {
+            _effectiveMoveInput = Vector2.zero;
+
             if (_controller.isGrounded &&
                 _velocity.y < 0f)
             {
@@ -558,7 +585,11 @@ namespace ROS.Game.Character
                 return crouchSpeed;
             }
 
-            if (_input.SprintHeld &&
+            bool wantsSprint =
+                _input.SprintHeld ||
+                _input.AutoRunActive;
+
+            if (wantsSprint &&
                 input.y > 0.25f &&
                 !IsAiming)
             {
