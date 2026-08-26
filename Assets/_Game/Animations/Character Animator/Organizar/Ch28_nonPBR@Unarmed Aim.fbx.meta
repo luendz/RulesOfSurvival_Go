@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: bd7224285406dc246934de4fe4ee0bee
+guid: d1d5ef3ddefa81f4089c05676bd62196
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -31,11 +31,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: mixamo.com
+      name: Unarmed Aim
       takeName: mixamo.com
       internalID: -203655887218126122
       firstFrame: 0
-      lastFrame: 122
+      lastFrame: 150
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
