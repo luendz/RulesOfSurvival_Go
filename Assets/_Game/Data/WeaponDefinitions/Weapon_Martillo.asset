@@ -17,7 +17,7 @@ MonoBehaviour:
   family: 6
   ammoType: 5
   fireMode: 0
-  animationStyle: 110
+  animationStyle: 0
   supportsSingle: 1
   supportsBurst: 0
   supportsAuto: 0
