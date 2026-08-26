@@ -23,9 +23,9 @@ namespace ROS.Game.Animation
     /// 4 FullBodyOverride -> acciones que toman todo el cuerpo (gestos/ataques melee fuertes).
     ///
     /// ROS Classic usa los equivalentes Base_Locomotion, UpperBody_Weapon,
-    /// UpperBody_Actions, Aim_Offset y FullBody_Actions. El coordinador escribe
-    /// ambos juegos de parametros cuando existen para mantener una migracion
-    /// visible y editable desde el Animator, sin componentes runtime ocultos.
+    /// UpperBody_Actions, Aim_Offset y FullBody_Actions. En ROS Classic Reload,
+    /// Switch, consumibles e interacciones se escriben en UpperBody_Actions,
+    /// dejando UpperBody_Weapon para la pose/aim/fire permanente del arma.
     /// </summary>
     [DefaultExecutionOrder(80)]
     [DisallowMultipleComponent]
@@ -43,13 +43,11 @@ namespace ROS.Game.Animation
         private const string ClassicAimOffsetLayerName = "Aim_Offset";
         private const string ClassicFullBodyActionsLayerName = "FullBody_Actions";
 
-        // Valores int visibles en Parameters del Animator legacy.
         public const int WeaponCategoryNone = 0;
         public const int WeaponCategoryFirearm = 1;
         public const int WeaponCategoryMelee = 2;
         public const int WeaponCategoryThrowable = 3;
 
-        // Convencion interna del Animator ROS Classic. No son valores del juego original.
         private const int ClassicWeaponUnarmed = 0;
         private const int ClassicWeaponRifle = 1;
         private const int ClassicWeaponPistol = 2;
@@ -62,7 +60,6 @@ namespace ROS.Game.Animation
         private const int ClassicStanceCrouch = 1;
         private const int ClassicStanceProne = 2;
 
-        // Alias de compatibilidad para herramientas Editor First antiguas.
         public const string CombatLayerName = WeaponUpperBodyLayerName;
         public const string ActionsLayerName = UpperBodyActionsLayerName;
 
@@ -115,6 +112,10 @@ namespace ROS.Game.Animation
         [SerializeField] private bool debugClassicFiring;
         [SerializeField] private int debugClassicStance;
         [SerializeField] private bool debugClassicSprinting;
+        [SerializeField] private bool debugClassicAutoRunning;
+        [SerializeField] private bool debugClassicSwitchingWeapon;
+        [SerializeField] private bool debugClassicUsingConsumable;
+        [SerializeField] private bool debugClassicPickingUp;
 
         private PlayerInteractor _interactor;
         private WeaponController _classicObservedWeapon;
@@ -146,7 +147,6 @@ namespace ROS.Game.Animation
         private static readonly int Dead = Animator.StringToHash("Dead");
         private static readonly int PickupItem = Animator.StringToHash("PickupItem");
 
-        // Parametros legacy de locomocion armada full-body: quedan siempre apagados.
         private static readonly int LegacyHasRifle = Animator.StringToHash("HasRifle");
         private static readonly int LegacyAim = Animator.StringToHash("Aim");
 
@@ -159,7 +159,6 @@ namespace ROS.Game.Animation
         private static readonly int WeaponCategory = Animator.StringToHash("WeaponCategory");
         private static readonly int WeaponStyle = Animator.StringToHash("WeaponStyle");
 
-        // Parametros del nuevo AC_Player_ROS_Classic.
         private static readonly int ClassicIsGrounded = Animator.StringToHash("IsGrounded");
         private static readonly int ClassicIsSprinting = Animator.StringToHash("IsSprinting");
         private static readonly int ClassicIsAutoRunning = Animator.StringToHash("IsAutoRunning");
@@ -168,6 +167,9 @@ namespace ROS.Game.Animation
         private static readonly int ClassicIsAiming = Animator.StringToHash("IsAiming");
         private static readonly int ClassicIsFiring = Animator.StringToHash("IsFiring");
         private static readonly int ClassicIsReloading = Animator.StringToHash("IsReloading");
+        private static readonly int ClassicIsSwitchingWeapon = Animator.StringToHash("IsSwitchingWeapon");
+        private static readonly int ClassicIsUsingConsumable = Animator.StringToHash("IsUsingConsumable");
+        private static readonly int ClassicIsPickingUp = Animator.StringToHash("IsPickingUp");
 
         public bool IsFullBodyOverrideActive
         {
@@ -211,6 +213,9 @@ namespace ROS.Game.Animation
             SetBoolIfPresent(ClassicIsFiring, false);
             SetBoolIfPresent(ClassicIsSprinting, false);
             SetBoolIfPresent(ClassicIsAutoRunning, false);
+            SetBoolIfPresent(ClassicIsSwitchingWeapon, false);
+            SetBoolIfPresent(ClassicIsUsingConsumable, false);
+            SetBoolIfPresent(ClassicIsPickingUp, false);
             ResetUpperLayerWeights();
             RestoreRootMotionDefault();
         }
@@ -248,10 +253,6 @@ namespace ROS.Game.Animation
             UpdateUpperBodyParametersAndLayers();
         }
 
-        /// <summary>
-        /// Activa/desactiva una accion explicita de cuerpo completo.
-        /// Root Motion solo se habilita cuando la accion lo solicita expresamente.
-        /// </summary>
         public void SetFullBodyOverride(bool active, bool useRootMotion = false)
         {
             _manualFullBodyOverride = active;
@@ -272,17 +273,14 @@ namespace ROS.Game.Animation
                 Time.deltaTime
             );
 
-            // Se usa el estado efectivo del motor para que el Animator refleje
-            // lo que realmente esta ocurriendo, no solo la tecla Shift.
             bool sprinting = motor.MovementState == PlayerMovementState.Sprinting;
-            SetBoolIfPresent(ClassicIsSprinting, sprinting);
+            bool autoRunning = input.AutoRunActive;
 
-            // Auto Sprint reutilizara el mismo estado Sprint. Todavia no existe
-            // una entrada runtime de auto-run en PlayerInputReader, por lo que
-            // se mantiene explicitamente apagado hasta materializar ese paso.
-            SetBoolIfPresent(ClassicIsAutoRunning, false);
+            SetBoolIfPresent(ClassicIsSprinting, sprinting);
+            SetBoolIfPresent(ClassicIsAutoRunning, autoRunning);
 
             debugClassicSprinting = sprinting;
+            debugClassicAutoRunning = autoRunning;
         }
 
         private float ResolveAnimationSpeed(Vector2 move)
@@ -335,7 +333,6 @@ namespace ROS.Game.Animation
 
             debugClassicStance = classicStance;
 
-            // La capa base no debe volver a una locomocion armada full-body.
             SetBoolIfPresent(LegacyHasRifle, false);
             SetBoolIfPresent(LegacyAim, false);
         }
@@ -435,8 +432,21 @@ namespace ROS.Game.Animation
                                  !gesturing &&
                                  !fullBodyOverride;
 
-            // Prone conserva temporalmente sus clips full-body hasta contar con
-            // una variante de torso dedicada.
+            bool classicUsingConsumable = healing &&
+                                          !dead &&
+                                          !switchingWeapon &&
+                                          !reloading &&
+                                          !gesturing &&
+                                          !fullBodyOverride;
+
+            bool classicPickingUp = pickupAction &&
+                                    !dead &&
+                                    !switchingWeapon &&
+                                    !reloading &&
+                                    !healing &&
+                                    !gesturing &&
+                                    !fullBodyOverride;
+
             bool armedUpperBody = hasWeapon &&
                                   !fullBodyOverride &&
                                   !dead &&
@@ -449,7 +459,11 @@ namespace ROS.Game.Animation
 
             bool actionsLayerActive = !dead &&
                                       !fullBodyOverride &&
-                                      (healing || upperBodyGesture || pickupAction);
+                                      (reloading ||
+                                       switchingWeapon ||
+                                       classicUsingConsumable ||
+                                       upperBodyGesture ||
+                                       classicPickingUp);
 
             float reloadSpeed = reloading
                 ? ResolveReloadSpeed(weapon, motor.IsCrouching)
@@ -466,15 +480,14 @@ namespace ROS.Game.Animation
             SetFloatIfPresent(ReloadSpeed, reloadSpeed);
             SetFloatIfPresent(AimPitch, aimPitch);
 
-            // Puente directo al nuevo Animator ROS Classic.
             SetIntegerIfPresent(ClassicWeaponType, classicWeaponType);
             SetBoolIfPresent(ClassicIsAiming, aiming);
             SetBoolIfPresent(ClassicIsFiring, classicFiring);
             SetBoolIfPresent(ClassicIsReloading, reloading);
+            SetBoolIfPresent(ClassicIsSwitchingWeapon, switchingWeapon && !dead && !fullBodyOverride);
+            SetBoolIfPresent(ClassicIsUsingConsumable, classicUsingConsumable);
+            SetBoolIfPresent(ClassicIsPickingUp, classicPickingUp);
 
-            // Orden de composicion:
-            // Locomotion < WeaponUpperBody < UpperBodyActions < AimRecoil < FullBodyOverride.
-            // En ROS Classic se resuelven los nombres equivalentes de layer.
             SetLayerWeightSafe(_locomotionLayer, 1f);
             SetLayerWeightSafe(_weaponUpperBodyLayer, weaponLayerActive ? 1f : 0f);
             SetLayerWeightSafe(_upperBodyActionsLayer, actionsLayerActive ? 1f : 0f);
@@ -499,6 +512,9 @@ namespace ROS.Game.Animation
             debugWeaponStyle = weaponStyle;
             debugClassicWeaponType = classicWeaponType;
             debugClassicFiring = classicFiring;
+            debugClassicSwitchingWeapon = switchingWeapon;
+            debugClassicUsingConsumable = classicUsingConsumable;
+            debugClassicPickingUp = classicPickingUp;
         }
 
         private static int ResolveWeaponCategory(WeaponController weapon)
