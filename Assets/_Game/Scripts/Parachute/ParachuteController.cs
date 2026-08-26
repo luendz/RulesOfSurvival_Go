@@ -17,6 +17,7 @@ namespace ROS.Game.Parachute
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private PlayerMotor motor;
         [SerializeField] private WeaponEquipmentController equipment;
+        [SerializeField] private Animator animator;
         [SerializeField] private GameObject parachuteVisual;
 
         [Header("Free Fall")]
@@ -42,6 +43,9 @@ namespace ROS.Game.Parachute
         [SerializeField] private float steerSpeed = 85f;
         [SerializeField] private LayerMask groundMask = ~0;
 
+        [Header("Runtime Debug")]
+        [SerializeField] private int debugParachuteAnimationState;
+
         public AirDropState State { get; private set; } =
             AirDropState.Inactive;
         public bool IsParachuting => State == AirDropState.Parachuting;
@@ -65,10 +69,14 @@ namespace ROS.Game.Parachute
         private bool _equipmentEnabledState;
         private bool _combatSuspended;
 
+        private static readonly int ParachuteStateParameter =
+            Animator.StringToHash("ParachuteState");
+
         private void Awake()
         {
             EnsureReferences();
             SetVisualActive(false);
+            SyncAnimatorState(State);
             enabled = false;
         }
 
@@ -294,6 +302,11 @@ namespace ROS.Game.Parachute
                 equipment = GetComponent<WeaponEquipmentController>();
             }
 
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>(true);
+            }
+
             if (_weapons == null)
             {
                 _weapons = GetComponentsInChildren<WeaponController>(true);
@@ -358,11 +371,57 @@ namespace ROS.Game.Parachute
         {
             if (State == state)
             {
+                SyncAnimatorState(state);
                 return;
             }
 
             State = state;
+            SyncAnimatorState(state);
             StateChanged?.Invoke(state);
+        }
+
+        private void SyncAnimatorState(AirDropState state)
+        {
+            if (animator == null || !HasParachuteStateParameter())
+                return;
+
+            int value = ResolveAnimatorParachuteState(state);
+            animator.SetInteger(ParachuteStateParameter, value);
+            debugParachuteAnimationState = value;
+        }
+
+        private static int ResolveAnimatorParachuteState(AirDropState state)
+        {
+            switch (state)
+            {
+                case AirDropState.FreeFall:
+                    return 1;
+                case AirDropState.Parachuting:
+                    return 2;
+                case AirDropState.Landed:
+                    return 3;
+                default:
+                    return 0;
+            }
+        }
+
+        private bool HasParachuteStateParameter()
+        {
+            if (animator == null)
+                return false;
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.nameHash == ParachuteStateParameter &&
+                    parameter.type == AnimatorControllerParameterType.Int)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void SetVisualActive(bool active)

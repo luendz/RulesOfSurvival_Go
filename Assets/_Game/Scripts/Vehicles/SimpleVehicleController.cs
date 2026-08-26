@@ -13,27 +13,73 @@ namespace ROS.Game.Vehicles
         [SerializeField] private bool playerControlled;
 
         private Rigidbody _rb;
+        private float _throttleInput;
+        private float _steeringInput;
 
-        private void Awake() => _rb = GetComponent<Rigidbody>();
+        public bool IsPlayerControlled => playerControlled;
+        public float ThrottleInput => _throttleInput;
+        public float SteeringInput => _steeringInput;
+        public float NormalizedSpeed => _rb != null
+            ? Mathf.Clamp01(_rb.linearVelocity.magnitude / Mathf.Max(0.01f, maxSpeed))
+            : 0f;
 
-        public void SetControlled(bool value) => playerControlled = value;
+        private void Awake()
+        {
+            _rb = GetComponent<Rigidbody>();
+        }
+
+        public void SetControlled(bool value)
+        {
+            playerControlled = value;
+
+            if (!value)
+            {
+                _throttleInput = 0f;
+                _steeringInput = 0f;
+            }
+        }
 
         private void FixedUpdate()
         {
-            if (!playerControlled || Keyboard.current == null) return;
+            if (!playerControlled || Keyboard.current == null)
+            {
+                _throttleInput = 0f;
+                _steeringInput = 0f;
+                return;
+            }
+
             float throttle = 0f;
             if (Keyboard.current.wKey.isPressed) throttle += 1f;
             if (Keyboard.current.sKey.isPressed) throttle -= 1f;
+
             float steer = 0f;
             if (Keyboard.current.dKey.isPressed) steer += 1f;
             if (Keyboard.current.aKey.isPressed) steer -= 1f;
 
-            if (_rb.linearVelocity.magnitude < maxSpeed || Vector3.Dot(_rb.linearVelocity, transform.forward) * throttle < 0f)
-                _rb.AddForce(transform.forward * (throttle * acceleration), ForceMode.Acceleration);
+            _throttleInput = Mathf.Clamp(throttle, -1f, 1f);
+            _steeringInput = Mathf.Clamp(steer, -1f, 1f);
+
+            if (_rb.linearVelocity.magnitude < maxSpeed ||
+                Vector3.Dot(_rb.linearVelocity, transform.forward) * _throttleInput < 0f)
+            {
+                _rb.AddForce(
+                    transform.forward * (_throttleInput * acceleration),
+                    ForceMode.Acceleration
+                );
+            }
 
             float steeringFactor = Mathf.Clamp01(_rb.linearVelocity.magnitude / 2f);
-            _rb.MoveRotation(_rb.rotation * Quaternion.Euler(0f, steer * steering * steeringFactor * Time.fixedDeltaTime, 0f));
-            _rb.linearDamping = Mathf.Abs(throttle) < 0.01f ? brakeDrag : 0.15f;
+            _rb.MoveRotation(
+                _rb.rotation * Quaternion.Euler(
+                    0f,
+                    _steeringInput * steering * steeringFactor * Time.fixedDeltaTime,
+                    0f
+                )
+            );
+
+            _rb.linearDamping = Mathf.Abs(_throttleInput) < 0.01f
+                ? brakeDrag
+                : 0.15f;
         }
     }
 }

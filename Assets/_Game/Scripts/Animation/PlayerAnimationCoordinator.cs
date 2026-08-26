@@ -15,16 +15,12 @@ namespace ROS.Game.Animation
     /// <summary>
     /// Fuente unica de verdad para parametros y pesos del Animator del jugador.
     ///
-    /// Arquitectura final:
-    /// 0 Locomotion       -> locomocion base. Sin arma, TODO el cuerpo viene de aqui.
-    /// 1 WeaponUpperBody  -> postura/Aim/Reload/Switch de arma, solo torso.
-    /// 2 UpperBodyActions -> Heal/Pickup/gestos de torso, solo torso.
+    /// Arquitectura:
+    /// 0 Locomotion       -> locomocion base y estados aereos.
+    /// 1 WeaponUpperBody  -> posturas de arma de fuego/melee, Aim/Reload/Switch.
+    /// 2 UpperBodyActions -> Heal/Pickup/gestos de torso.
     /// 3 AimRecoil        -> AimPitch/Recoil/Lean/offsets aditivos.
-    /// 4 FullBodyOverride -> acciones que explicitamente toman todo el cuerpo.
-    ///
-    /// Regla importante: una capa Override vacia nunca debe quedarse a peso 1.
-    /// De lo contrario puede neutralizar curvas del torso y dejar brazos/manos
-    /// en una pose incorrecta, especialmente cuando el jugador esta desarmado.
+    /// 4 FullBodyOverride -> acciones que toman todo el cuerpo (gestos/ataques melee fuertes).
     /// </summary>
     [DefaultExecutionOrder(80)]
     [DisallowMultipleComponent]
@@ -35,6 +31,12 @@ namespace ROS.Game.Animation
         public const string UpperBodyActionsLayerName = "UpperBodyActions";
         public const string AimRecoilLayerName = "AimRecoil";
         public const string FullBodyOverrideLayerName = "FullBodyOverride";
+
+        // Valores int visibles en Parameters del Animator.
+        public const int WeaponCategoryNone = 0;
+        public const int WeaponCategoryFirearm = 1;
+        public const int WeaponCategoryMelee = 2;
+        public const int WeaponCategoryThrowable = 3;
 
         // Alias de compatibilidad para herramientas Editor First antiguas.
         public const string CombatLayerName = WeaponUpperBodyLayerName;
@@ -54,6 +56,12 @@ namespace ROS.Game.Animation
         [Header("Smoothing")]
         [SerializeField, Min(0f)] private float movementDampTime = 0.12f;
 
+        [Header("Airborne / Fall")]
+        [Tooltip("Distancia real que debe descender desde el punto mas alto antes de entrar a Fall. Un salto corto puede ir directamente de Jump a Landing.")]
+        [SerializeField, Min(0.05f)] private float fallAnimationDistance = 1.50f;
+        [Tooltip("Velocidad vertical minima de descenso requerida para activar Fall.")]
+        [SerializeField] private float fallAnimationMinDownVelocity = -0.2f;
+
         [Header("Aim")]
         [SerializeField, Range(20f, 89f)] private float aimPitchRange = 70f;
 
@@ -70,6 +78,11 @@ namespace ROS.Game.Animation
         [SerializeField] private bool debugFullBodyOverride;
         [SerializeField] private float debugReloadSpeed = 1f;
         [SerializeField] private float debugAimPitch;
+        [SerializeField] private float debugAirbornePeakY;
+        [SerializeField] private float debugFallDistance;
+        [SerializeField] private bool debugShouldFall;
+        [SerializeField] private int debugWeaponCategory;
+        [SerializeField] private int debugWeaponStyle;
 
         private PlayerInteractor _interactor;
         private int _locomotionLayer = -1;
@@ -85,6 +98,8 @@ namespace ROS.Game.Animation
         private bool _manualRootMotion;
         private bool _initialApplyRootMotion;
         private bool _capturedRootMotion;
+        private bool _wasGrounded = true;
+        private float _airbornePeakY;
 
         private static readonly int MoveX = Animator.StringToHash("MoveX");
         private static readonly int MoveY = Animator.StringToHash("MoveY");
@@ -93,6 +108,7 @@ namespace ROS.Game.Animation
         private static readonly int Crouch = Animator.StringToHash("Crouch");
         private static readonly int Prone = Animator.StringToHash("Prone");
         private static readonly int VerticalVelocity = Animator.StringToHash("VerticalVelocity");
+        private static readonly int ShouldFall = Animator.StringToHash("ShouldFall");
         private static readonly int Dead = Animator.StringToHash("Dead");
         private static readonly int PickupItem = Animator.StringToHash("PickupItem");
 
@@ -106,6 +122,8 @@ namespace ROS.Game.Animation
         private static readonly int ReloadSpeed = Animator.StringToHash("ReloadSpeed");
         private static readonly int Healing = Animator.StringToHash("Healing");
         private static readonly int AimPitch = Animator.StringToHash("AimPitch");
+        private static readonly int WeaponCategory = Animator.StringToHash("WeaponCategory");
+        private static readonly int WeaponStyle = Animator.StringToHash("WeaponStyle");
 
         public bool IsFullBodyOverrideActive
         {
@@ -126,6 +144,7 @@ namespace ROS.Game.Animation
             ResolveLayerIndexes(true);
             ResetUpperLayerWeights();
             ResolveReloadClipLengths();
+            ResetAirborneTracking();
         }
 
         private void OnEnable()
@@ -135,11 +154,13 @@ namespace ROS.Game.Animation
             BindInteractor();
             ResolveLayerIndexes(true);
             ResetUpperLayerWeights();
+            ResetAirborneTracking();
         }
 
         private void OnDisable()
         {
             UnbindInteractor();
+            SetBoolIfPresent(ShouldFall, false);
             ResetUpperLayerWeights();
             RestoreRootMotionDefault();
         }
@@ -178,8 +199,7 @@ namespace ROS.Game.Animation
 
         /// <summary>
         /// Activa/desactiva una accion explicita de cuerpo completo.
-        /// Root Motion solo se habilita cuando la accion lo solicita expresamente
-        /// (por ejemplo Vault/Climb); nunca por un gesto normal.
+        /// Root Motion solo se habilita cuando la accion lo solicita expresamente.
         /// </summary>
         public void SetFullBodyOverride(bool active, bool useRootMotion = false)
         {
@@ -222,23 +242,75 @@ namespace ROS.Game.Animation
         private void UpdateBaseStateParameters()
         {
             bool airborneDrop = parachute != null && parachute.IsAirbornePhase;
+            bool grounded = !airborneDrop && motor.IsGrounded;
             bool dead = health != null && !health.IsAlive;
+            float verticalVelocity = airborneDrop && parachute != null
+                ? parachute.VerticalSpeed
+                : motor.Velocity.y;
 
-            SetBoolIfPresent(Grounded, !airborneDrop && motor.IsGrounded);
+            bool shouldFall = UpdateFallAnimationGate(
+                grounded,
+                airborneDrop,
+                verticalVelocity
+            );
+
+            SetBoolIfPresent(Grounded, grounded);
             SetBoolIfPresent(Crouch, motor.IsCrouching);
             SetBoolIfPresent(Prone, motor.IsProne);
             SetBoolIfPresent(Dead, dead);
-
-            SetFloatIfPresent(
-                VerticalVelocity,
-                airborneDrop && parachute != null
-                    ? parachute.VerticalSpeed
-                    : motor.Velocity.y
-            );
+            SetBoolIfPresent(ShouldFall, shouldFall);
+            SetFloatIfPresent(VerticalVelocity, verticalVelocity);
 
             // La capa base no debe volver a una locomocion armada full-body.
             SetBoolIfPresent(LegacyHasRifle, false);
             SetBoolIfPresent(LegacyAim, false);
+        }
+
+        private bool UpdateFallAnimationGate(
+            bool grounded,
+            bool parachuting,
+            float verticalVelocity)
+        {
+            float currentY = transform.position.y;
+
+            if (grounded)
+            {
+                _airbornePeakY = currentY;
+                _wasGrounded = true;
+                debugAirbornePeakY = _airbornePeakY;
+                debugFallDistance = 0f;
+                debugShouldFall = false;
+                return false;
+            }
+
+            if (_wasGrounded)
+            {
+                _airbornePeakY = currentY;
+                _wasGrounded = false;
+            }
+
+            if (currentY > _airbornePeakY)
+                _airbornePeakY = currentY;
+
+            float fallDistance = Mathf.Max(0f, _airbornePeakY - currentY);
+            bool shouldFall = !parachuting &&
+                              verticalVelocity <= fallAnimationMinDownVelocity &&
+                              fallDistance >= fallAnimationDistance;
+
+            debugAirbornePeakY = _airbornePeakY;
+            debugFallDistance = fallDistance;
+            debugShouldFall = shouldFall;
+            return shouldFall;
+        }
+
+        private void ResetAirborneTracking()
+        {
+            _airbornePeakY = transform.position.y;
+            _wasGrounded = motor == null || motor.IsGrounded;
+            debugAirbornePeakY = _airbornePeakY;
+            debugFallDistance = 0f;
+            debugShouldFall = false;
+            SetBoolIfPresent(ShouldFall, false);
         }
 
         private void UpdateUpperBodyParametersAndLayers()
@@ -256,17 +328,20 @@ namespace ROS.Game.Animation
                 : null;
 
             bool hasWeapon = weapon != null;
+            int weaponCategory = ResolveWeaponCategory(weapon);
+            int weaponStyle = ResolveWeaponStyle(weapon);
+            bool firearm = weaponCategory == WeaponCategoryFirearm;
             bool switchingWeapon = equipment != null && equipment.IsSwitchingWeapon;
             bool equipmentReloading = equipment != null &&
                                       equipment.CombatState == PlayerCombatState.Reloading;
 
-            bool reloading = hasWeapon &&
+            bool reloading = firearm &&
                              (weapon.IsReloading || equipmentReloading) &&
                              !healing &&
                              !gesturing &&
                              !fullBodyOverride;
 
-            bool aiming = hasWeapon &&
+            bool aiming = firearm &&
                           !reloading &&
                           !healing &&
                           !gesturing &&
@@ -282,16 +357,11 @@ namespace ROS.Game.Animation
                                   !dead &&
                                   !motor.IsProne;
 
-            // WeaponUpperBody solo existe en la pose cuando realmente hay arma
-            // (o un cambio de arma en curso). Sin arma, su peso debe ser cero
-            // para que Idle/Walk/Run de Locomotion controlen tambien brazos/manos.
             bool weaponLayerActive = !dead &&
                                      !fullBodyOverride &&
                                      !motor.IsProne &&
                                      (hasWeapon || switchingWeapon);
 
-            // UpperBodyActions solo se activa durante una accion real. Un Empty
-            // Override a peso 1 puede congelar/neutralizar el torso.
             bool actionsLayerActive = !dead &&
                                       !fullBodyOverride &&
                                       (healing || upperBodyGesture || pickupAction);
@@ -302,6 +372,8 @@ namespace ROS.Game.Animation
 
             float aimPitch = aiming ? ResolveAimPitch() : 0f;
 
+            SetIntegerIfPresent(WeaponCategory, weaponCategory);
+            SetIntegerIfPresent(WeaponStyle, weaponStyle);
             SetBoolIfPresent(UpperBodyArmed, armedUpperBody);
             SetBoolIfPresent(UpperBodyAim, aiming);
             SetBoolIfPresent(Reloading, reloading);
@@ -309,7 +381,7 @@ namespace ROS.Game.Animation
             SetFloatIfPresent(ReloadSpeed, reloadSpeed);
             SetFloatIfPresent(AimPitch, aimPitch);
 
-            // Orden real de composicion:
+            // Orden de composicion:
             // Locomotion < WeaponUpperBody < UpperBodyActions < AimRecoil < FullBodyOverride.
             SetLayerWeightSafe(_locomotionLayer, 1f);
             SetLayerWeightSafe(_weaponUpperBodyLayer, weaponLayerActive ? 1f : 0f);
@@ -331,6 +403,36 @@ namespace ROS.Game.Animation
             debugFullBodyOverride = fullBodyOverride;
             debugReloadSpeed = reloadSpeed;
             debugAimPitch = aimPitch;
+            debugWeaponCategory = weaponCategory;
+            debugWeaponStyle = weaponStyle;
+        }
+
+        private static int ResolveWeaponCategory(WeaponController weapon)
+        {
+            if (weapon == null || weapon.Definition == null)
+                return WeaponCategoryNone;
+
+            return weapon.Definition.family == WeaponFamily.Melee
+                ? WeaponCategoryMelee
+                : WeaponCategoryFirearm;
+        }
+
+        private static int ResolveWeaponStyle(WeaponController weapon)
+        {
+            if (weapon == null || weapon.Definition == null)
+                return (int)WeaponAnimationStyle.Default;
+
+            WeaponDefinition definition = weapon.Definition;
+            if (definition.animationStyle != WeaponAnimationStyle.Default)
+                return (int)definition.animationStyle;
+
+            if (definition.family == WeaponFamily.Pistol)
+                return (int)WeaponAnimationStyle.Pistol;
+
+            if (definition.family == WeaponFamily.Melee)
+                return (int)WeaponAnimationStyle.Default;
+
+            return (int)WeaponAnimationStyle.Rifle;
         }
 
         private float ResolveAimPitch()
@@ -483,6 +585,14 @@ namespace ROS.Game.Animation
                 return;
 
             animator.SetFloat(parameterHash, value);
+        }
+
+        private void SetIntegerIfPresent(int parameterHash, int value)
+        {
+            if (!HasParameter(parameterHash, AnimatorControllerParameterType.Int))
+                return;
+
+            animator.SetInteger(parameterHash, value);
         }
 
         private void SetTriggerIfPresent(int parameterHash)

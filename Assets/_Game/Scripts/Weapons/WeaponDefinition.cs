@@ -3,6 +3,27 @@ using UnityEngine;
 
 namespace ROS.Game.Weapons
 {
+    /// <summary>
+    /// Estilo visual que usa el Animator para elegir una pose compatible con el arma.
+    /// No representa el daño ni la familia jugable; solo la forma de animarla.
+    ///
+    /// Ejemplos de melee:
+    /// - Knife: cuchillo/machete corto.
+    /// - OneHandedHeavy: martillo, sartén, palo corto.
+    /// - TwoHanded: bate, arma larga de dos manos.
+    /// - Improvised: pollo u objetos especiales/improvisados.
+    /// </summary>
+    public enum WeaponAnimationStyle
+    {
+        Default = 0,
+        Rifle = 10,
+        Pistol = 20,
+        MeleeKnife = 100,
+        MeleeOneHandedHeavy = 110,
+        MeleeTwoHanded = 120,
+        MeleeImprovised = 130
+    }
+
     [CreateAssetMenu(menuName = "ROS/Weapons/Weapon Definition", fileName = "Weapon_")]
     public sealed class WeaponDefinition : ScriptableObject, IGameDataDefinition
     {
@@ -12,6 +33,10 @@ namespace ROS.Game.Weapons
         public WeaponFamily family = WeaponFamily.AssaultRifle;
         public AmmoType ammoType = AmmoType.Rifle;
         public WeaponFireMode fireMode = WeaponFireMode.Auto;
+
+        [Header("Animation")]
+        [Tooltip("Estilo visual usado por WeaponUpperBody. Para melee permite separar cuchillo, arma pesada, dos manos u objeto improvisado sin crear layers por arma.")]
+        public WeaponAnimationStyle animationStyle = WeaponAnimationStyle.Default;
 
         [Header("Fire Modes")]
         public bool supportsSingle = true;
