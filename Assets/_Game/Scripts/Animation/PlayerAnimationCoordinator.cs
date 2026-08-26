@@ -15,12 +15,17 @@ namespace ROS.Game.Animation
     /// <summary>
     /// Fuente unica de verdad para parametros y pesos del Animator del jugador.
     ///
-    /// Arquitectura:
+    /// Arquitectura legacy compatible:
     /// 0 Locomotion       -> locomocion base y estados aereos.
     /// 1 WeaponUpperBody  -> posturas de arma de fuego/melee, Aim/Reload/Switch.
     /// 2 UpperBodyActions -> Heal/Pickup/gestos de torso.
     /// 3 AimRecoil        -> AimPitch/Recoil/Lean/offsets aditivos.
     /// 4 FullBodyOverride -> acciones que toman todo el cuerpo (gestos/ataques melee fuertes).
+    ///
+    /// ROS Classic usa los equivalentes Base_Locomotion, UpperBody_Weapon,
+    /// UpperBody_Actions, Aim_Offset y FullBody_Actions. El coordinador escribe
+    /// ambos juegos de parametros cuando existen para mantener una migracion
+    /// visible y editable desde el Animator, sin componentes runtime ocultos.
     /// </summary>
     [DefaultExecutionOrder(80)]
     [DisallowMultipleComponent]
@@ -32,11 +37,30 @@ namespace ROS.Game.Animation
         public const string AimRecoilLayerName = "AimRecoil";
         public const string FullBodyOverrideLayerName = "FullBodyOverride";
 
-        // Valores int visibles en Parameters del Animator.
+        private const string ClassicLocomotionLayerName = "Base_Locomotion";
+        private const string ClassicWeaponUpperBodyLayerName = "UpperBody_Weapon";
+        private const string ClassicUpperBodyActionsLayerName = "UpperBody_Actions";
+        private const string ClassicAimOffsetLayerName = "Aim_Offset";
+        private const string ClassicFullBodyActionsLayerName = "FullBody_Actions";
+
+        // Valores int visibles en Parameters del Animator legacy.
         public const int WeaponCategoryNone = 0;
         public const int WeaponCategoryFirearm = 1;
         public const int WeaponCategoryMelee = 2;
         public const int WeaponCategoryThrowable = 3;
+
+        // Convencion interna del Animator ROS Classic. No son valores del juego original.
+        private const int ClassicWeaponUnarmed = 0;
+        private const int ClassicWeaponRifle = 1;
+        private const int ClassicWeaponPistol = 2;
+        private const int ClassicWeaponShotgun = 3;
+        private const int ClassicWeaponSniper = 4;
+        private const int ClassicWeaponMelee = 5;
+        private const int ClassicWeaponThrowable = 6;
+
+        private const int ClassicStanceStanding = 0;
+        private const int ClassicStanceCrouch = 1;
+        private const int ClassicStanceProne = 2;
 
         // Alias de compatibilidad para herramientas Editor First antiguas.
         public const string CombatLayerName = WeaponUpperBodyLayerName;
@@ -68,6 +92,10 @@ namespace ROS.Game.Animation
         [Header("Actions")]
         [SerializeField, Min(0.05f)] private float pickupUpperBodyDuration = 0.65f;
 
+        [Header("ROS Classic Runtime")]
+        [Tooltip("Duracion visual del pulso IsFiring producido por cada disparo real. Es un valor provisional y ajustable; no representa un timing medido del Rules of Survival original.")]
+        [SerializeField, Min(0.01f)] private float classicFirePulseDuration = 0.08f;
+
         [Header("Runtime Debug")]
         [SerializeField] private bool debugUpperBodyArmed;
         [SerializeField] private bool debugUpperBodyAim;
@@ -83,8 +111,13 @@ namespace ROS.Game.Animation
         [SerializeField] private bool debugShouldFall;
         [SerializeField] private int debugWeaponCategory;
         [SerializeField] private int debugWeaponStyle;
+        [SerializeField] private int debugClassicWeaponType;
+        [SerializeField] private bool debugClassicFiring;
+        [SerializeField] private int debugClassicStance;
+        [SerializeField] private bool debugClassicSprinting;
 
         private PlayerInteractor _interactor;
+        private WeaponController _classicObservedWeapon;
         private int _locomotionLayer = -1;
         private int _weaponUpperBodyLayer = -1;
         private int _upperBodyActionsLayer = -1;
@@ -94,6 +127,7 @@ namespace ROS.Game.Animation
         private float _standingReloadClipLength = -1f;
         private float _crouchReloadClipLength = -1f;
         private float _pickupUpperBodyUntil;
+        private float _classicFiringUntil;
         private bool _manualFullBodyOverride;
         private bool _manualRootMotion;
         private bool _initialApplyRootMotion;
@@ -125,6 +159,16 @@ namespace ROS.Game.Animation
         private static readonly int WeaponCategory = Animator.StringToHash("WeaponCategory");
         private static readonly int WeaponStyle = Animator.StringToHash("WeaponStyle");
 
+        // Parametros del nuevo AC_Player_ROS_Classic.
+        private static readonly int ClassicIsGrounded = Animator.StringToHash("IsGrounded");
+        private static readonly int ClassicIsSprinting = Animator.StringToHash("IsSprinting");
+        private static readonly int ClassicIsAutoRunning = Animator.StringToHash("IsAutoRunning");
+        private static readonly int ClassicStance = Animator.StringToHash("Stance");
+        private static readonly int ClassicWeaponType = Animator.StringToHash("WeaponType");
+        private static readonly int ClassicIsAiming = Animator.StringToHash("IsAiming");
+        private static readonly int ClassicIsFiring = Animator.StringToHash("IsFiring");
+        private static readonly int ClassicIsReloading = Animator.StringToHash("IsReloading");
+
         public bool IsFullBodyOverrideActive
         {
             get
@@ -139,6 +183,7 @@ namespace ROS.Game.Animation
         private void Awake()
         {
             ResolveReferences();
+            BindClassicWeaponFire(equipment != null ? equipment.EquippedWeapon : null);
             CaptureRootMotionDefault();
             BindInteractor();
             ResolveLayerIndexes(true);
@@ -150,6 +195,7 @@ namespace ROS.Game.Animation
         private void OnEnable()
         {
             ResolveReferences();
+            BindClassicWeaponFire(equipment != null ? equipment.EquippedWeapon : null);
             CaptureRootMotionDefault();
             BindInteractor();
             ResolveLayerIndexes(true);
@@ -160,7 +206,11 @@ namespace ROS.Game.Animation
         private void OnDisable()
         {
             UnbindInteractor();
+            UnbindClassicWeaponFire();
             SetBoolIfPresent(ShouldFall, false);
+            SetBoolIfPresent(ClassicIsFiring, false);
+            SetBoolIfPresent(ClassicIsSprinting, false);
+            SetBoolIfPresent(ClassicIsAutoRunning, false);
             ResetUpperLayerWeights();
             RestoreRootMotionDefault();
         }
@@ -168,6 +218,7 @@ namespace ROS.Game.Animation
         private void OnDestroy()
         {
             UnbindInteractor();
+            UnbindClassicWeaponFire();
             RestoreRootMotionDefault();
         }
 
@@ -220,6 +271,18 @@ namespace ROS.Game.Animation
                 movementDampTime,
                 Time.deltaTime
             );
+
+            // Se usa el estado efectivo del motor para que el Animator refleje
+            // lo que realmente esta ocurriendo, no solo la tecla Shift.
+            bool sprinting = motor.MovementState == PlayerMovementState.Sprinting;
+            SetBoolIfPresent(ClassicIsSprinting, sprinting);
+
+            // Auto Sprint reutilizara el mismo estado Sprint. Todavia no existe
+            // una entrada runtime de auto-run en PlayerInputReader, por lo que
+            // se mantiene explicitamente apagado hasta materializar ese paso.
+            SetBoolIfPresent(ClassicIsAutoRunning, false);
+
+            debugClassicSprinting = sprinting;
         }
 
         private float ResolveAnimationSpeed(Vector2 move)
@@ -254,12 +317,23 @@ namespace ROS.Game.Animation
                 verticalVelocity
             );
 
+            int classicStance = motor.IsProne
+                ? ClassicStanceProne
+                : motor.IsCrouching
+                    ? ClassicStanceCrouch
+                    : ClassicStanceStanding;
+
             SetBoolIfPresent(Grounded, grounded);
             SetBoolIfPresent(Crouch, motor.IsCrouching);
             SetBoolIfPresent(Prone, motor.IsProne);
             SetBoolIfPresent(Dead, dead);
             SetBoolIfPresent(ShouldFall, shouldFall);
             SetFloatIfPresent(VerticalVelocity, verticalVelocity);
+
+            SetBoolIfPresent(ClassicIsGrounded, grounded);
+            SetIntegerIfPresent(ClassicStance, classicStance);
+
+            debugClassicStance = classicStance;
 
             // La capa base no debe volver a una locomocion armada full-body.
             SetBoolIfPresent(LegacyHasRifle, false);
@@ -327,9 +401,12 @@ namespace ROS.Game.Animation
                 ? equipment.EquippedWeapon
                 : null;
 
+            BindClassicWeaponFire(weapon);
+
             bool hasWeapon = weapon != null;
             int weaponCategory = ResolveWeaponCategory(weapon);
             int weaponStyle = ResolveWeaponStyle(weapon);
+            int classicWeaponType = ResolveClassicWeaponType(weapon);
             bool firearm = weaponCategory == WeaponCategoryFirearm;
             bool switchingWeapon = equipment != null && equipment.IsSwitchingWeapon;
             bool equipmentReloading = equipment != null &&
@@ -349,6 +426,14 @@ namespace ROS.Game.Animation
                           !motor.IsProne &&
                           equipment != null &&
                           equipment.CombatState == PlayerCombatState.Aiming;
+
+            bool classicFiring = firearm &&
+                                 Time.time < _classicFiringUntil &&
+                                 !dead &&
+                                 !reloading &&
+                                 !healing &&
+                                 !gesturing &&
+                                 !fullBodyOverride;
 
             // Prone conserva temporalmente sus clips full-body hasta contar con
             // una variante de torso dedicada.
@@ -381,8 +466,15 @@ namespace ROS.Game.Animation
             SetFloatIfPresent(ReloadSpeed, reloadSpeed);
             SetFloatIfPresent(AimPitch, aimPitch);
 
+            // Puente directo al nuevo Animator ROS Classic.
+            SetIntegerIfPresent(ClassicWeaponType, classicWeaponType);
+            SetBoolIfPresent(ClassicIsAiming, aiming);
+            SetBoolIfPresent(ClassicIsFiring, classicFiring);
+            SetBoolIfPresent(ClassicIsReloading, reloading);
+
             // Orden de composicion:
             // Locomotion < WeaponUpperBody < UpperBodyActions < AimRecoil < FullBodyOverride.
+            // En ROS Classic se resuelven los nombres equivalentes de layer.
             SetLayerWeightSafe(_locomotionLayer, 1f);
             SetLayerWeightSafe(_weaponUpperBodyLayer, weaponLayerActive ? 1f : 0f);
             SetLayerWeightSafe(_upperBodyActionsLayer, actionsLayerActive ? 1f : 0f);
@@ -405,6 +497,8 @@ namespace ROS.Game.Animation
             debugAimPitch = aimPitch;
             debugWeaponCategory = weaponCategory;
             debugWeaponStyle = weaponStyle;
+            debugClassicWeaponType = classicWeaponType;
+            debugClassicFiring = classicFiring;
         }
 
         private static int ResolveWeaponCategory(WeaponController weapon)
@@ -433,6 +527,65 @@ namespace ROS.Game.Animation
                 return (int)WeaponAnimationStyle.Default;
 
             return (int)WeaponAnimationStyle.Rifle;
+        }
+
+        private static int ResolveClassicWeaponType(WeaponController weapon)
+        {
+            if (weapon == null || weapon.Definition == null)
+                return ClassicWeaponUnarmed;
+
+            switch (weapon.Definition.family)
+            {
+                case WeaponFamily.Pistol:
+                    return ClassicWeaponPistol;
+
+                case WeaponFamily.Shotgun:
+                    return ClassicWeaponShotgun;
+
+                case WeaponFamily.SniperRifle:
+                    return ClassicWeaponSniper;
+
+                case WeaponFamily.Melee:
+                    return ClassicWeaponMelee;
+
+                case WeaponFamily.AssaultRifle:
+                case WeaponFamily.SubmachineGun:
+                case WeaponFamily.LightMachineGun:
+                default:
+                    return ClassicWeaponRifle;
+            }
+        }
+
+        private void BindClassicWeaponFire(WeaponController weapon)
+        {
+            if (_classicObservedWeapon == weapon)
+                return;
+
+            if (_classicObservedWeapon != null)
+                _classicObservedWeapon.Fired -= OnClassicWeaponFired;
+
+            _classicObservedWeapon = weapon;
+            _classicFiringUntil = 0f;
+
+            if (_classicObservedWeapon != null)
+                _classicObservedWeapon.Fired += OnClassicWeaponFired;
+        }
+
+        private void UnbindClassicWeaponFire()
+        {
+            if (_classicObservedWeapon != null)
+                _classicObservedWeapon.Fired -= OnClassicWeaponFired;
+
+            _classicObservedWeapon = null;
+            _classicFiringUntil = 0f;
+        }
+
+        private void OnClassicWeaponFired()
+        {
+            _classicFiringUntil = Mathf.Max(
+                _classicFiringUntil,
+                Time.time + Mathf.Max(0.01f, classicFirePulseDuration)
+            );
         }
 
         private float ResolveAimPitch()
@@ -516,11 +669,37 @@ namespace ROS.Game.Animation
                 return;
 
             _resolvedController = controller;
-            _locomotionLayer = animator.GetLayerIndex(LocomotionLayerName);
-            _weaponUpperBodyLayer = animator.GetLayerIndex(WeaponUpperBodyLayerName);
-            _upperBodyActionsLayer = animator.GetLayerIndex(UpperBodyActionsLayerName);
-            _aimRecoilLayer = animator.GetLayerIndex(AimRecoilLayerName);
-            _fullBodyOverrideLayer = animator.GetLayerIndex(FullBodyOverrideLayerName);
+            _locomotionLayer = ResolveLayerIndex(
+                LocomotionLayerName,
+                ClassicLocomotionLayerName
+            );
+            _weaponUpperBodyLayer = ResolveLayerIndex(
+                WeaponUpperBodyLayerName,
+                ClassicWeaponUpperBodyLayerName
+            );
+            _upperBodyActionsLayer = ResolveLayerIndex(
+                UpperBodyActionsLayerName,
+                ClassicUpperBodyActionsLayerName
+            );
+            _aimRecoilLayer = ResolveLayerIndex(
+                AimRecoilLayerName,
+                ClassicAimOffsetLayerName
+            );
+            _fullBodyOverrideLayer = ResolveLayerIndex(
+                FullBodyOverrideLayerName,
+                ClassicFullBodyActionsLayerName
+            );
+        }
+
+        private int ResolveLayerIndex(string primaryName, string fallbackName)
+        {
+            if (animator == null)
+                return -1;
+
+            int index = animator.GetLayerIndex(primaryName);
+            return index >= 0
+                ? index
+                : animator.GetLayerIndex(fallbackName);
         }
 
         private void ResetUpperLayerWeights()
