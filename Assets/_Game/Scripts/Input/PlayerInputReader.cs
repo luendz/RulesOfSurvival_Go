@@ -257,7 +257,7 @@ namespace ROS.Game.Input
 
             UpdateAutoRunToggle();
 
-            Move =
+            Vector2 rawMove =
                 _move.ReadValue<Vector2>();
 
             Vector2 mouseLook =
@@ -281,9 +281,6 @@ namespace ROS.Game.Input
 
                 LookFromMouse = false;
             }
-
-            SprintHeld =
-                _sprint.IsPressed();
 
             AimHeld =
                 _aim.IsPressed();
@@ -342,10 +339,18 @@ namespace ROS.Game.Input
             if (AutoRunActive &&
                 (CrouchPressed ||
                  PronePressed ||
-                 (cancelAutoRunOnBackwardInput && Move.y < -0.25f)))
+                 (cancelAutoRunOnBackwardInput && rawMove.y < -0.25f)))
             {
                 SetAutoRun(false);
             }
+
+            Move = ResolveEffectiveMove(rawMove);
+
+            // Para el resto de sistemas Auto Run equivale a una solicitud de
+            // Sprint sostenida. AutoRunActive conserva la informacion de origen.
+            SprintHeld =
+                _sprint.IsPressed() ||
+                AutoRunActive;
 
             UpdateWeaponScroll();
         }
@@ -414,11 +419,11 @@ namespace ROS.Game.Input
                 EnableExternalControl();
             }
 
-            Move = Vector2.ClampMagnitude(move, 1f);
+            AutoRunActive = autoRun;
+            Move = ResolveEffectiveMove(Vector2.ClampMagnitude(move, 1f));
             Look = Vector2.zero;
             LookFromMouse = false;
-            SprintHeld = sprint;
-            AutoRunActive = autoRun;
+            SprintHeld = sprint || AutoRunActive;
             AimHeld = aim;
             FireHeld = fire;
             JumpPressed = jump;
@@ -438,6 +443,19 @@ namespace ROS.Game.Input
             WeaponSlot3Pressed = false;
             HolsterWeaponPressed = false;
             WeaponScrollDirection = 0;
+        }
+
+        private Vector2 ResolveEffectiveMove(Vector2 rawMove)
+        {
+            Vector2 move = Vector2.ClampMagnitude(rawMove, 1f);
+
+            if (!AutoRunActive)
+                return move;
+
+            // Auto Run aporta avance automatico; se conserva el eje lateral para
+            // que el jugador pueda corregir direccion mientras sigue avanzando.
+            move.y = Mathf.Max(move.y, 1f);
+            return Vector2.ClampMagnitude(move, 1f);
         }
 
         private void UpdateAutoRunToggle()
