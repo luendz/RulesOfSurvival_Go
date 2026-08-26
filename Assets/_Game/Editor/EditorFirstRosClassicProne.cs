@@ -157,6 +157,12 @@ namespace ROS.Game.EditorTools
                 "Stance"
             );
 
+            // Crouch ya existia antes que Prone y originalmente tenia una salida
+            // incondicional a Standing. La convertimos en Stance=0 y agregamos la
+            // ruta directa Stance=2 para respetar Crouch -> Prone.
+            if (crouch != null)
+                EnsureCrouchRoutes(grounded, crouch, standing, prone);
+
             // Sin clip de entrada, avanzamos inmediatamente a Idle. Si el usuario
             // cambia Stance durante esa entrada vacia, se cancela hacia Exit.
             AnimatorStateTransition enterToIdle = proneEnter.AddTransition(proneIdle);
@@ -241,6 +247,53 @@ namespace ROS.Game.EditorTools
                 "Prone Enter, Idle, Exit y las 8 direcciones de Crawl quedan visibles " +
                 "como Motion=None para asignarlas manualmente cuando existan."
             );
+        }
+
+        private static void EnsureCrouchRoutes(
+            AnimatorStateMachine grounded,
+            AnimatorStateMachine crouch,
+            AnimatorStateMachine standing,
+            AnimatorStateMachine prone)
+        {
+            AnimatorTransition[] transitions =
+                grounded.GetStateMachineTransitions(crouch);
+            bool hasCrouchToProne = false;
+
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                AnimatorTransition transition = transitions[i];
+                if (transition == null)
+                    continue;
+
+                if (transition.destinationStateMachine == prone)
+                {
+                    hasCrouchToProne = true;
+                    continue;
+                }
+
+                if (transition.destinationStateMachine == standing &&
+                    transition.conditions.Length == 0)
+                {
+                    transition.AddCondition(
+                        AnimatorConditionMode.Equals,
+                        StandingStance,
+                        "Stance"
+                    );
+                    EditorUtility.SetDirty(transition);
+                }
+            }
+
+            if (!hasCrouchToProne)
+            {
+                AnimatorTransition crouchToProne =
+                    grounded.AddStateMachineTransition(crouch, prone);
+                crouchToProne.AddCondition(
+                    AnimatorConditionMode.Equals,
+                    ProneStance,
+                    "Stance"
+                );
+                EditorUtility.SetDirty(crouchToProne);
+            }
         }
 
         private static void AddStandingExitTransition(AnimatorState state)
