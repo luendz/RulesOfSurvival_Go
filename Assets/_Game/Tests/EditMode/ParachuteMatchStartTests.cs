@@ -144,6 +144,16 @@ namespace ROS.Game.Tests.EditMode
                 "FullBodyAction",
                 AnimatorControllerParameterType.Int
             );
+            AssertParameter(
+                controller,
+                "ParachuteState",
+                AnimatorControllerParameterType.Int
+            );
+            AssertParameter(
+                controller,
+                "AirDropAnimationComplete",
+                AnimatorControllerParameterType.Bool
+            );
 
             string[] gestureStates =
             {
@@ -177,8 +187,44 @@ namespace ROS.Game.Tests.EditMode
             );
             Assert.That(airDrop, Is.Not.Null);
             Assert.That(airDrop.defaultState, Is.Not.Null);
-            Assert.That(airDrop.defaultState.name, Is.EqualTo("FreeFall"));
+            Assert.That(airDrop.defaultState.name, Is.EqualTo("FreeFall Enter"));
             Assert.That(airDrop.defaultState.motion, Is.Not.Null);
+
+            string[] runtimeAirDropStates =
+            {
+                "FreeFall Enter",
+                "FreeFall",
+                "Parachute Deploy",
+                "Parachute Glide",
+                "Parachute Land"
+            };
+
+            for (int i = 0; i < runtimeAirDropStates.Length; i++)
+            {
+                AnimatorState state = FindState(
+                    airDrop,
+                    runtimeAirDropStates[i]
+                );
+                Assert.That(state, Is.Not.Null, runtimeAirDropStates[i]);
+                Assert.That(state.motion, Is.Not.Null, runtimeAirDropStates[i]);
+            }
+
+            Assert.That(
+                FindState(airDrop, "FreeFall Enter").transitions.Length,
+                Is.EqualTo(3)
+            );
+            Assert.That(
+                FindState(airDrop, "FreeFall").transitions.Length,
+                Is.EqualTo(2)
+            );
+            Assert.That(
+                FindState(airDrop, "Parachute Deploy").transitions.Length,
+                Is.EqualTo(2)
+            );
+            Assert.That(
+                FindState(airDrop, "Parachute Glide").transitions.Length,
+                Is.EqualTo(1)
+            );
 
             AnimatorStateMachine vehicle = FindStateMachine(
                 fullBody.stateMachine,
@@ -215,10 +261,12 @@ namespace ROS.Game.Tests.EditMode
                 parachute.BeginAirDrop();
                 Assert.That(animator.GetBool("IsFreeFalling"), Is.True);
                 Assert.That(animator.GetBool("IsParachuting"), Is.False);
+                Assert.That(animator.GetInteger("ParachuteState"), Is.EqualTo(1));
 
                 Assert.That(parachute.TryDeploy(), Is.True);
                 Assert.That(animator.GetBool("IsFreeFalling"), Is.False);
                 Assert.That(animator.GetBool("IsParachuting"), Is.True);
+                Assert.That(animator.GetInteger("ParachuteState"), Is.EqualTo(2));
             }
             finally
             {

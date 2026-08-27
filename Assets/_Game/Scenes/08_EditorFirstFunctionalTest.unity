@@ -15147,7 +15147,26 @@ MonoBehaviour:
   input: {fileID: 0}
   weapons: {fileID: 0}
   lootEquipment: {fileID: 0}
+  animator: {fileID: 0}
+  rightHandSocket: {fileID: 0}
   selectedAuxiliarySlot: 0
+  rawModelLocalPosition: {x: -0.044, y: 0.228, z: 0.021}
+  rawModelLocalEulerAngles: {x: 1.246, y: -88.748, z: 89.526}
+  rawModelLocalScale: {x: 40, y: 40, z: 40}
+  aimController: {fileID: 0}
+  health: {fileID: 0}
+  consumable: {fileID: 0}
+  gestureController: {fileID: 0}
+  parachute: {fileID: 0}
+  meleeCastRadius: 0.35
+  meleeHitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  meleeTriggerInteraction: 2
+  unarmedDamage: 15
+  unarmedRange: 1.6
+  unarmedAttacksPerSecond: 1.5
+  unarmedImpactForce: 3
 --- !u!114 &2016612353
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15164,6 +15183,7 @@ MonoBehaviour:
   motor: {fileID: 2016612337}
   input: {fileID: 2016612333}
   equipment: {fileID: 2016612335}
+  auxiliarySlots: {fileID: 0}
   aimController: {fileID: 2016612351}
   health: {fileID: 2016612339}
   parachute: {fileID: 2016612345}
@@ -15175,6 +15195,7 @@ MonoBehaviour:
   aimPitchRange: 70
   aimYawRange: 70
   pickupUpperBodyDuration: 0.65
+  airDropLandingMaxDuration: 4
   classicFirePulseDuration: 0.08
   debugUpperBodyArmed: 0
   debugUpperBodyAim: 0

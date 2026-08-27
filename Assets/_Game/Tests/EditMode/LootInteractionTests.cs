@@ -372,6 +372,38 @@ namespace ROS.Game.Tests.EditMode
         }
 
         [Test]
+        public void UnarmedAttack_DamagesClosestTargetAndRaisesAnimationSignal()
+        {
+            GameObject player = CreatePlayer(100f);
+            player.AddComponent<PlayerLootEquipment>();
+            PlayerAuxiliaryWeaponSlots auxiliary =
+                player.AddComponent<PlayerAuxiliaryWeaponSlots>();
+
+            auxiliary.SelectMelee();
+            Assert.That(
+                auxiliary.SelectedAuxiliarySlot,
+                Is.EqualTo(PlayerWeaponSlot.None)
+            );
+
+            GameObject target = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            target.name = "Unarmed_Target";
+            target.transform.position = new Vector3(0f, 1f, 1.25f);
+            Health targetHealth = target.AddComponent<Health>();
+            _created.Add(target);
+
+            Physics.SyncTransforms();
+
+            float signaledDuration = 0f;
+            auxiliary.UnarmedAttacked += duration => signaledDuration = duration;
+
+            Assert.That(auxiliary.TryUnarmedAttack(), Is.True);
+            Assert.That(targetHealth.CurrentHealth, Is.EqualTo(85f).Within(0.01f));
+            Assert.That(targetHealth.LastDamage.Type, Is.EqualTo(DamageType.Generic));
+            Assert.That(signaledDuration, Is.EqualTo(1f / 1.5f).Within(0.01f));
+            Assert.That(auxiliary.TryUnarmedAttack(), Is.False);
+        }
+
+        [Test]
         public void DeathContainer_UsesConfiguredFloatingModel()
         {
             GameObject sourcePlayer = CreatePlayer(20f);

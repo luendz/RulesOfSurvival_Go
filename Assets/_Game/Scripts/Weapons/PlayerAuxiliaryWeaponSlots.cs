@@ -1,8 +1,12 @@
 using System;
+using ROS.Game.Animation;
 using ROS.Game.Combat;
+using ROS.Game.Core;
+using ROS.Game.Gameplay;
 using ROS.Game.Input;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
+using ROS.Game.Parachute;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -35,10 +39,19 @@ namespace ROS.Game.Weapons
         [Header("Melee Combat")]
         [SerializeField] private PlayerAimController aimController;
         [SerializeField] private Health health;
+        [SerializeField] private ConsumableController consumable;
+        [SerializeField] private PlayerGestureController gestureController;
+        [SerializeField] private ParachuteController parachute;
         [SerializeField, Min(0.05f)] private float meleeCastRadius = 0.35f;
         [SerializeField] private LayerMask meleeHitMask = ~0;
         [SerializeField] private QueryTriggerInteraction meleeTriggerInteraction =
             QueryTriggerInteraction.Collide;
+
+        [Header("Unarmed Combat")]
+        [SerializeField, Min(0f)] private float unarmedDamage = 15f;
+        [SerializeField, Min(0.1f)] private float unarmedRange = 1.6f;
+        [SerializeField, Min(0.01f)] private float unarmedAttacksPerSecond = 1.5f;
+        [SerializeField, Min(0f)] private float unarmedImpactForce = 3f;
 
         private GameObject _heldVisualInstance;
         private CharacterController _characterController;
@@ -56,6 +69,7 @@ namespace ROS.Game.Weapons
 
         public event Action<PlayerWeaponSlot> AuxiliarySlotChanged;
         public event Action<float> MeleeAttacked;
+        public event Action<float> UnarmedAttacked;
 
         private void Awake()
         {
@@ -128,7 +142,10 @@ namespace ROS.Game.Weapons
                 return;
 
             _meleeFireLatched = true;
-            TryMeleeAttack();
+            if (selectedAuxiliarySlot == PlayerWeaponSlot.Melee)
+                TryMeleeAttack();
+            else if (selectedAuxiliarySlot == PlayerWeaponSlot.None)
+                TryUnarmedAttack();
         }
 
         public bool TryMeleeAttack()
@@ -139,8 +156,7 @@ namespace ROS.Game.Weapons
             if (selectedAuxiliarySlot != PlayerWeaponSlot.Melee ||
                 definition == null ||
                 definition.family != WeaponFamily.Melee ||
-                (health != null && !health.IsAlive) ||
-                (weapons != null && weapons.EquippedWeapon != null) ||
+                IsCloseRangeActionBlocked() ||
                 Time.time < _nextMeleeAttackTime)
             {
                 return false;
@@ -151,21 +167,65 @@ namespace ROS.Game.Weapons
             _nextMeleeAttackTime = Time.time + attackDuration;
 
             MeleeAttacked?.Invoke(attackDuration);
-            ApplyMeleeHit(definition);
+            ApplyCloseRangeHit(
+                definition.damage,
+                definition.range,
+                definition.impactForce,
+                definition
+            );
             return true;
         }
 
-        private void ApplyMeleeHit(WeaponDefinition definition)
+        public bool TryUnarmedAttack()
+        {
+            ResolveReferences();
+
+            if (selectedAuxiliarySlot != PlayerWeaponSlot.None ||
+                IsCloseRangeActionBlocked() ||
+                Time.time < _nextMeleeAttackTime)
+            {
+                return false;
+            }
+
+            float attacksPerSecond = Mathf.Max(0.01f, unarmedAttacksPerSecond);
+            float attackDuration = 1f / attacksPerSecond;
+            _nextMeleeAttackTime = Time.time + attackDuration;
+
+            UnarmedAttacked?.Invoke(attackDuration);
+            ApplyCloseRangeHit(
+                unarmedDamage,
+                unarmedRange,
+                unarmedImpactForce,
+                null
+            );
+            return true;
+        }
+
+        private bool IsCloseRangeActionBlocked()
+        {
+            return (health != null && !health.IsAlive) ||
+                   (weapons != null &&
+                    (weapons.EquippedWeapon != null || weapons.IsSwitchingWeapon)) ||
+                   (consumable != null && consumable.IsUsing) ||
+                   (gestureController != null && gestureController.IsPlaying) ||
+                   (parachute != null && parachute.IsAirbornePhase);
+        }
+
+        private void ApplyCloseRangeHit(
+            float damage,
+            float range,
+            float impactForce,
+            WeaponDefinition definition)
         {
             Vector3 origin = ResolveMeleeOrigin();
             Vector3 direction = ResolveMeleeDirection(origin);
-            float range = Mathf.Max(0.1f, definition.range);
+            float safeRange = Mathf.Max(0.1f, range);
 
             RaycastHit[] hits = Physics.SphereCastAll(
                 origin,
                 Mathf.Max(0.05f, meleeCastRadius),
                 direction,
-                range,
+                safeRange,
                 meleeHitMask,
                 meleeTriggerInteraction
             );
@@ -200,24 +260,33 @@ namespace ROS.Game.Weapons
                     : HitZone.Torso;
                 Vector3 hitPoint = hits[i].point.sqrMagnitude > 0.0001f
                     ? hits[i].point
-                    : hitCollider.ClosestPoint(origin + direction * range);
+                    : hitCollider.ClosestPoint(origin + direction * safeRange);
 
-                damageable.ApplyDamage(
-                    new DamageInfo(
-                        definition.damage,
+                DamageInfo damageInfo = definition != null
+                    ? new DamageInfo(
+                        damage,
                         hitPoint,
                         direction,
                         gameObject,
                         definition,
                         hitZone
                     )
-                );
+                    : new DamageInfo(
+                        damage,
+                        hitPoint,
+                        direction,
+                        gameObject,
+                        DamageType.Generic,
+                        hitZone
+                    );
+
+                damageable.ApplyDamage(damageInfo);
 
                 Rigidbody body = hitCollider.attachedRigidbody;
-                if (body != null && !body.isKinematic && definition.impactForce > 0f)
+                if (body != null && !body.isKinematic && impactForce > 0f)
                 {
                     body.AddForceAtPosition(
-                        direction * definition.impactForce,
+                        direction * impactForce,
                         hitPoint,
                         ForceMode.Impulse
                     );
@@ -256,7 +325,13 @@ namespace ROS.Game.Weapons
             if (weapons != null)
                 weapons.HolsterCurrentWeapon();
 
-            SetAuxiliarySlot(PlayerWeaponSlot.Melee);
+            bool hasMelee = lootEquipment != null &&
+                            lootEquipment.GetWeaponItem(PlayerWeaponSlot.Melee) != null;
+            SetAuxiliarySlot(
+                hasMelee
+                    ? PlayerWeaponSlot.Melee
+                    : PlayerWeaponSlot.None
+            );
         }
 
         public bool SelectThrowable()
@@ -407,6 +482,9 @@ namespace ROS.Game.Weapons
             animator ??= GetComponentInChildren<Animator>(true);
             aimController ??= GetComponent<PlayerAimController>();
             health ??= GetComponent<Health>();
+            consumable ??= GetComponent<ConsumableController>();
+            gestureController ??= GetComponent<PlayerGestureController>();
+            parachute ??= GetComponent<ParachuteController>();
             _characterController ??= GetComponent<CharacterController>();
             ResolveRightHandSocket();
         }

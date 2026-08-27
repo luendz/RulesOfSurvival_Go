@@ -104,6 +104,10 @@ namespace ROS.Game.Animation
         [Header("Actions")]
         [SerializeField, Min(0.05f)] private float pickupUpperBodyDuration = 0.65f;
 
+        [Header("Air Drop Actions")]
+        [Tooltip("Tiempo de seguridad maximo durante el que Parachute Land puede mantener activa la capa de cuerpo completo.")]
+        [SerializeField, Min(0.5f)] private float airDropLandingMaxDuration = 4f;
+
         [Header("ROS Classic Runtime")]
         [Tooltip("Duracion visual del pulso IsFiring producido por cada disparo real. Es un valor provisional y ajustable; no representa un timing medido del Rules of Survival original.")]
         [SerializeField, Min(0.01f)] private float classicFirePulseDuration = 0.08f;
@@ -146,12 +150,16 @@ namespace ROS.Game.Animation
         private float _crouchReloadClipLength = -1f;
         private float _pickupUpperBodyUntil;
         private float _classicFiringUntil;
+        private float _classicUnarmedAttackUntil;
         private bool _manualFullBodyOverride;
         private bool _manualRootMotion;
         private bool _initialApplyRootMotion;
         private bool _capturedRootMotion;
         private bool _wasGrounded = true;
         private float _airbornePeakY;
+        private AirDropState _animatedAirDropState = (AirDropState)(-1);
+        private bool _airDropLandingPlaying;
+        private float _airDropLandingStartedAt;
 
         private static readonly int MoveX = Animator.StringToHash("MoveX");
         private static readonly int MoveY = Animator.StringToHash("MoveY");
@@ -190,7 +198,11 @@ namespace ROS.Game.Animation
         private static readonly int ClassicIsPickingUp = Animator.StringToHash("IsPickingUp");
         private static readonly int ClassicIsParachuting = Animator.StringToHash("IsParachuting");
         private static readonly int ClassicIsFreeFalling = Animator.StringToHash("IsFreeFalling");
+        private static readonly int ClassicAirDropAnimationComplete =
+            Animator.StringToHash("AirDropAnimationComplete");
         private static readonly int ClassicFullBodyAction = Animator.StringToHash("FullBodyAction");
+        private static readonly int AirDropLandingTag =
+            Animator.StringToHash("AirDropLanding");
 
         public bool IsFullBodyOverrideActive
         {
@@ -199,7 +211,8 @@ namespace ROS.Game.Animation
                 bool gestureFullBody = gestureController != null &&
                                        gestureController.IsPlaying &&
                                        gestureController.IsFullBodyGesture;
-                bool airDrop = parachute != null && parachute.IsAirbornePhase;
+                bool airDrop = (parachute != null && parachute.IsAirbornePhase) ||
+                               _airDropLandingPlaying;
                 bool dead = health != null && !health.IsAlive;
                 return _manualFullBodyOverride || gestureFullBody || airDrop || dead;
             }
@@ -244,6 +257,7 @@ namespace ROS.Game.Animation
             SetBoolIfPresent(ClassicIsPickingUp, false);
             SetBoolIfPresent(ClassicIsParachuting, false);
             SetBoolIfPresent(ClassicIsFreeFalling, false);
+            SetBoolIfPresent(ClassicAirDropAnimationComplete, false);
             SetIntegerIfPresent(ClassicFullBodyAction, FullBodyActionNone);
             SetFloatIfPresent(AimPitch, 0f);
             SetFloatIfPresent(AimYaw, 0f);
@@ -281,6 +295,7 @@ namespace ROS.Game.Animation
                 return;
 
             ResolveLayerIndexes(false);
+            UpdateAirDropAnimationPhase();
             UpdateMovementParameters();
             UpdateBaseStateParameters();
             UpdateUpperBodyParametersAndLayers();
@@ -431,10 +446,19 @@ namespace ROS.Game.Animation
             bool gesturing = gestureController != null && gestureController.IsPlaying;
             bool fullBodyGesture = gesturing && gestureController.IsFullBodyGesture;
             bool upperBodyGesture = gesturing && !fullBodyGesture;
-            bool fullBodyOverride = !dead && (_manualFullBodyOverride || fullBodyGesture);
+            bool vehicleFullBody = !dead &&
+                                   GetIntegerIfPresent(
+                                       ClassicFullBodyAction,
+                                       FullBodyActionNone
+                                   ) == FullBodyActionVehicle;
+            bool fullBodyOverride = !dead &&
+                                    (_manualFullBodyOverride ||
+                                     fullBodyGesture ||
+                                     vehicleFullBody);
             bool airDropFullBody = !dead &&
-                                   parachute != null &&
-                                   parachute.IsAirbornePhase;
+                                   ((parachute != null &&
+                                     parachute.IsAirbornePhase) ||
+                                    _airDropLandingPlaying);
             bool healing = consumable != null && consumable.IsUsing;
             bool pickupAction = Time.time < _pickupUpperBodyUntil;
 
@@ -488,6 +512,15 @@ namespace ROS.Game.Animation
                           equipment != null &&
                           equipment.CombatState == PlayerCombatState.Aiming;
 
+            bool unarmedAiming = weaponCategory == WeaponCategoryNone &&
+                                 input != null &&
+                                 input.AimHeld &&
+                                 !healing &&
+                                 !gesturing &&
+                                 !fullBodyOverride &&
+                                 !motor.IsProne;
+            bool classicAiming = aiming || unarmedAiming;
+
             bool classicFiring = (firearm || weaponCategory == WeaponCategoryMelee) &&
                                  Time.time < _classicFiringUntil &&
                                  !dead &&
@@ -495,6 +528,12 @@ namespace ROS.Game.Animation
                                  !healing &&
                                  !gesturing &&
                                  !fullBodyOverride;
+            classicFiring |= weaponCategory == WeaponCategoryNone &&
+                             Time.time < _classicUnarmedAttackUntil &&
+                             !dead &&
+                             !healing &&
+                             !gesturing &&
+                             !fullBodyOverride;
 
             bool classicUsingConsumable = healing &&
                                           !dead &&
@@ -547,7 +586,7 @@ namespace ROS.Game.Animation
             SetFloatIfPresent(AimYaw, aimYaw);
 
             SetIntegerIfPresent(ClassicWeaponType, classicWeaponType);
-            SetBoolIfPresent(ClassicIsAiming, aiming);
+            SetBoolIfPresent(ClassicIsAiming, classicAiming);
             SetBoolIfPresent(ClassicIsFiring, classicFiring);
             SetBoolIfPresent(ClassicIsReloading, reloading);
             SetBoolIfPresent(ClassicIsSwitchingWeapon, switchingWeapon && !dead && !fullBodyOverride);
@@ -562,7 +601,9 @@ namespace ROS.Game.Animation
                         ? FullBodyActionGesture
                         : _manualFullBodyOverride
                             ? FullBodyActionVault
-                            : FullBodyActionNone;
+                            : vehicleFullBody
+                                ? FullBodyActionVehicle
+                                : FullBodyActionNone;
             SetIntegerIfPresent(ClassicFullBodyAction, fullBodyAction);
 
             SetLayerWeightSafe(_locomotionLayer, 1f);
@@ -706,26 +747,44 @@ namespace ROS.Game.Animation
                 return;
 
             if (_classicObservedAuxiliarySlots != null)
+            {
                 _classicObservedAuxiliarySlots.MeleeAttacked -= OnClassicMeleeAttacked;
+                _classicObservedAuxiliarySlots.UnarmedAttacked -= OnClassicUnarmedAttacked;
+            }
 
             _classicObservedAuxiliarySlots = slots;
 
             if (_classicObservedAuxiliarySlots != null)
+            {
                 _classicObservedAuxiliarySlots.MeleeAttacked += OnClassicMeleeAttacked;
+                _classicObservedAuxiliarySlots.UnarmedAttacked += OnClassicUnarmedAttacked;
+            }
         }
 
         private void UnbindClassicMeleeAttack()
         {
             if (_classicObservedAuxiliarySlots != null)
+            {
                 _classicObservedAuxiliarySlots.MeleeAttacked -= OnClassicMeleeAttacked;
+                _classicObservedAuxiliarySlots.UnarmedAttacked -= OnClassicUnarmedAttacked;
+            }
 
             _classicObservedAuxiliarySlots = null;
+            _classicUnarmedAttackUntil = 0f;
         }
 
         private void OnClassicMeleeAttacked(float attackDuration)
         {
             _classicFiringUntil = Mathf.Max(
                 _classicFiringUntil,
+                Time.time + Mathf.Max(classicFirePulseDuration, attackDuration)
+            );
+        }
+
+        private void OnClassicUnarmedAttacked(float attackDuration)
+        {
+            _classicUnarmedAttackUntil = Mathf.Max(
+                _classicUnarmedAttackUntil,
                 Time.time + Mathf.Max(classicFirePulseDuration, attackDuration)
             );
         }
@@ -825,6 +884,60 @@ namespace ROS.Game.Animation
             }
         }
 
+        private void UpdateAirDropAnimationPhase()
+        {
+            AirDropState state = parachute != null
+                ? parachute.State
+                : AirDropState.Inactive;
+
+            if (state != _animatedAirDropState)
+            {
+                _animatedAirDropState = state;
+                _airDropLandingPlaying = state == AirDropState.Landed;
+                _airDropLandingStartedAt = Time.time;
+                SetBoolIfPresent(ClassicAirDropAnimationComplete, false);
+            }
+
+            if (state == AirDropState.Landed && _airDropLandingPlaying)
+            {
+                bool landingFinished = IsAirDropLandingComplete() ||
+                                       Time.time - _airDropLandingStartedAt >=
+                                       airDropLandingMaxDuration;
+                if (landingFinished)
+                {
+                    _airDropLandingPlaying = false;
+                    SetBoolIfPresent(ClassicAirDropAnimationComplete, true);
+                }
+            }
+        }
+
+        private bool IsAirDropLandingComplete()
+        {
+            if (animator == null ||
+                _fullBodyOverrideLayer < 0)
+            {
+                return false;
+            }
+
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(
+                _fullBodyOverrideLayer
+            );
+            if (current.tagHash == AirDropLandingTag &&
+                current.normalizedTime >= 0.95f)
+            {
+                return true;
+            }
+
+            if (!animator.IsInTransition(_fullBodyOverrideLayer))
+                return false;
+
+            AnimatorStateInfo next = animator.GetNextAnimatorStateInfo(
+                _fullBodyOverrideLayer
+            );
+            return next.tagHash == AirDropLandingTag &&
+                   next.normalizedTime >= 0.95f;
+        }
+
         private void ResolveLayerIndexes(bool force)
         {
             if (animator == null)
@@ -855,6 +968,7 @@ namespace ROS.Game.Animation
                 FullBodyOverrideLayerName,
                 ClassicFullBodyActionsLayerName
             );
+            _animatedAirDropState = (AirDropState)(-1);
         }
 
         private int ResolveLayerIndex(string primaryName, string fallbackName)
@@ -938,6 +1052,14 @@ namespace ROS.Game.Animation
                 return;
 
             animator.SetInteger(parameterHash, value);
+        }
+
+        private int GetIntegerIfPresent(int parameterHash, int fallback)
+        {
+            if (!HasParameter(parameterHash, AnimatorControllerParameterType.Int))
+                return fallback;
+
+            return animator.GetInteger(parameterHash);
         }
 
         private void SetTriggerIfPresent(int parameterHash)
