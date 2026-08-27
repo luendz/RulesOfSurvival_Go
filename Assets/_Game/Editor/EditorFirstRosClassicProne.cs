@@ -92,8 +92,18 @@ namespace ROS.Game.EditorTools
                 return;
             }
 
-            if (FindChildStateMachine(grounded, "Prone") != null)
+            AnimatorStateMachine existingProne =
+                FindChildStateMachine(grounded, "Prone");
+            if (existingProne != null)
+            {
+                if (RepairProneExitTransition(existingProne))
+                {
+                    EditorUtility.SetDirty(existingProne);
+                    EditorUtility.SetDirty(controller);
+                    AssetDatabase.SaveAssets();
+                }
                 return;
+            }
 
             AnimatorStateMachine prone = grounded.AddStateMachine(
                 "Prone",
@@ -212,6 +222,11 @@ namespace ROS.Game.EditorTools
             // No existe aun un clip Prone Exit: salimos inmediatamente al parent.
             AnimatorStateTransition exitToParent = proneExit.AddExitTransition();
             ConfigureTransition(exitToParent, 0.01f);
+            exitToParent.AddCondition(
+                AnimatorConditionMode.NotEqual,
+                ProneStance,
+                "Stance"
+            );
 
             // Prone puede volver a Standing o Crouch segun Stance.
             AnimatorTransition proneToStanding =
@@ -332,6 +347,38 @@ namespace ROS.Game.EditorTools
                 ProneStance,
                 "Stance"
             );
+        }
+
+        private static bool RepairProneExitTransition(
+            AnimatorStateMachine prone)
+        {
+            AnimatorState proneExit = FindState(prone, "Prone Exit");
+            if (proneExit == null)
+                return false;
+
+            bool changed = false;
+            AnimatorStateTransition[] transitions = proneExit.transitions;
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                AnimatorStateTransition transition = transitions[i];
+                if (transition == null ||
+                    !transition.isExit ||
+                    transition.hasExitTime ||
+                    transition.conditions.Length > 0)
+                {
+                    continue;
+                }
+
+                transition.AddCondition(
+                    AnimatorConditionMode.NotEqual,
+                    ProneStance,
+                    "Stance"
+                );
+                EditorUtility.SetDirty(transition);
+                changed = true;
+            }
+
+            return changed;
         }
 
         private static AnimatorControllerLayer FindLayer(

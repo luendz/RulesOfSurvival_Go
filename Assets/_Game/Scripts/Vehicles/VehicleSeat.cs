@@ -40,6 +40,8 @@ namespace ROS.Game.Vehicles
         private static readonly int VehicleSpeed = Animator.StringToHash("VehicleSpeed");
         private static readonly int VehicleSteer = Animator.StringToHash("VehicleSteer");
         private static readonly int ShouldFall = Animator.StringToHash("ShouldFall");
+        private static readonly int FullBodyAction =
+            Animator.StringToHash("FullBodyAction");
 
         private GameObject _occupant;
         private Animator _occupantAnimator;
@@ -111,6 +113,31 @@ namespace ROS.Game.Vehicles
                 _occupantAnimator,
                 PlayerAnimationCoordinator.FullBodyOverrideLayerName,
                 0f
+            );
+            SetLayerWeightIfPresent(
+                _occupantAnimator,
+                PlayerAnimationCoordinator.ClassicWeaponUpperBodyLayerName,
+                0f
+            );
+            SetLayerWeightIfPresent(
+                _occupantAnimator,
+                PlayerAnimationCoordinator.ClassicUpperBodyActionsLayerName,
+                0f
+            );
+            SetLayerWeightIfPresent(
+                _occupantAnimator,
+                PlayerAnimationCoordinator.ClassicAimOffsetLayerName,
+                0f
+            );
+            SetLayerWeightIfPresent(
+                _occupantAnimator,
+                PlayerAnimationCoordinator.ClassicLeanLayerName,
+                0f
+            );
+            SetLayerWeightIfPresent(
+                _occupantAnimator,
+                PlayerAnimationCoordinator.ClassicFullBodyActionsLayerName,
+                1f
             );
         }
 
@@ -184,6 +211,13 @@ namespace ROS.Game.Vehicles
                 _occupantAnimator,
                 VehicleStyle,
                 state == VehicleStateNone ? 0 : (int)animationStyle
+            );
+            SetIntegerIfPresent(
+                _occupantAnimator,
+                FullBodyAction,
+                state == VehicleStateNone
+                    ? PlayerAnimationCoordinator.FullBodyActionNone
+                    : PlayerAnimationCoordinator.FullBodyActionVehicle
             );
         }
 

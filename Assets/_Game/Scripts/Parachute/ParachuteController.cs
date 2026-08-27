@@ -71,6 +71,10 @@ namespace ROS.Game.Parachute
 
         private static readonly int ParachuteStateParameter =
             Animator.StringToHash("ParachuteState");
+        private static readonly int IsParachutingParameter =
+            Animator.StringToHash("IsParachuting");
+        private static readonly int IsFreeFallingParameter =
+            Animator.StringToHash("IsFreeFalling");
 
         private void Awake()
         {
@@ -382,11 +386,25 @@ namespace ROS.Game.Parachute
 
         private void SyncAnimatorState(AirDropState state)
         {
-            if (animator == null || !HasParachuteStateParameter())
+            if (animator == null)
                 return;
 
             int value = ResolveAnimatorParachuteState(state);
-            animator.SetInteger(ParachuteStateParameter, value);
+            if (HasAnimatorParameter(
+                    ParachuteStateParameter,
+                    AnimatorControllerParameterType.Int))
+            {
+                animator.SetInteger(ParachuteStateParameter, value);
+            }
+
+            SetAnimatorBoolIfPresent(
+                IsParachutingParameter,
+                state == AirDropState.Parachuting
+            );
+            SetAnimatorBoolIfPresent(
+                IsFreeFallingParameter,
+                state == AirDropState.FreeFall
+            );
             debugParachuteAnimationState = value;
         }
 
@@ -405,7 +423,19 @@ namespace ROS.Game.Parachute
             }
         }
 
-        private bool HasParachuteStateParameter()
+        private void SetAnimatorBoolIfPresent(int parameterHash, bool value)
+        {
+            if (HasAnimatorParameter(
+                    parameterHash,
+                    AnimatorControllerParameterType.Bool))
+            {
+                animator.SetBool(parameterHash, value);
+            }
+        }
+
+        private bool HasAnimatorParameter(
+            int parameterHash,
+            AnimatorControllerParameterType type)
         {
             if (animator == null)
                 return false;
@@ -414,8 +444,8 @@ namespace ROS.Game.Parachute
             for (int i = 0; i < parameters.Length; i++)
             {
                 AnimatorControllerParameter parameter = parameters[i];
-                if (parameter.nameHash == ParachuteStateParameter &&
-                    parameter.type == AnimatorControllerParameterType.Int)
+                if (parameter.nameHash == parameterHash &&
+                    parameter.type == type)
                 {
                     return true;
                 }

@@ -5,6 +5,7 @@ using ROS.Game.Core;
 using ROS.Game.Gameplay;
 using ROS.Game.Input;
 using ROS.Game.Interaction;
+using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using ROS.Game.Parachute;
 using ROS.Game.Weapons;
@@ -38,10 +39,20 @@ namespace ROS.Game.Animation
         public const string FullBodyOverrideLayerName = "FullBodyOverride";
 
         private const string ClassicLocomotionLayerName = "Base_Locomotion";
-        private const string ClassicWeaponUpperBodyLayerName = "UpperBody_Weapon";
-        private const string ClassicUpperBodyActionsLayerName = "UpperBody_Actions";
-        private const string ClassicAimOffsetLayerName = "Aim_Offset";
-        private const string ClassicFullBodyActionsLayerName = "FullBody_Actions";
+        public const string ClassicWeaponUpperBodyLayerName = "UpperBody_Weapon";
+        public const string ClassicUpperBodyActionsLayerName = "UpperBody_Actions";
+        public const string ClassicAimOffsetLayerName = "Aim_Offset";
+        public const string ClassicLeanLayerName = "Lean";
+        public const string ClassicFullBodyActionsLayerName = "FullBody_Actions";
+
+        public const int FullBodyActionNone = 0;
+        public const int FullBodyActionVault = 1;
+        public const int FullBodyActionAirDrop = 2;
+        public const int FullBodyActionSwimming = 3;
+        public const int FullBodyActionVehicle = 4;
+        public const int FullBodyActionKnocked = 5;
+        public const int FullBodyActionGesture = 6;
+        public const int FullBodyActionDeath = 7;
 
         public const int WeaponCategoryNone = 0;
         public const int WeaponCategoryFirearm = 1;
@@ -68,6 +79,7 @@ namespace ROS.Game.Animation
         [SerializeField] private PlayerMotor motor;
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private WeaponEquipmentController equipment;
+        [SerializeField] private PlayerAuxiliaryWeaponSlots auxiliarySlots;
         [SerializeField] private PlayerAimController aimController;
         [SerializeField] private Health health;
         [SerializeField] private ParachuteController parachute;
@@ -123,6 +135,7 @@ namespace ROS.Game.Animation
 
         private PlayerInteractor _interactor;
         private WeaponController _classicObservedWeapon;
+        private PlayerAuxiliaryWeaponSlots _classicObservedAuxiliarySlots;
         private int _locomotionLayer = -1;
         private int _weaponUpperBodyLayer = -1;
         private int _upperBodyActionsLayer = -1;
@@ -175,6 +188,9 @@ namespace ROS.Game.Animation
         private static readonly int ClassicIsSwitchingWeapon = Animator.StringToHash("IsSwitchingWeapon");
         private static readonly int ClassicIsUsingConsumable = Animator.StringToHash("IsUsingConsumable");
         private static readonly int ClassicIsPickingUp = Animator.StringToHash("IsPickingUp");
+        private static readonly int ClassicIsParachuting = Animator.StringToHash("IsParachuting");
+        private static readonly int ClassicIsFreeFalling = Animator.StringToHash("IsFreeFalling");
+        private static readonly int ClassicFullBodyAction = Animator.StringToHash("FullBodyAction");
 
         public bool IsFullBodyOverrideActive
         {
@@ -183,7 +199,9 @@ namespace ROS.Game.Animation
                 bool gestureFullBody = gestureController != null &&
                                        gestureController.IsPlaying &&
                                        gestureController.IsFullBodyGesture;
-                return _manualFullBodyOverride || gestureFullBody;
+                bool airDrop = parachute != null && parachute.IsAirbornePhase;
+                bool dead = health != null && !health.IsAlive;
+                return _manualFullBodyOverride || gestureFullBody || airDrop || dead;
             }
         }
 
@@ -191,6 +209,7 @@ namespace ROS.Game.Animation
         {
             ResolveReferences();
             BindClassicWeaponFire(equipment != null ? equipment.EquippedWeapon : null);
+            BindClassicMeleeAttack(auxiliarySlots);
             CaptureRootMotionDefault();
             BindInteractor();
             ResolveLayerIndexes(true);
@@ -203,6 +222,7 @@ namespace ROS.Game.Animation
         {
             ResolveReferences();
             BindClassicWeaponFire(equipment != null ? equipment.EquippedWeapon : null);
+            BindClassicMeleeAttack(auxiliarySlots);
             CaptureRootMotionDefault();
             BindInteractor();
             ResolveLayerIndexes(true);
@@ -214,6 +234,7 @@ namespace ROS.Game.Animation
         {
             UnbindInteractor();
             UnbindClassicWeaponFire();
+            UnbindClassicMeleeAttack();
             SetBoolIfPresent(ShouldFall, false);
             SetBoolIfPresent(ClassicIsFiring, false);
             SetBoolIfPresent(ClassicIsSprinting, false);
@@ -221,6 +242,9 @@ namespace ROS.Game.Animation
             SetBoolIfPresent(ClassicIsSwitchingWeapon, false);
             SetBoolIfPresent(ClassicIsUsingConsumable, false);
             SetBoolIfPresent(ClassicIsPickingUp, false);
+            SetBoolIfPresent(ClassicIsParachuting, false);
+            SetBoolIfPresent(ClassicIsFreeFalling, false);
+            SetIntegerIfPresent(ClassicFullBodyAction, FullBodyActionNone);
             SetFloatIfPresent(AimPitch, 0f);
             SetFloatIfPresent(AimYaw, 0f);
             ResetUpperLayerWeights();
@@ -231,6 +255,7 @@ namespace ROS.Game.Animation
         {
             UnbindInteractor();
             UnbindClassicWeaponFire();
+            UnbindClassicMeleeAttack();
             RestoreRootMotionDefault();
         }
 
@@ -240,6 +265,7 @@ namespace ROS.Game.Animation
             motor = GetComponent<PlayerMotor>();
             input = GetComponent<PlayerInputReader>();
             equipment = GetComponent<WeaponEquipmentController>();
+            auxiliarySlots = GetComponent<PlayerAuxiliaryWeaponSlots>();
             aimController = GetComponent<PlayerAimController>();
             health = GetComponent<Health>();
             parachute = GetComponent<ParachuteController>();
@@ -337,6 +363,14 @@ namespace ROS.Game.Animation
 
             SetBoolIfPresent(ClassicIsGrounded, grounded);
             SetIntegerIfPresent(ClassicStance, classicStance);
+            SetBoolIfPresent(
+                ClassicIsParachuting,
+                parachute != null && parachute.IsParachuting
+            );
+            SetBoolIfPresent(
+                ClassicIsFreeFalling,
+                parachute != null && parachute.State == AirDropState.FreeFall
+            );
 
             debugClassicStance = classicStance;
 
@@ -398,6 +432,9 @@ namespace ROS.Game.Animation
             bool fullBodyGesture = gesturing && gestureController.IsFullBodyGesture;
             bool upperBodyGesture = gesturing && !fullBodyGesture;
             bool fullBodyOverride = !dead && (_manualFullBodyOverride || fullBodyGesture);
+            bool airDropFullBody = !dead &&
+                                   parachute != null &&
+                                   parachute.IsAirbornePhase;
             bool healing = consumable != null && consumable.IsUsing;
             bool pickupAction = Time.time < _pickupUpperBodyUntil;
 
@@ -405,19 +442,39 @@ namespace ROS.Game.Animation
                 ? equipment.EquippedWeapon
                 : null;
 
-            BindClassicWeaponFire(weapon);
+            InventoryItemDefinition auxiliaryItem = auxiliarySlots != null
+                ? auxiliarySlots.SelectedItem
+                : null;
+            PlayerWeaponSlot auxiliarySlot = auxiliaryItem != null
+                ? auxiliarySlots.SelectedAuxiliarySlot
+                : PlayerWeaponSlot.None;
+            WeaponDefinition weaponDefinition = weapon != null
+                ? weapon.Definition
+                : auxiliaryItem != null
+                    ? auxiliaryItem.weaponDefinition
+                    : null;
 
-            bool hasWeapon = weapon != null;
-            int weaponCategory = ResolveWeaponCategory(weapon);
-            int weaponStyle = ResolveWeaponStyle(weapon);
-            int classicWeaponType = ResolveClassicWeaponType(weapon);
+            BindClassicWeaponFire(weapon);
+            BindClassicMeleeAttack(auxiliarySlots);
+
+            bool hasWeapon = weapon != null || auxiliaryItem != null;
+            int weaponCategory = ResolveWeaponCategory(
+                weaponDefinition,
+                auxiliarySlot
+            );
+            int weaponStyle = ResolveWeaponStyle(weaponDefinition);
+            int classicWeaponType = ResolveClassicWeaponType(
+                weaponDefinition,
+                auxiliarySlot
+            );
             bool firearm = weaponCategory == WeaponCategoryFirearm;
             bool switchingWeapon = equipment != null && equipment.IsSwitchingWeapon;
             bool equipmentReloading = equipment != null &&
                                       equipment.CombatState == PlayerCombatState.Reloading;
 
             bool reloading = firearm &&
-                             (weapon.IsReloading || equipmentReloading) &&
+                             ((weapon != null && weapon.IsReloading) ||
+                              equipmentReloading) &&
                              !healing &&
                              !gesturing &&
                              !fullBodyOverride;
@@ -431,7 +488,7 @@ namespace ROS.Game.Animation
                           equipment != null &&
                           equipment.CombatState == PlayerCombatState.Aiming;
 
-            bool classicFiring = firearm &&
+            bool classicFiring = (firearm || weaponCategory == WeaponCategoryMelee) &&
                                  Time.time < _classicFiringUntil &&
                                  !dead &&
                                  !reloading &&
@@ -497,6 +554,17 @@ namespace ROS.Game.Animation
             SetBoolIfPresent(ClassicIsUsingConsumable, classicUsingConsumable);
             SetBoolIfPresent(ClassicIsPickingUp, classicPickingUp);
 
+            int fullBodyAction = dead
+                ? FullBodyActionDeath
+                : airDropFullBody
+                    ? FullBodyActionAirDrop
+                    : fullBodyGesture
+                        ? FullBodyActionGesture
+                        : _manualFullBodyOverride
+                            ? FullBodyActionVault
+                            : FullBodyActionNone;
+            SetIntegerIfPresent(ClassicFullBodyAction, fullBodyAction);
+
             SetLayerWeightSafe(_locomotionLayer, 1f);
             SetLayerWeightSafe(_weaponUpperBodyLayer, weaponLayerActive ? 1f : 0f);
             SetLayerWeightSafe(_upperBodyActionsLayer, actionsLayerActive ? 1f : 0f);
@@ -504,7 +572,8 @@ namespace ROS.Game.Animation
                 _aimRecoilLayer,
                 aiming && !dead && !fullBodyOverride ? 1f : 0f
             );
-            SetLayerWeightSafe(_fullBodyOverrideLayer, fullBodyOverride ? 1f : 0f);
+            bool fullBodyLayerActive = fullBodyOverride || airDropFullBody || dead;
+            SetLayerWeightSafe(_fullBodyOverrideLayer, fullBodyLayerActive ? 1f : 0f);
 
             ApplyRootMotionPolicy();
 
@@ -527,22 +596,30 @@ namespace ROS.Game.Animation
             debugClassicPickingUp = classicPickingUp;
         }
 
-        private static int ResolveWeaponCategory(WeaponController weapon)
+        private static int ResolveWeaponCategory(
+            WeaponDefinition definition,
+            PlayerWeaponSlot auxiliarySlot
+        )
         {
-            if (weapon == null || weapon.Definition == null)
+            if (auxiliarySlot == PlayerWeaponSlot.Throwable)
+                return WeaponCategoryThrowable;
+
+            if (auxiliarySlot == PlayerWeaponSlot.Melee)
+                return WeaponCategoryMelee;
+
+            if (definition == null)
                 return WeaponCategoryNone;
 
-            return weapon.Definition.family == WeaponFamily.Melee
+            return definition.family == WeaponFamily.Melee
                 ? WeaponCategoryMelee
                 : WeaponCategoryFirearm;
         }
 
-        private static int ResolveWeaponStyle(WeaponController weapon)
+        private static int ResolveWeaponStyle(WeaponDefinition definition)
         {
-            if (weapon == null || weapon.Definition == null)
+            if (definition == null)
                 return (int)WeaponAnimationStyle.Default;
 
-            WeaponDefinition definition = weapon.Definition;
             if (definition.animationStyle != WeaponAnimationStyle.Default)
                 return (int)definition.animationStyle;
 
@@ -555,12 +632,21 @@ namespace ROS.Game.Animation
             return (int)WeaponAnimationStyle.Rifle;
         }
 
-        private static int ResolveClassicWeaponType(WeaponController weapon)
+        private static int ResolveClassicWeaponType(
+            WeaponDefinition definition,
+            PlayerWeaponSlot auxiliarySlot
+        )
         {
-            if (weapon == null || weapon.Definition == null)
+            if (auxiliarySlot == PlayerWeaponSlot.Throwable)
+                return ClassicWeaponThrowable;
+
+            if (auxiliarySlot == PlayerWeaponSlot.Melee)
+                return ClassicWeaponMelee;
+
+            if (definition == null)
                 return ClassicWeaponUnarmed;
 
-            switch (weapon.Definition.family)
+            switch (definition.family)
             {
                 case WeaponFamily.Pistol:
                     return ClassicWeaponPistol;
@@ -611,6 +697,36 @@ namespace ROS.Game.Animation
             _classicFiringUntil = Mathf.Max(
                 _classicFiringUntil,
                 Time.time + Mathf.Max(0.01f, classicFirePulseDuration)
+            );
+        }
+
+        private void BindClassicMeleeAttack(PlayerAuxiliaryWeaponSlots slots)
+        {
+            if (_classicObservedAuxiliarySlots == slots)
+                return;
+
+            if (_classicObservedAuxiliarySlots != null)
+                _classicObservedAuxiliarySlots.MeleeAttacked -= OnClassicMeleeAttacked;
+
+            _classicObservedAuxiliarySlots = slots;
+
+            if (_classicObservedAuxiliarySlots != null)
+                _classicObservedAuxiliarySlots.MeleeAttacked += OnClassicMeleeAttacked;
+        }
+
+        private void UnbindClassicMeleeAttack()
+        {
+            if (_classicObservedAuxiliarySlots != null)
+                _classicObservedAuxiliarySlots.MeleeAttacked -= OnClassicMeleeAttacked;
+
+            _classicObservedAuxiliarySlots = null;
+        }
+
+        private void OnClassicMeleeAttacked(float attackDuration)
+        {
+            _classicFiringUntil = Mathf.Max(
+                _classicFiringUntil,
+                Time.time + Mathf.Max(classicFirePulseDuration, attackDuration)
             );
         }
 
@@ -896,6 +1012,10 @@ namespace ROS.Game.Animation
             if (equipment == null)
                 equipment = GetComponent<WeaponEquipmentController>() ??
                             GetComponentInParent<WeaponEquipmentController>();
+
+            if (auxiliarySlots == null)
+                auxiliarySlots = GetComponent<PlayerAuxiliaryWeaponSlots>() ??
+                                 GetComponentInParent<PlayerAuxiliaryWeaponSlots>();
 
             if (aimController == null)
                 aimController = GetComponent<PlayerAimController>() ??

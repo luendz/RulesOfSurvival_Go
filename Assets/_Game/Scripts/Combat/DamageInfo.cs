@@ -83,6 +83,38 @@ namespace ROS.Game.Combat
             HitZoneMultiplierOverride = definition.GetHitZoneMultiplier(hitZone);
         }
 
+        public DamageInfo(
+            float amount,
+            Vector3 point,
+            Vector3 direction,
+            GameObject instigator,
+            WeaponDefinition definition,
+            HitZone hitZone = HitZone.Torso)
+        {
+            BaseAmount = Mathf.Max(0f, amount);
+            Amount = BaseAmount;
+            Point = point;
+            Direction = direction;
+            Instigator = instigator;
+            Type = DamageType.Generic;
+            HitZone = hitZone;
+            WeaponId = definition != null ? definition.weaponId : string.Empty;
+            WeaponFamily = definition != null
+                ? definition.family
+                : WeaponFamily.Melee;
+            Distance = instigator != null
+                ? Vector3.Distance(instigator.transform.position, point)
+                : 0f;
+            BulletTravelTime = 0f;
+            EstimatedBulletDrop = 0f;
+            ArmorPenetration = definition != null
+                ? Mathf.Clamp01(definition.armorPenetration)
+                : 0f;
+            HitZoneMultiplierOverride = definition != null
+                ? definition.GetHitZoneMultiplier(hitZone)
+                : 0f;
+        }
+
         public DamageInfo WithHitZone(HitZone hitZone)
         {
             return new DamageInfo(

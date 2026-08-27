@@ -18,6 +18,7 @@ namespace ROS.Game.Animation
         public const string UpperBodyGestureLayerName = PlayerAnimationCoordinator.UpperBodyActionsLayerName;
         public const string FullBodyGestureLayerName = PlayerAnimationCoordinator.FullBodyOverrideLayerName;
         public const string GestureIdleState = "Empty";
+        private const string ClassicGestureStateMachine = "Gestures";
 
         [Header("References")]
         [SerializeField] private Animator animator;
@@ -70,8 +71,8 @@ namespace ROS.Game.Animation
                     return false;
                 }
 
-                return ResolveLayer(UpperBodyGestureLayerName) >= 0 ||
-                       ResolveLayer(FullBodyGestureLayerName) >= 0;
+                return ResolveGestureLayer(false, out _, out _) ||
+                       ResolveGestureLayer(true, out _, out _);
             }
         }
 
@@ -147,19 +148,24 @@ namespace ROS.Game.Animation
                 return false;
 
             bool fullBody = IsFullBodyGestureState(animatorStateName);
-            string targetLayerName = fullBody
-                ? FullBodyGestureLayerName
-                : UpperBodyGestureLayerName;
-
-            int targetLayer = ResolveLayer(targetLayerName);
-            if (targetLayer < 0)
+            if (!ResolveGestureLayer(
+                    fullBody,
+                    out int targetLayer,
+                    out string targetLayerName))
             {
-                WarnMissingLayer(targetLayerName);
+                WarnMissingLayer(
+                    fullBody
+                        ? FullBodyGestureLayerName
+                        : UpperBodyGestureLayerName
+                );
                 return false;
             }
 
-            int stateHash = Animator.StringToHash($"{targetLayerName}.{animatorStateName}");
-            if (!animator.HasState(targetLayer, stateHash))
+            if (!TryResolveGestureState(
+                    targetLayer,
+                    targetLayerName,
+                    animatorStateName,
+                    out int stateHash))
             {
                 Debug.LogWarning(
                     $"Gesture state '{animatorStateName}' was not found in layer '{targetLayerName}'.",
@@ -386,6 +392,54 @@ namespace ROS.Game.Animation
                 return -1;
 
             return animator.GetLayerIndex(layerName);
+        }
+
+        private bool ResolveGestureLayer(
+            bool fullBody,
+            out int layerIndex,
+            out string resolvedLayerName)
+        {
+            string primary = fullBody
+                ? FullBodyGestureLayerName
+                : UpperBodyGestureLayerName;
+            string fallback = fullBody
+                ? PlayerAnimationCoordinator.ClassicFullBodyActionsLayerName
+                : PlayerAnimationCoordinator.ClassicUpperBodyActionsLayerName;
+
+            layerIndex = ResolveLayer(primary);
+            resolvedLayerName = primary;
+            if (layerIndex >= 0)
+                return true;
+
+            layerIndex = ResolveLayer(fallback);
+            resolvedLayerName = fallback;
+            return layerIndex >= 0;
+        }
+
+        private bool TryResolveGestureState(
+            int layerIndex,
+            string layerName,
+            string stateName,
+            out int stateHash)
+        {
+            string[] candidatePaths =
+            {
+                $"{layerName}.{stateName}",
+                $"{layerName}.{ClassicGestureStateMachine}.{stateName}"
+            };
+
+            for (int i = 0; i < candidatePaths.Length; i++)
+            {
+                int candidateHash = Animator.StringToHash(candidatePaths[i]);
+                if (!animator.HasState(layerIndex, candidateHash))
+                    continue;
+
+                stateHash = candidateHash;
+                return true;
+            }
+
+            stateHash = 0;
+            return false;
         }
 
         private void WarnMissingLayer(string layerName)

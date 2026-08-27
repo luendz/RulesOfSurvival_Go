@@ -143,6 +143,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f38075d20594164d988d173441ba6c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Input.PlayerInputReader
+  autoRunToggleKey: 0
+  cancelAutoRunOnBackwardInput: 1
 --- !u!114 &4425118486816412173
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -218,6 +220,7 @@ MonoBehaviour:
   gravity: -24
   groundedGravity: -2
   healingSpeedMultiplier: 0.5
+  reloadMovementSpeedMultiplier: 0.65
   standingHeight: 1.8
   crouchingHeight: 1.25
   proneHeight: 0.65

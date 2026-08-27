@@ -1,7 +1,9 @@
 using NUnit.Framework;
+using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
+using ROS.Game.Weapons;
 using UnityEngine;
 
 namespace ROS.Game.Tests.EditMode
@@ -267,6 +269,106 @@ namespace ROS.Game.Tests.EditMode
                 pickup.GetComponent<MeshRenderer>(),
                 Is.Null
             );
+        }
+
+        [Test]
+        public void SelectedMelee_InstantiatesItsModelInTheRightHand()
+        {
+            GameObject player = CreatePlayer(100f);
+            GameObject rightHand = new GameObject("Weapon_RightHand");
+            rightHand.transform.SetParent(player.transform, false);
+
+            PlayerLootEquipment equipment =
+                player.AddComponent<PlayerLootEquipment>();
+            PlayerAuxiliaryWeaponSlots auxiliary =
+                player.AddComponent<PlayerAuxiliaryWeaponSlots>();
+
+            InventoryItemDefinition melee = CreateItem(
+                "weapon_item_melee_visual",
+                ItemType.Weapon,
+                1f
+            );
+            WeaponDefinition definition =
+                ScriptableObject.CreateInstance<WeaponDefinition>();
+            definition.family = WeaponFamily.Melee;
+            melee.weaponDefinition = definition;
+
+            GameObject model = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            model.name = "Melee_Model";
+            melee.weaponPrefab = model;
+
+            _created.Add(definition);
+            _created.Add(model);
+
+            Assert.That(equipment.TryEquip(melee, out _), Is.True);
+            Assert.That(
+                equipment.GetWeaponItem(PlayerWeaponSlot.Melee),
+                Is.SameAs(melee)
+            );
+
+            auxiliary.SelectMelee();
+
+            Assert.That(auxiliary.SelectedItem, Is.SameAs(melee));
+            Assert.That(
+                auxiliary.SelectedWeaponDefinition,
+                Is.SameAs(definition)
+            );
+            Assert.That(auxiliary.HeldVisualInstance, Is.Not.Null);
+            Assert.That(
+                auxiliary.HeldVisualInstance.transform.parent,
+                Is.SameAs(rightHand.transform)
+            );
+            Assert.That(
+                auxiliary.HeldVisualInstance
+                    .GetComponentInChildren<Collider>(true)
+                    .enabled,
+                Is.False
+            );
+        }
+
+        [Test]
+        public void SelectedMelee_AttackDamagesClosestTargetAndRaisesAnimationSignal()
+        {
+            GameObject player = CreatePlayer(100f);
+            PlayerLootEquipment equipment =
+                player.AddComponent<PlayerLootEquipment>();
+            PlayerAuxiliaryWeaponSlots auxiliary =
+                player.AddComponent<PlayerAuxiliaryWeaponSlots>();
+
+            InventoryItemDefinition melee = CreateItem(
+                "weapon_item_melee_attack",
+                ItemType.Weapon,
+                1f
+            );
+            WeaponDefinition definition =
+                ScriptableObject.CreateInstance<WeaponDefinition>();
+            definition.weaponId = "melee_attack_test";
+            definition.family = WeaponFamily.Melee;
+            definition.damage = 25f;
+            definition.range = 2.2f;
+            definition.shotsPerSecond = 1.5f;
+            melee.weaponDefinition = definition;
+            _created.Add(definition);
+
+            GameObject target = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            target.name = "Melee_Target";
+            target.transform.position = new Vector3(0f, 1f, 1.5f);
+            Health targetHealth = target.AddComponent<Health>();
+            _created.Add(target);
+
+            Assert.That(equipment.TryEquip(melee, out _), Is.True);
+            auxiliary.SelectMelee();
+            Physics.SyncTransforms();
+
+            float signaledDuration = 0f;
+            auxiliary.MeleeAttacked += duration => signaledDuration = duration;
+
+            Assert.That(auxiliary.TryMeleeAttack(), Is.True);
+            Assert.That(targetHealth.CurrentHealth, Is.EqualTo(75f).Within(0.01f));
+            Assert.That(targetHealth.LastDamage.WeaponId, Is.EqualTo(definition.weaponId));
+            Assert.That(targetHealth.LastDamage.WeaponFamily, Is.EqualTo(WeaponFamily.Melee));
+            Assert.That(signaledDuration, Is.EqualTo(1f / 1.5f).Within(0.01f));
+            Assert.That(auxiliary.TryMeleeAttack(), Is.False);
         }
 
         [Test]
