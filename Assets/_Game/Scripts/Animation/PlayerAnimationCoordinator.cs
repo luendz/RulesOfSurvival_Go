@@ -608,7 +608,11 @@ namespace ROS.Game.Animation
 
             SetLayerWeightSafe(_locomotionLayer, 1f);
             SetLayerWeightSafe(_weaponUpperBodyLayer, weaponLayerActive ? 1f : 0f);
-            SetLayerWeightSafe(_upperBodyActionsLayer, actionsLayerActive ? 1f : 0f);
+            // Este layer permanece listo en peso 1. Su estado Empty no contiene
+            // motion, por lo que no altera la pose base; las transiciones visibles
+            // del Animator deciden cuándo una acción afecta el torso. Evita perder
+            // acciones muy cortas por sincronizar peso y transición en el mismo frame.
+            SetLayerWeightSafe(_upperBodyActionsLayer, 1f);
             SetLayerWeightSafe(
                 _aimRecoilLayer,
                 aiming && !dead && !fullBodyOverride ? 1f : 0f
@@ -989,7 +993,7 @@ namespace ROS.Game.Animation
 
             SetLayerWeightSafe(_locomotionLayer, 1f);
             SetLayerWeightSafe(_weaponUpperBodyLayer, 0f);
-            SetLayerWeightSafe(_upperBodyActionsLayer, 0f);
+            SetLayerWeightSafe(_upperBodyActionsLayer, 1f);
             SetLayerWeightSafe(_aimRecoilLayer, 0f);
             SetLayerWeightSafe(_fullBodyOverrideLayer, 0f);
         }

@@ -171,7 +171,7 @@ namespace ROS.Game.EditorTools
                 UpperBodyActionsLayer,
                 upperBodyMask,
                 AnimatorLayerBlendingMode.Override,
-                0f,
+                1f,
                 true
             );
 

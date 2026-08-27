@@ -16,7 +16,7 @@ namespace ROS.Game.Weapons
     /// Slot 2 = Primaria / Back 02
     /// Slot 3 = Secundaria / Hip
     ///
-    /// El cambio de arma utiliza una animación Upper Body.
+    /// El cambio de arma utiliza una animaciÃ³n Upper Body.
     /// </summary>
     [DefaultExecutionOrder(-40)]
     [RequireComponent(typeof(PlayerInputReader))]
@@ -65,16 +65,16 @@ namespace ROS.Game.Weapons
 
         [Header("Weapon Switch")]
         [Tooltip(
-            "Duración aproximada total de RifleSwitch_UpperBody."
+            "DuraciÃ³n aproximada total de RifleSwitch_UpperBody."
         )]
-        [SerializeField]
-        private float weaponSwitchDuration = 0.8f;
+        [SerializeField, Min(0.05f)]
+        private float weaponSwitchDuration = 0.75f;
 
         [Tooltip(
-            "Momento en segundos en el que se realiza físicamente el cambio de arma."
+            "Momento en segundos en el que se realiza fÃ­sicamente el cambio de arma."
         )]
-        [SerializeField]
-        private float weaponSwapTime = 0.4f;
+        [SerializeField, Min(0f)]
+        private float weaponSwapTime = 0.30f;
 
         [Header("Runtime Debug")]
         [SerializeField]
@@ -176,6 +176,11 @@ namespace ROS.Game.Weapons
                 "WeaponSwitch"
             );
 
+        private static readonly int IsSwitchingWeaponParameter =
+            Animator.StringToHash(
+                "IsSwitchingWeapon"
+            );
+
         private Coroutine _switchRoutine;
 
         private void Awake()
@@ -226,6 +231,19 @@ namespace ROS.Game.Weapons
             {
                 HolsterCurrentWeapon();
             }
+        }
+
+        private void OnDisable()
+        {
+            if (_switchRoutine != null)
+            {
+                StopCoroutine(_switchRoutine);
+                _switchRoutine = null;
+            }
+
+            SetSwitchingWeaponState(false);
+            debugPendingSlot = 0;
+            UpdateRuntimeDebug();
         }
 
         private void Update()
@@ -389,19 +407,26 @@ namespace ROS.Game.Weapons
                 return;
             }
 
-            if (EquippedWeapon == null)
-            {
-                EquipSlotImmediate(slot);
-                return;
-            }
-
             StartAnimatedWeaponSwitch(
                 slot
             );
         }
 
+        public bool RequestAuxiliarySwitch(Action performSwap)
+        {
+            if (performSwap == null || IsSwitchingWeapon)
+                return false;
+
+            if (EquippedWeapon != null && EquippedWeapon.IsReloading)
+                return false;
+
+            StartAnimatedWeaponSwitch(0, performSwap);
+            return true;
+        }
+
         private void StartAnimatedWeaponSwitch(
-            int targetSlot
+            int targetSlot,
+            Action auxiliarySwap = null
         )
         {
             if (_switchRoutine != null)
@@ -409,29 +434,34 @@ namespace ROS.Game.Weapons
                 StopCoroutine(
                     _switchRoutine
                 );
+
+                SetSwitchingWeaponState(false);
             }
 
             _switchRoutine =
                 StartCoroutine(
                     WeaponSwitchRoutine(
-                        targetSlot
+                        targetSlot,
+                        auxiliarySwap
                     )
                 );
         }
 
         private IEnumerator WeaponSwitchRoutine(
-            int targetSlot
+            int targetSlot,
+            Action auxiliarySwap
         )
         {
             WeaponController targetWeapon =
                 GetWeaponForSlot(targetSlot);
 
-            if (targetWeapon == null)
+            if (targetWeapon == null && auxiliarySwap == null)
             {
+                _switchRoutine = null;
                 yield break;
             }
 
-            IsSwitchingWeapon = true;
+            SetSwitchingWeaponState(true);
 
             debugPendingSlot =
                 targetSlot;
@@ -469,9 +499,17 @@ namespace ROS.Game.Weapons
                 );
             }
 
-            PerformWeaponSwap(
-                targetSlot
-            );
+            if (auxiliarySwap != null)
+            {
+                HolsterCurrentWeaponImmediate();
+                auxiliarySwap.Invoke();
+            }
+            else
+            {
+                PerformWeaponSwap(
+                    targetSlot
+                );
+            }
 
             float remainingTime =
                 Mathf.Max(
@@ -487,7 +525,7 @@ namespace ROS.Game.Weapons
                 );
             }
 
-            IsSwitchingWeapon = false;
+            SetSwitchingWeaponState(false);
 
             debugPendingSlot = 0;
 
@@ -646,6 +684,11 @@ namespace ROS.Game.Weapons
                 return;
             }
 
+            HolsterCurrentWeaponImmediate();
+        }
+
+        private void HolsterCurrentWeaponImmediate()
+        {
             if (EquippedWeapon == null)
             {
                 EquippedSlot = 0;
@@ -1233,6 +1276,56 @@ namespace ROS.Game.Weapons
                     HasEquippedWeapon
                 );
             }
+        }
+
+        private void SetSwitchingWeaponState(
+            bool isSwitching
+        )
+        {
+            IsSwitchingWeapon = isSwitching;
+
+            if (
+                AnimatorHasParameter(
+                    IsSwitchingWeaponParameter,
+                    AnimatorControllerParameterType.Bool
+                )
+            )
+            {
+                animator.SetBool(
+                    IsSwitchingWeaponParameter,
+                    isSwitching
+                );
+            }
+        }
+
+        private bool AnimatorHasParameter(
+            int parameterHash,
+            AnimatorControllerParameterType parameterType
+        )
+        {
+            if (animator == null)
+            {
+                return false;
+            }
+
+            AnimatorControllerParameter[] parameters =
+                animator.parameters;
+
+            foreach (
+                AnimatorControllerParameter parameter
+                in parameters
+            )
+            {
+                if (
+                    parameter.nameHash == parameterHash &&
+                    parameter.type == parameterType
+                )
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void UpdateRuntimeDebug()

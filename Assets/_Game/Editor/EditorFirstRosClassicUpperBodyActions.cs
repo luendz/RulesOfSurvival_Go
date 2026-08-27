@@ -85,6 +85,11 @@ namespace ROS.Game.EditorTools
             if (actionsLayer == null || actionsLayer.stateMachine == null)
                 return;
 
+            bool normalizedLayerWeight =
+                !Mathf.Approximately(actionsLayer.defaultWeight, 1f);
+            if (normalizedLayerWeight)
+                actionsLayer.defaultWeight = 1f;
+
             EnsureParameters(controller);
 
             bool migratedWeaponLayer = RemoveReloadStatesFromWeaponLayer(weaponLayer);
@@ -99,7 +104,7 @@ namespace ROS.Game.EditorTools
 
             if (alreadyBuilt)
             {
-                if (migratedWeaponLayer)
+                if (migratedWeaponLayer || normalizedLayerWeight)
                 {
                     EditorUtility.SetDirty(controller);
                     AssetDatabase.SaveAssets();
@@ -195,7 +200,8 @@ namespace ROS.Game.EditorTools
             if (weaponSwitch != null)
             {
                 AnimatorStateTransition toWeapon = empty.AddTransition(weapon);
-                ConfigureTransition(toWeapon, 0.04f);
+                toWeapon.name = "Empty -> Weapon Switch";
+                ConfigureTransition(toWeapon, 0.03f);
                 toWeapon.AddCondition(AnimatorConditionMode.If, 0f, "IsSwitchingWeapon");
 
                 AnimatorTransition fromWeapon =
@@ -321,11 +327,12 @@ namespace ROS.Game.EditorTools
             AddState(machine, "Holster Weapon", null, 240f, 40f);
             AnimatorState weaponSwitch = AddState(
                 machine,
-                "Switch Weapon",
+                "RifleSwitch_UpperBody",
                 switchMotion,
                 520f,
                 -20f
             );
+            weaponSwitch.speed = 3f;
 
             machine.defaultState = weaponSwitch;
             return machine;

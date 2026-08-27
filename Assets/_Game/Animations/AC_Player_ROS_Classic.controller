@@ -386,7 +386,7 @@ AnimatorStateTransition:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: 
+  m_Name: Empty -> Weapon Switch
   m_Conditions:
   - m_ConditionMode: 1
     m_ConditionEvent: IsSwitchingWeapon
@@ -397,7 +397,7 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.04
+  m_TransitionDuration: 0.03
   m_TransitionOffset: 0
   m_ExitTime: 0
   m_HasExitTime: 0
@@ -939,22 +939,6 @@ AnimatorStateMachine:
   m_AnyStateTransitions: []
   m_EntryTransitions: []
   m_StateMachineTransitions:
-  - first: {fileID: -1462320192442330681}
-    second:
-    - {fileID: 4357796503721512160}
-    - {fileID: 8929799400114193356}
-    - {fileID: 6050899995578102387}
-    - {fileID: 1165396969119013813}
-    - {fileID: 4130847557749219795}
-    - {fileID: -4449886445959583389}
-  - first: {fileID: -4082439113073316904}
-    second:
-    - {fileID: -3268606510829231028}
-    - {fileID: 4291474695449725245}
-    - {fileID: -1401059823488530562}
-    - {fileID: -329434141912498243}
-    - {fileID: -7167759153205200875}
-    - {fileID: 1106806129101062222}
   - first: {fileID: -7726448014651544177}
     second:
     - {fileID: -6029943089130643755}
@@ -963,6 +947,14 @@ AnimatorStateMachine:
     - {fileID: 4917020407563603638}
     - {fileID: -3596758072461490816}
     - {fileID: 6858695304388178496}
+  - first: {fileID: -1462320192442330681}
+    second:
+    - {fileID: 4357796503721512160}
+    - {fileID: 8929799400114193356}
+    - {fileID: 6050899995578102387}
+    - {fileID: 1165396969119013813}
+    - {fileID: 4130847557749219795}
+    - {fileID: -4449886445959583389}
   - first: {fileID: 4300675403980477249}
     second:
     - {fileID: 3024645640985767577}
@@ -987,6 +979,14 @@ AnimatorStateMachine:
     - {fileID: -2268945035415926199}
     - {fileID: -8774132681759568362}
     - {fileID: 6680778696775443265}
+  - first: {fileID: -4082439113073316904}
+    second:
+    - {fileID: -3268606510829231028}
+    - {fileID: 4291474695449725245}
+    - {fileID: -1401059823488530562}
+    - {fileID: -329434141912498243}
+    - {fileID: -7167759153205200875}
+    - {fileID: 1106806129101062222}
   - first: {fileID: -6534316099122958860}
     second:
     - {fileID: 719362991621187029}
@@ -2850,9 +2850,6 @@ AnimatorStateMachine:
   m_AnyStateTransitions: []
   m_EntryTransitions: []
   m_StateMachineTransitions:
-  - first: {fileID: -1972932948962105656}
-    second:
-    - {fileID: 7263153242783170049}
   - first: {fileID: -2231006130666552903}
     second:
     - {fileID: -7101198242966651979}
@@ -2865,6 +2862,9 @@ AnimatorStateMachine:
   - first: {fileID: 6889958047307367399}
     second:
     - {fileID: -8474202878022362734}
+  - first: {fileID: -1972932948962105656}
+    second:
+    - {fileID: 7263153242783170049}
   m_StateMachineBehaviours: []
   m_AnyStatePosition: {x: 50, y: 20, z: 0}
   m_EntryPosition: {x: 50, y: 120, z: 0}
@@ -3076,7 +3076,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Switch Weapon
+  m_Name: RifleSwitch_UpperBody
   m_Speed: 3
   m_CycleOffset: 0
   m_Transitions: []
@@ -3789,7 +3789,7 @@ AnimatorStateMachine:
   m_AnyStatePosition: {x: 50, y: 20, z: 0}
   m_EntryPosition: {x: 50, y: 120, z: 0}
   m_ExitPosition: {x: 470, y: -330, z: 0}
-  m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
+  m_ParentStateMachinePosition: {x: 810, y: 20, z: 0}
   m_DefaultState: {fileID: 4394091281842490614}
 --- !u!1107 &-1446863703321368227
 AnimatorStateMachine:
@@ -4672,7 +4672,7 @@ AnimatorController:
     m_Behaviours: []
     m_BlendingMode: 0
     m_SyncedLayerIndex: -1
-    m_DefaultWeight: 0
+    m_DefaultWeight: 1
     m_IKPass: 1
     m_SyncedLayerAffectsTiming: 0
     m_Controller: {fileID: 9100000}
@@ -5098,9 +5098,6 @@ AnimatorStateMachine:
   m_AnyStateTransitions: []
   m_EntryTransitions: []
   m_StateMachineTransitions:
-  - first: {fileID: 7195143291738009706}
-    second:
-    - {fileID: -8005019352949569259}
   - first: {fileID: 3514501158840965366}
     second:
     - {fileID: 5068719020281175767}
@@ -5108,6 +5105,9 @@ AnimatorStateMachine:
   - first: {fileID: 172746848734235121}
     second:
     - {fileID: 910000000000000002}
+  - first: {fileID: 7195143291738009706}
+    second:
+    - {fileID: -8005019352949569259}
   m_StateMachineBehaviours: []
   m_AnyStatePosition: {x: 50, y: 20, z: 0}
   m_EntryPosition: {x: 50, y: 120, z: 0}

@@ -248,8 +248,8 @@ MonoBehaviour:
   startWithSlot1Equipped: 0
   autoDiscoverWeapons: 0
   autoBindSocketsToHumanoidBones: 1
-  weaponSwitchDuration: 0.8
-  weaponSwapTime: 0.4
+  weaponSwitchDuration: 0.75
+  weaponSwapTime: 0.3
   debugEquippedSlot: 0
   debugEquippedWeapon: 
   debugCombatState: 0

@@ -237,6 +237,75 @@ namespace ROS.Game.Tests.EditMode
         }
 
         [Test]
+        public void ClassicAnimator_ContainsVisibleFastWeaponSwitchFlow()
+        {
+            AnimatorController controller =
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(
+                    ClassicAnimatorPath
+                );
+
+            Assert.That(controller, Is.Not.Null);
+            AssertParameter(
+                controller,
+                "IsSwitchingWeapon",
+                AnimatorControllerParameterType.Bool
+            );
+            AssertParameter(
+                controller,
+                "WeaponSwitch",
+                AnimatorControllerParameterType.Trigger
+            );
+
+            AnimatorControllerLayer actions = FindLayer(
+                controller,
+                "UpperBody_Actions"
+            );
+            Assert.That(actions, Is.Not.Null);
+            Assert.That(actions.defaultWeight, Is.EqualTo(1f));
+
+            AnimatorStateMachine weapon = FindStateMachine(
+                actions.stateMachine,
+                "Weapon"
+            );
+            Assert.That(weapon, Is.Not.Null);
+            Assert.That(weapon.defaultState, Is.Not.Null);
+            Assert.That(
+                weapon.defaultState.name,
+                Is.EqualTo("RifleSwitch_UpperBody")
+            );
+            Assert.That(weapon.defaultState.motion, Is.Not.Null);
+            Assert.That(weapon.defaultState.speed, Is.EqualTo(3f));
+
+            AnimatorState empty = actions.stateMachine.defaultState;
+            Assert.That(empty, Is.Not.Null);
+
+            AnimatorStateTransition switchTransition = null;
+            AnimatorStateTransition[] transitions = empty.transitions;
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                if (transitions[i].destinationStateMachine == weapon)
+                {
+                    switchTransition = transitions[i];
+                    break;
+                }
+            }
+
+            Assert.That(switchTransition, Is.Not.Null);
+            Assert.That(switchTransition.duration, Is.EqualTo(0.03f));
+
+            bool hasSwitchingCondition = false;
+            AnimatorCondition[] conditions = switchTransition.conditions;
+            for (int i = 0; i < conditions.Length; i++)
+            {
+                hasSwitchingCondition |=
+                    conditions[i].parameter == "IsSwitchingWeapon";
+            }
+
+            Assert.That(hasSwitchingCondition, Is.True);
+            Assert.That(conditions.Length, Is.EqualTo(1));
+        }
+
+        [Test]
         public void ParachuteController_WritesClassicBooleanParameters()
         {
             AnimatorController controller =

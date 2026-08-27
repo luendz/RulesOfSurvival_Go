@@ -13,7 +13,7 @@ using UnityEngine.InputSystem;
 namespace ROS.Game.Weapons
 {
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-35)]
+    [DefaultExecutionOrder(-45)]
     public sealed class PlayerAuxiliaryWeaponSlots : MonoBehaviour
     {
         [SerializeField] private PlayerInputReader input;
@@ -322,15 +322,10 @@ namespace ROS.Game.Weapons
         {
             ResolveReferences();
 
-            if (weapons != null)
-                weapons.HolsterCurrentWeapon();
-
             bool hasMelee = lootEquipment != null &&
                             lootEquipment.GetWeaponItem(PlayerWeaponSlot.Melee) != null;
-            SetAuxiliarySlot(
-                hasMelee
-                    ? PlayerWeaponSlot.Melee
-                    : PlayerWeaponSlot.None
+            RequestAuxiliarySelection(
+                hasMelee ? PlayerWeaponSlot.Melee : PlayerWeaponSlot.None
             );
         }
 
@@ -344,11 +339,27 @@ namespace ROS.Game.Weapons
                 return false;
             }
 
-            if (weapons != null)
-                weapons.HolsterCurrentWeapon();
+            return RequestAuxiliarySelection(PlayerWeaponSlot.Throwable);
+        }
 
-            SetAuxiliarySlot(PlayerWeaponSlot.Throwable);
-            return true;
+        private bool RequestAuxiliarySelection(PlayerWeaponSlot targetSlot)
+        {
+            bool firearmEquipped = weapons != null && weapons.HasEquippedWeapon;
+            if (!firearmEquipped && selectedAuxiliarySlot == targetSlot)
+            {
+                RefreshHeldVisual();
+                return false;
+            }
+
+            if (weapons == null)
+            {
+                SetAuxiliarySlot(targetSlot);
+                return true;
+            }
+
+            return weapons.RequestAuxiliarySwitch(
+                () => SetAuxiliarySlot(targetSlot)
+            );
         }
 
         private void HandleWeaponEquipped(WeaponController _, int __)
