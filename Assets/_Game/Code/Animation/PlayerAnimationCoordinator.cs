@@ -734,12 +734,21 @@ namespace ROS.Game.Animation
                                   !dead &&
                                   !motor.IsProne;
 
-            // Esta capa también contiene las poses y ataques desarmados.
-            // Mantenerla en peso cero cuando no hay arma permite que sus estados
-            // avancen en el Animator, pero impide que la pose llegue al personaje.
+            bool unarmedUpperBodyActive = weaponCategory == WeaponCategoryNone &&
+                                          (classicFiring ||
+                                           classicAiming ||
+                                           (motor.IsGrounded &&
+                                            input.Move.sqrMagnitude <= 0.01f));
+
+            // Con arma, la pose superior debe mantenerse durante la locomoción.
+            // Desarmado, Upper Idle solo se aplica estando quieto; al desplazarse
+            // se libera el torso para que Base_Locomotion anime el cuerpo completo.
             bool weaponLayerActive = !dead &&
                                      !fullBodyOverride &&
-                                     !motor.IsProne;
+                                     !motor.IsProne &&
+                                     (hasWeapon ||
+                                      switchingWeapon ||
+                                      unarmedUpperBodyActive);
 
             bool actionsLayerActive = !dead &&
                                       !fullBodyOverride &&
