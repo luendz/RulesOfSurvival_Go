@@ -1198,18 +1198,8 @@ namespace ROS.Game.Weapons
             }
 
             BoneSocketFollower follower =
-                socket.GetComponent<
-                    BoneSocketFollower
-                >();
-
-            if (follower == null)
-            {
-                Debug.LogError(
-                    $"{socket.name} no tiene BoneSocketFollower configurado.",
-                    socket
-                );
-                return;
-            }
+                socket.GetComponent<BoneSocketFollower>()
+                ?? socket.gameObject.AddComponent<BoneSocketFollower>();
 
             follower.Bind(bone);
         }
