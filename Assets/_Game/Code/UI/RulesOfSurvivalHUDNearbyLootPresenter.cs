@@ -79,6 +79,18 @@ namespace ROS.Game.UI
 
         public DeathLootContainer OpenedContainer => _openedContainer;
 
+        public void BindPlayer(
+            PlayerInputReader input,
+            PlayerInteractor interactor,
+            InventoryComponent inventory,
+            PlayerLootEquipment lootEquipment)
+        {
+            _localInput = input;
+            _interactor = interactor;
+            _inventory = inventory;
+            _lootEquipment = lootEquipment;
+        }
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -88,7 +100,7 @@ namespace ROS.Game.UI
                 return;
             }
 
-            if (!HasRequiredReferences())
+            if (!HasVisualReferences())
             {
                 Debug.LogError(
                     $"[{nameof(RulesOfSurvivalHUDNearbyLootPresenter)}] Referencias incompletas en '{name}'.",
@@ -172,11 +184,10 @@ namespace ROS.Game.UI
                 UpdateNearbyLoot();
         }
 
-        private bool HasRequiredReferences()
+        private bool HasVisualReferences()
         {
             if (nearbyRoot == null || nearbyTitle == null || nearbyHint == null ||
-                _localInput == null || _interactor == null || _inventory == null ||
-                _lootEquipment == null || rowViews == null || rowViews.Length != VisibleRows)
+                rowViews == null || rowViews.Length != VisibleRows)
                 return false;
 
             for (int i = 0; i < rowViews.Length; i++)

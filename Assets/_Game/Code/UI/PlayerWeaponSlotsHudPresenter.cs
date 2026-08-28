@@ -38,10 +38,21 @@ namespace ROS.Game.UI
         private static readonly Color ActiveText =
             new Color(0.05f, 0.05f, 0.05f, 1f);
 
+        public void BindPlayer(
+            WeaponEquipmentController w,
+            PlayerLootEquipment loot,
+            PlayerAuxiliaryWeaponSlots aux,
+            InventoryComponent inv)
+        {
+            weapons = w;
+            lootEquipment = loot;
+            auxiliarySlots = aux;
+            inventory = inv;
+        }
+
         private void Awake()
         {
-            if (weapons == null || lootEquipment == null || auxiliarySlots == null ||
-                inventory == null || _slots == null || _slots.Length != 5)
+            if (_slots == null || _slots.Length != 5 || System.Array.Exists(_slots, s => s == null))
             {
                 Debug.LogError($"[{nameof(PlayerWeaponSlotsHudPresenter)}] Referencias incompletas en '{name}'.", this);
                 enabled = false;

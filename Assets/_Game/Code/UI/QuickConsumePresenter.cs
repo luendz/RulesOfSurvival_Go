@@ -33,7 +33,8 @@ namespace ROS.Game.UI
 
         private void Awake()
         {
-            if (inventory == null || consumable == null || slots == null || slots.Length != MaxSlots)
+            if (slots == null || slots.Length != MaxSlots ||
+                System.Array.Exists(slots, s => s == null))
             {
                 Debug.LogError($"[{nameof(QuickConsumePresenter)}] Referencias incompletas en '{name}'.", this);
                 enabled = false;

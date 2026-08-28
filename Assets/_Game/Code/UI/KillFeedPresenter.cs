@@ -23,7 +23,7 @@ namespace ROS.Game.UI
 
         private void Awake()
         {
-            if (manager == null || localHealth == null || rows == null || rows.Length != MaxEntries ||
+            if (rows == null || rows.Length != MaxEntries ||
                 System.Array.Exists(rows, row => row == null))
             {
                 Debug.LogError($"[{nameof(KillFeedPresenter)}] Referencias incompletas en '{name}'.", this);

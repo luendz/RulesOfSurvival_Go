@@ -17,7 +17,7 @@ namespace ROS.Game.UI
 
         private void Awake()
         {
-            if (health == null || playerTransform == null || arrows == null || arrows.Length != 4 ||
+            if (arrows == null || arrows.Length != 4 ||
                 System.Array.Exists(arrows, arrow => arrow == null))
             {
                 Debug.LogError($"[{nameof(DamageDirectionIndicator)}] Referencias incompletas en '{name}'.", this);

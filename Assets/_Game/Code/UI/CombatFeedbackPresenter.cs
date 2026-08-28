@@ -34,9 +34,24 @@ namespace ROS.Game.UI
         private bool _lastHitWasFatal;
         private float _nextWeaponRefresh;
 
+        public void Bind(Health h, Transform directionRef)
+        {
+            if (health != null)
+                health.Damaged -= OnDamaged;
+
+            health = h;
+            directionReference = directionRef;
+
+            if (isActiveAndEnabled && health != null)
+            {
+                health.Damaged -= OnDamaged;
+                health.Damaged += OnDamaged;
+            }
+        }
+
         private void OnEnable()
         {
-            if (!HasRequiredReferences())
+            if (!HasVisualReferences())
             {
                 Debug.LogError(
                     $"[{nameof(CombatFeedbackPresenter)}] Referencias incompletas en '{name}'.",
@@ -84,10 +99,10 @@ namespace ROS.Game.UI
             UpdatePhysicalFeedback();
         }
 
-        private bool HasRequiredReferences()
+        private bool HasVisualReferences()
         {
-            if (health == null || directionReference == null || hitmarkerRoot == null ||
-                headshotLabel == null || hitmarkerParts == null || hitmarkerParts.Length != 4 ||
+            if (hitmarkerRoot == null || headshotLabel == null ||
+                hitmarkerParts == null || hitmarkerParts.Length != 4 ||
                 damageBars == null || damageBars.Length != 4)
                 return false;
 

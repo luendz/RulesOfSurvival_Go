@@ -167,8 +167,7 @@ namespace ROS.Game.UI
 
         private bool HasRequiredReferences()
         {
-            return sequence != null && input != null && playerCamera != null &&
-                   viewRoot != null && startMatchButton != null && freeroamButton != null;
+            return viewRoot != null && startMatchButton != null && freeroamButton != null;
         }
 
         private void HookButtons()

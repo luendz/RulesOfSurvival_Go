@@ -78,11 +78,23 @@ namespace ROS.Game.UI
             UpdateZoneBanner();
         }
 
+        public void BindScene(Camera worldCam, Camera minimapCam, BattleRoyaleManager br)
+        {
+            worldCamera = worldCam;
+            minimapCamera = minimapCam;
+            battleRoyale = br;
+        }
+
+        public void BindPlayer(Health h, WeaponEquipmentController eq, PlayerInteractor inter)
+        {
+            health = h;
+            equipment = eq;
+            interactor = inter;
+        }
+
         private bool HasRequiredReferences()
         {
-            return worldCamera != null && minimapCamera != null && health != null &&
-                   equipment != null && battleRoyale != null && interactor != null &&
-                   canvas != null && compassText != null && healthFill != null &&
+            return canvas != null && compassText != null && healthFill != null &&
                    armorFill != null && lootPanel != null && minimapPlayerArrow != null &&
                    lootRows != null && lootRows.Length == 7 &&
                    weaponSlots != null && weaponSlots.Length == 3;

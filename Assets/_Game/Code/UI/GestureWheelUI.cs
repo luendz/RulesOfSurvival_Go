@@ -59,13 +59,15 @@ namespace ROS.Game.UI
         private static readonly Color ItemSelectedColor =
             new Color(0.88f, 0.55f, 0.12f, 1f);
 
+        public void BindPlayer(PlayerInputReader input, PlayerGestureController gesture)
+        {
+            _input = input;
+            _gestureController = gesture;
+        }
+
         private void Awake()
         {
-            if (_input == null ||
-                _gestureController == null ||
-                canvas == null ||
-                wheelOverlay == null ||
-                wheelCenter == null)
+            if (canvas == null || wheelOverlay == null || wheelCenter == null)
             {
                 Debug.LogError(
                     "GestureWheelUI tiene referencias sin asignar. " +
