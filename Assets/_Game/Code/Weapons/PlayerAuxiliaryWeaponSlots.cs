@@ -405,10 +405,22 @@ namespace ROS.Game.Weapons
             }
             else
             {
-                visualTransform.localPosition = rawModelLocalPosition;
-                visualTransform.localRotation =
-                    Quaternion.Euler(rawModelLocalEulerAngles);
-                visualTransform.localScale = rawModelLocalScale;
+                Vector3 pos, euler, scale;
+                if (item.overrideHandTransform)
+                {
+                    pos   = item.handLocalPosition;
+                    euler = item.handLocalEulerAngles;
+                    scale = item.handLocalScale;
+                }
+                else
+                {
+                    pos   = rawModelLocalPosition;
+                    euler = rawModelLocalEulerAngles;
+                    scale = rawModelLocalScale;
+                }
+                visualTransform.localPosition = pos;
+                visualTransform.localRotation = Quaternion.Euler(euler);
+                visualTransform.localScale    = scale;
             }
 
             DisableVisualPhysics(_heldVisualInstance);

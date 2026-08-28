@@ -34,3 +34,7 @@ MonoBehaviour:
   worldOffset: {x: 0, y: 0.28, z: 0}
   worldEulerAngles: {x: 1.246, y: -88.748, z: 89.526}
   worldScale: {x: 40, y: 40, z: 40}
+  overrideHandTransform: 1
+  handLocalPosition: {x: -0.109, y: 0.132, z: 0.066}
+  handLocalEulerAngles: {x: -51.184, y: -102.016, z: 89.898}
+  handLocalScale: {x: 25, y: 20, z: 30}

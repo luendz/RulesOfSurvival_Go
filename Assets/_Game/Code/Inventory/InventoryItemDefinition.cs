@@ -103,6 +103,19 @@ namespace ROS.Game.Inventory
         public Vector3 worldScale =
             Vector3.one;
 
+        [Header("Hand Held Visual (raw model)")]
+        [Tooltip(
+            "Cuando está activo, el modelo FBX se posiciona con los valores de abajo " +
+            "en lugar de los valores globales del PlayerAuxiliaryWeaponSlots."
+        )]
+        public bool overrideHandTransform;
+
+        public Vector3 handLocalPosition;
+
+        public Vector3 handLocalEulerAngles;
+
+        public Vector3 handLocalScale = Vector3.one;
+
         public string StableId => itemId;
 
         public DataConfidence Confidence =>
