@@ -13956,7 +13956,7 @@ MonoBehaviour:
   sequence: {fileID: 1831406594}
   botHealthBarPrefab: {fileID: 8837910987892454964, guid: 08773048bfbf65143b9e1ade1fe52f66, type: 3}
   gameplayCamera: {fileID: 851681085}
-  botCount: 10
+  botCount: 1
 --- !u!1 &1855147426
 GameObject:
   m_ObjectHideFlags: 0
@@ -15389,7 +15389,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1121173014715245539, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.26
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 1121173014715245539, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       propertyPath: m_LocalRotation.w
