@@ -1071,9 +1071,16 @@ MonoBehaviour:
   backSocket01: {fileID: 0}
   backSocket02: {fileID: 0}
   hipSocket: {fileID: 0}
+  backMeleeSocket: {fileID: 0}
+  backSocket01LocalPosition: {x: 0.35, y: -0.06, z: -0.15}
+  backSocket01LocalEulerAngles: {x: 0, y: 0, z: 45}
+  backSocket02LocalPosition: {x: -0.2, y: -0.15, z: -0.2}
+  backSocket02LocalEulerAngles: {x: 0, y: 0, z: -30}
+  backMeleeSocketLocalPosition: {x: 0, y: 0.05, z: -0.15}
+  backMeleeSocketLocalEulerAngles: {x: 0, y: 0, z: 0}
   startWithSlot1Equipped: 0
   autoDiscoverWeapons: 0
-  autoBindSocketsToHumanoidBones: 0
+  autoBindSocketsToHumanoidBones: 1
   weaponSwitchDuration: 0.75
   weaponSwapTime: 0.3
   debugEquippedSlot: 0
