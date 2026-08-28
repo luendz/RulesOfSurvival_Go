@@ -55,19 +55,22 @@ namespace ROS.Game.Weapons
         [SerializeField] private Transform leftHandIKTarget;
         [Tooltip("Expulsión de casquillos. Fallback: ShellEjectionPoint.")]
         [SerializeField] private Transform shellEjectionPoint;
+        [Tooltip("Raíz visual editable del prefab del arma.")]
+        [SerializeField] private Transform visualRoot;
 
-        private Transform _visualRoot;
         private bool _visualDefaultCached;
         private Vector3 _visualDefaultPosition;
         private Quaternion _visualDefaultRotation;
         private Vector3 _visualDefaultScale;
 
-        public Transform MuzzlePoint => Resolve(ref muzzlePoint, "MuzzlePoint", transform, transform);
-        public Transform AimPoint => Resolve(ref aimPoint, "AimPoint", transform, MuzzlePoint);
-        public Transform StockPoint => Resolve(ref stockPoint, "StockPoint", transform, null);
-        public Transform RightHandGrip => Resolve(ref rightHandGrip, "RightHandGrip", transform, transform);
-        public Transform LeftHandIKTarget => Resolve(ref leftHandIKTarget, "LeftHandIK", transform, null);
-        public Transform ShellEjectionPoint => Resolve(ref shellEjectionPoint, "ShellEjectionPoint", transform, MuzzlePoint);
+        public Transform MuzzlePoint => muzzlePoint != null ? muzzlePoint : transform;
+        public Transform AimPoint => aimPoint != null ? aimPoint : MuzzlePoint;
+        public Transform StockPoint => stockPoint;
+        public Transform RightHandGrip => rightHandGrip != null ? rightHandGrip : transform;
+        public Transform LeftHandIKTarget => leftHandIKTarget;
+        public Transform ShellEjectionPoint => shellEjectionPoint != null
+            ? shellEjectionPoint
+            : MuzzlePoint;
 
         public Vector3 ShotOrigin => MuzzlePoint != null ? MuzzlePoint.position : transform.position;
         public Vector3 MechanicalForward
@@ -121,8 +124,7 @@ namespace ROS.Game.Weapons
 
         public bool HasCompleteFiringSetup()
         {
-            return FindChildRecursive(transform, "MuzzlePoint") != null &&
-                   FindChildRecursive(transform, "AimPoint") != null;
+            return muzzlePoint != null;
         }
 
         private void ApplyBackVisual(Vector3 localPosition, Vector3 localEulerAngles)
@@ -179,51 +181,7 @@ namespace ROS.Game.Weapons
 
         private Transform ResolveVisualRoot()
         {
-            if (_visualRoot != null)
-                return _visualRoot;
-
-            Transform[] children = GetComponentsInChildren<Transform>(true);
-            for (int i = 0; i < children.Length; i++)
-            {
-                Transform child = children[i];
-                if (child == null || child == transform)
-                    continue;
-
-                if (child.name.StartsWith("Visual_", System.StringComparison.Ordinal))
-                {
-                    _visualRoot = child;
-                    return _visualRoot;
-                }
-            }
-
-            return null;
-        }
-
-        private static Transform Resolve(
-            ref Transform field,
-            string childName,
-            Transform searchRoot,
-            Transform fallback)
-        {
-            if (field == null)
-                field = FindChildRecursive(searchRoot, childName);
-
-            return field != null ? field : fallback;
-        }
-
-        private static Transform FindChildRecursive(Transform root, string childName)
-        {
-            if (root == null)
-                return null;
-
-            Transform[] children = root.GetComponentsInChildren<Transform>(true);
-            foreach (Transform child in children)
-            {
-                if (child != null && child.name == childName)
-                    return child;
-            }
-
-            return null;
+            return visualRoot;
         }
     }
 }

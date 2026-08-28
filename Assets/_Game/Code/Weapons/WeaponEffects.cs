@@ -63,16 +63,6 @@ namespace ROS.Game.Weapons
 
         private void Awake()
         {
-            EnsureRuntimeSetup();
-        }
-
-        private void OnEnable()
-        {
-            EnsureRuntimeSetup();
-        }
-
-        public void EnsureRuntimeSetup()
-        {
             if (weapon == null ||
                 muzzle == null ||
                 impactPrefab == null ||

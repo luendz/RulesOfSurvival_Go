@@ -55,13 +55,10 @@ namespace ROS.Game.Weapons
             snappiness = definition.recoilSnappiness;
             kickBackDistance = definition.recoilKickBack;
 
-            EnsureReferences();
         }
 
         public void AddRecoil()
         {
-            EnsureReferences();
-
             if (_definition != null &&
                 Time.time - _lastShotTime > _definition.recoilPatternResetDelay)
             {
@@ -90,13 +87,12 @@ namespace ROS.Game.Weapons
 
         private void Awake()
         {
-            EnsureReferences();
+            ResolveOwnerContext();
+            CacheVisualBasePosition();
         }
 
         private void Update()
         {
-            EnsureReferences();
-
             if (_definition != null &&
                 Time.time - _lastShotTime > _definition.recoilPatternResetDelay)
             {
@@ -147,21 +143,17 @@ namespace ROS.Game.Weapons
             }
         }
 
-        private void EnsureReferences()
+        private void ResolveOwnerContext()
         {
             if (_input == null)
                 _input = GetComponentInParent<PlayerInputReader>();
 
             if (_motor == null)
                 _motor = GetComponentInParent<PlayerMotor>();
+        }
 
-            if (visualRecoilTransform == null)
-            {
-                Transform candidate = FindChildRecursive(transform, "WeaponVisual");
-                if (candidate != null)
-                    visualRecoilTransform = candidate;
-            }
-
+        private void CacheVisualBasePosition()
+        {
             if (visualRecoilTransform != null && !_visualBaseCaptured)
             {
                 _visualBaseLocalPosition = visualRecoilTransform.localPosition;
@@ -231,19 +223,5 @@ namespace ROS.Game.Weapons
                 Vector3.back * _kickCurrent;
         }
 
-        private static Transform FindChildRecursive(Transform root, string childName)
-        {
-            if (root == null)
-                return null;
-
-            Transform[] children = root.GetComponentsInChildren<Transform>(true);
-            foreach (Transform child in children)
-            {
-                if (child != null && child.name == childName)
-                    return child;
-            }
-
-            return null;
-        }
     }
 }

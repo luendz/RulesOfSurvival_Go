@@ -127,6 +127,24 @@ namespace ROS.Game.Editor
                         "_equipment", "_lootEquipment", "_inventory", "_consumables",
                         "_health", "_controlFrame");
 
+                foreach (WeaponController weapon in
+                         root.GetComponentsInChildren<WeaponController>(true))
+                    RequireReferences(weapon, errors, path, "definition", "weaponMount",
+                        "muzzle", "weaponEffects", "weaponRecoil");
+
+                foreach (WeaponEffects effects in
+                         root.GetComponentsInChildren<WeaponEffects>(true))
+                    RequireReferences(effects, errors, path, "weapon", "muzzle", "tracer",
+                        "tracerMaterial", "impactPrefab", "bulletHolePrefab");
+
+                foreach (WeaponRecoil recoil in
+                         root.GetComponentsInChildren<WeaponRecoil>(true))
+                    RequireReferences(recoil, errors, path, "visualRecoilTransform");
+
+                foreach (WeaponMount mount in
+                         root.GetComponentsInChildren<WeaponMount>(true))
+                    RequireReferences(mount, errors, path, "muzzlePoint", "visualRoot");
+
                 ValidatePlayerReferenceGraph(root, path, errors, false);
                 PrefabUtility.UnloadPrefabContents(root);
             }

@@ -333,15 +333,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponController
   definition: {fileID: 11400000, guid: 69fc11be9a878bd4ba9fa725411ae7e4, type: 2}
-  input: {fileID: 0}
-  motor: {fileID: 0}
-  equipment: {fileID: 0}
-  aimController: {fileID: 0}
-  weaponMount: {fileID: 0}
-  muzzle: {fileID: 0}
-  aimCamera: {fileID: 0}
-  weaponEffects: {fileID: 0}
-  weaponRecoil: {fileID: 0}
+  weaponMount: {fileID: 5672550133044555999}
+  muzzle: {fileID: 495099067917795040}
+  weaponEffects: {fileID: 2640554394648865018}
+  weaponRecoil: {fileID: 3632271293811897595}
   hitMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -375,14 +370,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33b497a2c959c8a489c7508d72c68720, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponEffects
-  weapon: {fileID: 0}
-  muzzle: {fileID: 0}
+  weapon: {fileID: 499736669613723928}
+  muzzle: {fileID: 495099067917795040}
   muzzleFlash: {fileID: 0}
   tracer: {fileID: 8477769546487442082}
   tracerMaterial: {fileID: 2100000, guid: 5308c3199e2d51a48bb97816a9e4a040, type: 2}
   tracerDuration: 0.04
   tracerSegments: 10
-  impactPrefab: {fileID: 0}
+  impactPrefab: {fileID: 2564379608624879167, guid: 52417886a8a873c4ea61fa0fe7d4f308, type: 3}
   bloodImpactPrefab: {fileID: 0}
   impactLifetime: 2
   impactSurfaceOffset: 0.01
@@ -400,7 +395,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 6c3ab54348cdee849b60ba8fac53b25c, type: 3}
   - {fileID: 8300000, guid: 931466f0b7fbe2743a5636e3c438ad25, type: 3}
   - {fileID: 8300000, guid: b49ecaa405c9fd943887674406a98aa7, type: 3}
-  bulletHolePrefab: {fileID: 0}
+  bulletHolePrefab: {fileID: 8341003533612642948, guid: b1884a508ae4fa9418d4e7fde19e9748, type: 3}
   bulletHoleLifetime: 20
   bulletHoleSurfaceOffset: 0.002
   randomizeBulletHoleRotation: 1
@@ -420,7 +415,7 @@ MonoBehaviour:
   horizontalRecoil: 0.35
   returnSpeed: 8
   snappiness: 14
-  visualRecoilTransform: {fileID: 0}
+  visualRecoilTransform: {fileID: 8966848471362090077}
   kickBackDistance: 0.035
   kickReturnSpeed: 18
   debugCurrentRecoil: {x: 0, y: 0}
@@ -447,12 +442,13 @@ MonoBehaviour:
   backVisualScale: {x: 40, y: 40, z: 40}
   hipLocalPosition: {x: 0.18, y: -0.05, z: 0}
   hipLocalEulerAngles: {x: 0, y: 0, z: 0}
-  muzzlePoint: {fileID: 0}
+  muzzlePoint: {fileID: 495099067917795040}
   aimPoint: {fileID: 0}
   stockPoint: {fileID: 0}
   rightHandGrip: {fileID: 0}
   leftHandIKTarget: {fileID: 0}
   shellEjectionPoint: {fileID: 0}
+  visualRoot: {fileID: 8966848471362090077}
 --- !u!114 &6384083498837708766
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -14,14 +14,14 @@ namespace ROS.Game.Weapons
         [Header("Definition")]
         [SerializeField] private WeaponDefinition definition;
 
-        [Header("References")]
-        [SerializeField] private PlayerInputReader input;
-        [SerializeField] private PlayerMotor motor;
-        [SerializeField] private WeaponEquipmentController equipment;
-        [SerializeField] private PlayerAimController aimController;
+        private PlayerInputReader input;
+        private PlayerMotor motor;
+        private WeaponEquipmentController equipment;
+        private PlayerAimController aimController;
+
+        [Header("Prefab References")]
         [SerializeField] private WeaponMount weaponMount;
         [SerializeField] private Transform muzzle;
-        [SerializeField] private UnityEngine.Camera aimCamera;
         [SerializeField] private WeaponEffects weaponEffects;
         [SerializeField] private WeaponRecoil weaponRecoil;
 
@@ -64,6 +64,7 @@ namespace ROS.Game.Weapons
         private float _lastShotTime = -999f;
         private bool _usesExternalShotDirection;
         private Vector3 _externalShotDirection;
+        private bool _prefabReferencesValid;
 
         public WeaponDefinition Definition => definition;
         public float DamageScale { get; set; } = 1f;
@@ -104,7 +105,6 @@ namespace ROS.Game.Weapons
                 ? definition.GetInitialFireMode()
                 : WeaponFireMode.Single;
 
-            EnsureReferences();
             ApplyDefinitionToComponents();
             UpdateDebugValues();
             AmmoChanged?.Invoke();
@@ -147,7 +147,8 @@ namespace ROS.Game.Weapons
 
         private void Awake()
         {
-            EnsureReferences();
+            ResolveOwnerContext();
+            _prefabReferencesValid = ValidatePrefabReferences();
 
             AmmoInMagazine = definition != null ? definition.magazineSize : 0;
             CurrentFireMode = definition != null
@@ -158,12 +159,7 @@ namespace ROS.Game.Weapons
             UpdateDebugValues();
         }
 
-        private void OnEnable()
-        {
-            EnsureReferences();
-        }
-
-        private void EnsureReferences()
+        private void ResolveOwnerContext()
         {
             if (input == null)
                 input = GetComponentInParent<PlayerInputReader>();
@@ -176,24 +172,24 @@ namespace ROS.Game.Weapons
 
             if (equipment == null)
                 equipment = GetComponentInParent<WeaponEquipmentController>();
+        }
 
-            if (weaponMount == null)
-                weaponMount = GetComponent<WeaponMount>();
+        private bool ValidatePrefabReferences()
+        {
+            bool complete = weaponMount != null &&
+                            muzzle != null &&
+                            weaponEffects != null &&
+                            weaponRecoil != null;
 
-            if (muzzle == null && weaponMount != null)
-                muzzle = weaponMount.MuzzlePoint;
+            if (complete)
+                return true;
 
-            if (muzzle == null)
-                muzzle = FindChildRecursive(transform, "MuzzlePoint");
-
-            if (weaponEffects == null)
-                weaponEffects = GetComponent<WeaponEffects>();
-
-            if (weaponRecoil == null)
-                weaponRecoil = GetComponent<WeaponRecoil>();
-
-            if (weaponEffects != null)
-                weaponEffects.EnsureRuntimeSetup();
+            Debug.LogError(
+                $"{nameof(WeaponController)} tiene referencias locales sin asignar en " +
+                $"'{name}'. Completa el prefab del arma antes de ejecutar.",
+                this
+            );
+            return false;
         }
 
         private void ApplyDefinitionToComponents()
@@ -207,9 +203,7 @@ namespace ROS.Game.Weapons
 
         private void Update()
         {
-            EnsureReferences();
-
-            if (definition == null || input == null)
+            if (!_prefabReferencesValid || definition == null || input == null)
             {
                 UpdateDebugValues();
                 return;
@@ -319,9 +313,8 @@ namespace ROS.Game.Weapons
 
         public bool TryFireAt(Vector3 worldPoint)
         {
-            EnsureReferences();
-
-            if (!isActiveAndEnabled ||
+            if (!_prefabReferencesValid ||
+                !isActiveAndEnabled ||
                 definition == null ||
                 IsReloading ||
                 Time.time < _nextShotTime ||
@@ -447,9 +440,6 @@ namespace ROS.Game.Weapons
             if (muzzle != null)
                 return muzzle.position;
 
-            if (aimCamera != null)
-                return aimCamera.transform.position;
-
             return transform.position;
         }
 
@@ -460,9 +450,6 @@ namespace ROS.Game.Weapons
 
             if (aimController != null)
                 return aimController.GetDirectionFrom(origin);
-
-            if (aimCamera != null)
-                return aimCamera.transform.forward;
 
             if (weaponMount != null)
                 return weaponMount.MechanicalForward;
@@ -925,19 +912,5 @@ namespace ROS.Game.Weapons
             debugLastShotCharacterImpacts = LastShotCharacterImpactCount;
         }
 
-        private static Transform FindChildRecursive(Transform root, string childName)
-        {
-            if (root == null)
-                return null;
-
-            Transform[] children = root.GetComponentsInChildren<Transform>(true);
-            foreach (Transform child in children)
-            {
-                if (child != null && child.name == childName)
-                    return child;
-            }
-
-            return null;
-        }
     }
 }

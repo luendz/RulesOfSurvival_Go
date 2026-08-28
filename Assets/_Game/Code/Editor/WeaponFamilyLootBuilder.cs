@@ -19,6 +19,15 @@ namespace ROS.Game.Editor
         private const string PrefabFolder =
             "Assets/_Game/Prefabs/Weapons";
 
+        private const string BulletImpactPrefabPath =
+            "Assets/_Game/Prefabs/Effects/PF_BulletImpact.prefab";
+
+        private const string BulletHolePrefabPath =
+            "Assets/_Game/Prefabs/Effects/PF_BulletHole.prefab";
+
+        private const string TracerMaterialPath =
+            "Assets/_Game/Resources/EditorFirst/WeaponTracer.mat";
+
         private const string LootTablePath =
             "Assets/_Game/Data/LootTables/LootTable_TestArea.asset";
 
@@ -431,9 +440,9 @@ namespace ROS.Game.Editor
             WeaponController controller =
                 root.AddComponent<WeaponController>();
 
-            root.AddComponent<WeaponEffects>();
-            root.AddComponent<WeaponRecoil>();
-            root.AddComponent<WeaponMount>();
+            WeaponEffects effects = root.AddComponent<WeaponEffects>();
+            WeaponRecoil recoil = root.AddComponent<WeaponRecoil>();
+            WeaponMount mount = root.AddComponent<WeaponMount>();
 
             SerializedObject controllerObject =
                 new SerializedObject(controller);
@@ -470,13 +479,62 @@ namespace ROS.Game.Editor
             muzzle.transform.localEulerAngles =
                 new Vector3(0f, 90f, 0f);
 
+            Transform leftHandTarget = null;
             if (profile.family != WeaponFamily.Pistol)
             {
                 GameObject leftHand = new GameObject("LeftHandIK");
                 leftHand.transform.SetParent(modelInstance.transform, false);
                 leftHand.transform.localPosition =
                     new Vector3(0.0023f, 0f, 0.001f);
+                leftHandTarget = leftHand.transform;
             }
+
+            GameObject tracerObject = new GameObject("Tracer");
+            tracerObject.transform.SetParent(root.transform, false);
+            LineRenderer tracer = tracerObject.AddComponent<LineRenderer>();
+            Material tracerMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+                TracerMaterialPath
+            );
+            tracer.sharedMaterial = tracerMaterial;
+            tracer.useWorldSpace = true;
+            tracer.positionCount = 2;
+            tracer.enabled = false;
+
+            GameObject impactPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BulletImpactPrefabPath
+            );
+            GameObject bulletHolePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BulletHolePrefabPath
+            );
+
+            controllerObject.FindProperty("weaponMount").objectReferenceValue = mount;
+            controllerObject.FindProperty("muzzle").objectReferenceValue = muzzle.transform;
+            controllerObject.FindProperty("weaponEffects").objectReferenceValue = effects;
+            controllerObject.FindProperty("weaponRecoil").objectReferenceValue = recoil;
+            controllerObject.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject effectsObject = new SerializedObject(effects);
+            effectsObject.FindProperty("weapon").objectReferenceValue = controller;
+            effectsObject.FindProperty("muzzle").objectReferenceValue = muzzle.transform;
+            effectsObject.FindProperty("tracer").objectReferenceValue = tracer;
+            effectsObject.FindProperty("tracerMaterial").objectReferenceValue = tracerMaterial;
+            effectsObject.FindProperty("impactPrefab").objectReferenceValue = impactPrefab;
+            effectsObject.FindProperty("bulletHolePrefab").objectReferenceValue = bulletHolePrefab;
+            effectsObject.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject recoilObject = new SerializedObject(recoil);
+            recoilObject.FindProperty("visualRecoilTransform").objectReferenceValue =
+                modelInstance.transform;
+            recoilObject.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject mountObject = new SerializedObject(mount);
+            mountObject.FindProperty("muzzlePoint").objectReferenceValue = muzzle.transform;
+            mountObject.FindProperty("aimPoint").objectReferenceValue = muzzle.transform;
+            mountObject.FindProperty("rightHandGrip").objectReferenceValue = root.transform;
+            mountObject.FindProperty("leftHandIKTarget").objectReferenceValue = leftHandTarget;
+            mountObject.FindProperty("shellEjectionPoint").objectReferenceValue = muzzle.transform;
+            mountObject.FindProperty("visualRoot").objectReferenceValue = modelInstance.transform;
+            mountObject.ApplyModifiedPropertiesWithoutUndo();
 
             string prefabPath =
                 $"{PrefabFolder}/PF_Weapon_{profile.assetName}.prefab";
