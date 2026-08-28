@@ -48,9 +48,6 @@ namespace ROS.Game.UI
         private void BindEquipment()
         {
             if (_equipment == null)
-                _equipment = GetComponent<WeaponEquipmentController>();
-
-            if (_equipment == null)
                 return;
 
             // Evita suscripciones duplicadas si OnEnable/Start se ejecutan en la
@@ -75,33 +72,17 @@ namespace ROS.Game.UI
         {
             HashSet<WeaponController> current = new HashSet<WeaponController>();
 
-            if (_equipment != null)
+            if (_equipment == null)
+                return;
+
+            for (int slot = 1; slot <= 3; slot++)
             {
-                for (int slot = 1; slot <= 3; slot++)
-                {
-                    WeaponController weapon = _equipment.GetWeaponForSlot(slot);
-                    if (weapon == null)
-                        continue;
+                WeaponController weapon = _equipment.GetWeaponForSlot(slot);
+                if (weapon == null)
+                    continue;
 
-                    current.Add(weapon);
-                    SubscribeWeapon(weapon);
-                }
-            }
-            else
-            {
-                // Compatibilidad con escenas antiguas sin WeaponEquipmentController.
-                WeaponController[] weapons =
-                    GetComponentsInChildren<WeaponController>(true);
-
-                for (int i = 0; i < weapons.Length; i++)
-                {
-                    WeaponController weapon = weapons[i];
-                    if (weapon == null)
-                        continue;
-
-                    current.Add(weapon);
-                    SubscribeWeapon(weapon);
-                }
+                current.Add(weapon);
+                SubscribeWeapon(weapon);
             }
 
             if (_subscribedWeapons.Count == 0)

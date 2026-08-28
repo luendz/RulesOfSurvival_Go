@@ -22,7 +22,7 @@ namespace ROS.Game.Combat
         public bool HasHit { get; private set; }
         public RaycastHit LastHit { get; private set; }
 
-        private void Awake()
+        private void OnEnable()
         {
             if (aimCamera == null)
             {
@@ -96,9 +96,5 @@ namespace ROS.Game.Combat
             return direction.normalized;
         }
 
-        public void SetCamera(Camera newCamera)
-        {
-            aimCamera = newCamera;
-        }
     }
 }

@@ -1028,7 +1028,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7120ee38b9901ba4da5fccad24a98cd8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerMotor
-  cameraTransform: {fileID: 0}
+  cameraTransform: {fileID: 459615452157366795}
   visualRoot: {fileID: 7124975566911811489}
   equipment: {fileID: 826845583909105141}
   consumable: {fileID: 2459768188170288252}
@@ -1214,9 +1214,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92d6b77dcb3b4da2ad72f07a17a11c46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.PlayerLootEquipment
-  inventory: {fileID: 0}
-  protection: {fileID: 0}
-  weapons: {fileID: 0}
+  inventory: {fileID: 8512140981779427804}
+  protection: {fileID: 6496514001200459371}
+  weapons: {fileID: 826845583909105141}
   helmetItem: {fileID: 0}
   vestItem: {fileID: 0}
   backpackItem: {fileID: 0}
@@ -1241,7 +1241,7 @@ MonoBehaviour:
   _health: {fileID: 3126027295475445980}
   _inventory: {fileID: 8512140981779427804}
   _input: {fileID: 2640033198694110004}
-  showHud: 1
+  showHud: 0
   barRoot: {fileID: 0}
   fill: {fileID: 0}
   label: {fileID: 0}
@@ -1252,7 +1252,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7696175128083726300}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90bd573496504534aab1990c2be4480f, type: 3}
   m_Name: 
@@ -1542,8 +1542,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f46305e0e6f8426fbda9fc001850ad78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.LootDropController
-  inventory: {fileID: 0}
-  input: {fileID: 0}
+  inventory: {fileID: 8512140981779427804}
+  input: {fileID: 2640033198694110004}
   dropDistance: 1.25
   dropHeight: 0.25
 --- !u!114 &2811455123180896050
@@ -1578,6 +1578,14 @@ MonoBehaviour:
   debugHasWeapon: 0
   debugHasUsableAmmo: 0
   debugEnemyThreatNearby: 0
+  _input: {fileID: 2640033198694110004}
+  _motor: {fileID: 6004067574700781314}
+  _parachute: {fileID: 1637742478793109868}
+  _equipment: {fileID: 826845583909105141}
+  _lootEquipment: {fileID: 3208074854048604277}
+  _inventory: {fileID: 8512140981779427804}
+  _consumables: {fileID: 2459768188170288252}
+  _health: {fileID: 3126027295475445980}
   _controlFrame: {fileID: 459615452157366795}
 --- !u!114 &1622883635715581803
 MonoBehaviour:

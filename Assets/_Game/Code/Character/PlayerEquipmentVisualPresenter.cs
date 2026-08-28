@@ -1,5 +1,4 @@
 using ROS.Game.Combat;
-using ROS.Game.Core;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using UnityEngine;
@@ -39,14 +38,21 @@ namespace ROS.Game.Character
 
         private void Awake()
         {
-            ResolveGameplayReferences();
-            BindViewFromHierarchy();
+            if (!ValidateReferences())
+            {
+                Debug.LogError(
+                    $"[{nameof(PlayerEquipmentVisualPresenter)}] Referencias incompletas en '{name}'. Completa la instancia en el Editor.",
+                    this
+                );
+                enabled = false;
+                return;
+            }
+
             Refresh();
         }
 
         private void OnEnable()
         {
-            ResolveGameplayReferences();
             Subscribe();
             Refresh();
         }
@@ -56,35 +62,8 @@ namespace ROS.Game.Character
             Unsubscribe();
         }
 
-        [ContextMenu("Rebind Equipment Visuals")]
-        public void BindViewFromHierarchy()
-        {
-            helmetLevel1 = FindVisual("Helmet_Lv1", helmetLevel1);
-            helmetLevel2 = FindVisual("Helmet_Lv2", helmetLevel2);
-            helmetLevel3 = FindVisual("Helmet_Lv3", helmetLevel3);
-            vestLevel1 = FindVisual("Vest_Lv1", vestLevel1);
-            vestLevel2 = FindVisual("Vest_Lv2", vestLevel2);
-            vestLevel3 = FindVisual("Vest_Lv3", vestLevel3);
-            backpackLevel1 = FindVisual("Backpack_Lv1", backpackLevel1);
-            backpackLevel2 = FindVisual("Backpack_Lv2", backpackLevel2);
-            backpackLevel3 = FindVisual("Backpack_Lv3", backpackLevel3);
-        }
-
-        public void ConfigureBackpackDefinitions(
-            InventoryItemDefinition level1,
-            InventoryItemDefinition level2,
-            InventoryItemDefinition level3)
-        {
-            backpackLevel1Definition = level1;
-            backpackLevel2Definition = level2;
-            backpackLevel3Definition = level3;
-            Refresh();
-        }
-
         public void Refresh()
         {
-            ResolveGameplayReferences();
-
             ProtectionLevel helmet = protection != null
                 ? protection.HelmetLevel
                 : lootEquipment != null && lootEquipment.HelmetItem != null
@@ -163,12 +142,22 @@ namespace ROS.Game.Character
                 target.SetActive(active);
         }
 
-        private void ResolveGameplayReferences()
+        private bool ValidateReferences()
         {
-            if (lootEquipment == null)
-                lootEquipment = GetComponent<PlayerLootEquipment>();
-            if (protection == null)
-                protection = GetComponent<ProtectiveEquipment>();
+            return lootEquipment != null &&
+                   protection != null &&
+                   helmetLevel1 != null &&
+                   helmetLevel2 != null &&
+                   helmetLevel3 != null &&
+                   vestLevel1 != null &&
+                   vestLevel2 != null &&
+                   vestLevel3 != null &&
+                   backpackLevel1Definition != null &&
+                   backpackLevel2Definition != null &&
+                   backpackLevel3Definition != null &&
+                   backpackLevel1 != null &&
+                   backpackLevel2 != null &&
+                   backpackLevel3 != null;
         }
 
         private void Subscribe()
@@ -188,18 +177,5 @@ namespace ROS.Game.Character
                 protection.Changed -= Refresh;
         }
 
-        private GameObject FindVisual(string objectName, GameObject current)
-        {
-            if (current != null)
-                return current;
-
-            Transform[] all = GetComponentsInChildren<Transform>(true);
-            for (int i = 0; i < all.Length; i++)
-            {
-                if (all[i] != null && all[i].name == objectName)
-                    return all[i].gameObject;
-            }
-            return null;
-        }
     }
 }

@@ -34,7 +34,7 @@ namespace ROS.Game.UI
         private bool _lastHitWasFatal;
         private float _nextWeaponRefresh;
 
-        private void Awake()
+        private void OnEnable()
         {
             if (!HasRequiredReferences())
             {
@@ -47,10 +47,7 @@ namespace ROS.Game.UI
 
             SetHitmarkerVisible(false);
             SetDamageBarsAlpha(0f);
-        }
 
-        private void OnEnable()
-        {
             if (health != null)
             {
                 health.Damaged -= OnDamaged;

@@ -407,9 +407,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92d6b77dcb3b4da2ad72f07a17a11c46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.PlayerLootEquipment
-  inventory: {fileID: 0}
-  protection: {fileID: 0}
-  weapons: {fileID: 0}
+  inventory: {fileID: 9053975027515490960}
+  protection: {fileID: 2996432441501125645}
+  weapons: {fileID: 7000000000000000001}
   helmetItem: {fileID: 0}
   vestItem: {fileID: 0}
   backpackItem: {fileID: 0}
@@ -434,7 +434,7 @@ MonoBehaviour:
   _health: {fileID: 4425118486816412173}
   _inventory: {fileID: 9053975027515490960}
   _input: {fileID: 3875897436019806596}
-  showHud: 1
+  showHud: 0
   barRoot: {fileID: 0}
   fill: {fileID: 0}
   label: {fileID: 0}
@@ -699,7 +699,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 671814729856690070}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c071ab4e46745f4bcb5be79e86f9f46, type: 3}
   m_Name: 
@@ -735,8 +735,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f46305e0e6f8426fbda9fc001850ad78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.LootDropController
-  inventory: {fileID: 0}
-  input: {fileID: 0}
+  inventory: {fileID: 9053975027515490960}
+  input: {fileID: 3875897436019806596}
   dropDistance: 1.25
   dropHeight: 0.25
 --- !u!114 &2257425146492110011

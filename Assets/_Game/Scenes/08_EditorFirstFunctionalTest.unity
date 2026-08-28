@@ -13581,7 +13581,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Parachute.MatchStartController
   matchManager: {fileID: 1502575284}
   airplane: {fileID: 232900604}
-  playerParachute: {fileID: 2016612345}
+  playerParachute: {fileID: 1137076256}
   input: {fileID: 2016612333}
   startOnStart: 0
   warmupDuration: 0
@@ -14905,6 +14905,74 @@ PrefabInstance:
       propertyPath: aimCamera
       value: 
       objectReference: {fileID: 851681085}
+    - target: {fileID: 259852442615330371, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: showHud
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 259852442615330371, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: barRoot
+      value:
+      objectReference: {fileID: 1174718138}
+    - target: {fileID: 259852442615330371, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: fill
+      value:
+      objectReference: {fileID: 528022816}
+    - target: {fileID: 259852442615330371, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: label
+      value:
+      objectReference: {fileID: 603680637}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: health
+      value:
+      objectReference: {fileID: 2016612339}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: directionReference
+      value:
+      objectReference: {fileID: 851681086}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: hitmarkerRoot
+      value:
+      objectReference: {fileID: 1824258850}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: hitmarkerParts.Array.data[0]
+      value:
+      objectReference: {fileID: 929640395}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: hitmarkerParts.Array.data[1]
+      value:
+      objectReference: {fileID: 1578166094}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: hitmarkerParts.Array.data[2]
+      value:
+      objectReference: {fileID: 1461703269}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: hitmarkerParts.Array.data[3]
+      value:
+      objectReference: {fileID: 1712825295}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: headshotLabel
+      value:
+      objectReference: {fileID: 235725702}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: damageBars.Array.data[0]
+      value:
+      objectReference: {fileID: 1628246391}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: damageBars.Array.data[1]
+      value:
+      objectReference: {fileID: 1897399338}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: damageBars.Array.data[2]
+      value:
+      objectReference: {fileID: 1600578236}
+    - target: {fileID: 5599779571766301083, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: damageBars.Array.data[3]
+      value:
+      objectReference: {fileID: 736657618}
     - target: {fileID: 2257425146492110011, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       propertyPath: deathCamera
       value: 
@@ -15004,9 +15072,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 671814729856690070, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2016612345}
-    - targetCorrespondingSourceObject: {fileID: 671814729856690070, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 2016612350}
     - targetCorrespondingSourceObject: {fileID: 671814729856690070, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       insertIndex: -1
@@ -15014,12 +15079,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 671814729856690070, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2016612354}
-    - targetCorrespondingSourceObject: {fileID: 671814729856690070, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2016612355}
-    - targetCorrespondingSourceObject: {fileID: 671814729856690070, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2016612358}
   m_SourcePrefab: {fileID: 100100000, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
 --- !u!114 &2016612333 stripped
 MonoBehaviour:
@@ -15075,96 +15134,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d2afe20f4298594285e7217aac2425a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.Health
---- !u!114 &2016612345
+--- !u!114 &2016612348 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1246167062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5e52bb1425a8604388f668e41e0972e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Parachute.ParachuteController
-  input: {fileID: 0}
-  motor: {fileID: 0}
-  equipment: {fileID: 0}
-  controller: {fileID: 0}
-  parachuteVisual: {fileID: 544348919}
-  freeFallSpeed: 24
-  freeFallAcceleration: 18
-  freeFallHorizontalSpeed: 9
-  airControl: 3.5
-  autoDeployGroundHeight: 32
-  manualDeployDelay: 0.35
-  glideFallSpeed: 5
-  glideSpeed: 10
-  steerSpeed: 85
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  debugParachuteAnimationState: 0
---- !u!114 &2016612346
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1246167062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c071ab4e46745f4bcb5be79e86f9f46, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.CombatFeedbackPresenter
-  health: {fileID: 2016612339}
-  directionReference: {fileID: 851681086}
-  audioSource: {fileID: 0}
-  receivedDamageClips: []
-  hitConfirmedClips: []
-  hitmarkerDuration: 0.16
-  damageIndicatorDuration: 0.65
-  hitmarkerRoot: {fileID: 1824258850}
-  hitmarkerParts:
-  - {fileID: 929640395}
-  - {fileID: 1578166094}
-  - {fileID: 1461703269}
-  - {fileID: 1712825295}
-  headshotLabel: {fileID: 235725702}
-  damageBars:
-  - {fileID: 1628246391}
-  - {fileID: 1897399338}
-  - {fileID: 1600578236}
-  - {fileID: 736657618}
---- !u!114 &2016612347
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1246167062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 92d6b77dcb3b4da2ad72f07a17a11c46, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.PlayerLootEquipment
-  inventory: {fileID: 0}
-  protection: {fileID: 0}
-  weapons: {fileID: 0}
-  helmetItem: {fileID: 0}
-  vestItem: {fileID: 0}
-  backpackItem: {fileID: 0}
-  weaponItems:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
---- !u!114 &2016612348
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 259852442615330371, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1246167062}
   m_Enabled: 1
@@ -15172,13 +15145,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f92271d87c5a40a4498c6f5f888545d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Gameplay.ConsumableController
-  _health: {fileID: 0}
-  _inventory: {fileID: 0}
-  _input: {fileID: 0}
-  showHud: 1
-  barRoot: {fileID: 1174718138}
-  fill: {fileID: 528022816}
-  label: {fileID: 603680637}
 --- !u!114 &2016612349
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15203,33 +15169,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 481ee4e1416596a428300a212a342fa1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.DamageNumberSpawner
-  _equipment: {fileID: 0}
+  _equipment: {fileID: 2016612335}
   _damageNumberPrefab: {fileID: 3312986627613197328, guid: 623cc0f040259e649aa6e734d3ac7c8b, type: 3}
   _worldCamera: {fileID: 851681085}
---- !u!114 &2016612351
+--- !u!114 &2016612352 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1246167062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90bd573496504534aab1990c2be4480f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.PlayerAimController
-  aimCamera: {fileID: 0}
-  maxAimDistance: 1000
-  aimMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  triggerInteraction: 1
-  drawDebugRay: 0
---- !u!114 &2016612352
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 3181186746451611303, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1246167062}
   m_Enabled: 1
@@ -15237,85 +15183,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38f1c4b7a9d24e02a5b6c13d7e8f9041, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.PlayerAuxiliaryWeaponSlots
-  input: {fileID: 0}
-  weapons: {fileID: 0}
-  lootEquipment: {fileID: 0}
-  animator: {fileID: 0}
-  rightHandSocket: {fileID: 0}
-  selectedAuxiliarySlot: 0
-  rawModelLocalPosition: {x: -0.044, y: 0.228, z: 0.021}
-  rawModelLocalEulerAngles: {x: 1.246, y: -88.748, z: 89.526}
-  rawModelLocalScale: {x: 40, y: 40, z: 40}
-  aimController: {fileID: 0}
-  health: {fileID: 0}
-  consumable: {fileID: 0}
-  gestureController: {fileID: 0}
-  parachute: {fileID: 0}
-  meleeCastRadius: 0.35
-  meleeHitMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  meleeTriggerInteraction: 2
-  unarmedDamage: 15
-  unarmedRange: 1.6
-  unarmedAttacksPerSecond: 1.5
-  unarmedImpactForce: 3
-  _characterController: {fileID: 0}
---- !u!114 &2016612353
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1246167062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a6b2b38127b4f39a7c9ef14c0d26a91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Animation.PlayerAnimationCoordinator
-  animator: {fileID: 2016612336}
-  motor: {fileID: 2016612337}
-  input: {fileID: 2016612333}
-  equipment: {fileID: 2016612335}
-  auxiliarySlots: {fileID: 0}
-  aimController: {fileID: 2016612351}
-  leanController: {fileID: 0}
-  health: {fileID: 2016612339}
-  parachute: {fileID: 2016612345}
-  consumable: {fileID: 2016612348}
-  gestureController: {fileID: 0}
-  interactor: {fileID: 0}
-  movementDampTime: 0.12
-  fallAnimationDistance: 1.5
-  fallAnimationMinDownVelocity: -0.2
-  aimPitchRange: 70
-  aimYawRange: 70
-  pickupUpperBodyDuration: 0.65
-  airDropLandingMaxDuration: 4
-  classicFirePulseDuration: 0.08
-  debugUpperBodyArmed: 0
-  debugUpperBodyAim: 0
-  debugReloading: 0
-  debugHealing: 0
-  debugWeaponLayerActive: 0
-  debugActionsLayerActive: 0
-  debugFullBodyOverride: 0
-  debugReloadSpeed: 1
-  debugAimPitch: 0
-  debugAimYaw: 0
-  debugAirbornePeakY: 0
-  debugFallDistance: 0
-  debugShouldFall: 0
-  debugWeaponCategory: 0
-  debugWeaponStyle: 0
-  debugClassicWeaponType: 0
-  debugClassicFiring: 0
-  debugClassicStance: 0
-  debugClassicSprinting: 0
-  debugClassicAutoRunning: 0
-  debugClassicSwitchingWeapon: 0
-  debugClassicUsingConsumable: 0
-  debugClassicPickingUp: 0
 --- !u!114 &2016612354
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15328,8 +15195,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c42f8358c02f4bc3b8d856cf3af31e5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerEquipmentVisualPresenter
-  lootEquipment: {fileID: 2016612347}
-  protection: {fileID: 0}
+  lootEquipment: {fileID: 704085252}
+  protection: {fileID: 2016612359}
   helmetLevel1: {fileID: 1716492794}
   helmetLevel2: {fileID: 1159059777}
   helmetLevel3: {fileID: 1254120749}
@@ -15342,81 +15209,17 @@ MonoBehaviour:
   backpackLevel1: {fileID: 866465236}
   backpackLevel2: {fileID: 1996095802}
   backpackLevel3: {fileID: 1331682521}
---- !u!114 &2016612355
+--- !u!114 &2016612359 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 2996432441501125645, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1246167062}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1e179c80e5424195a75cc3390cc8c430, type: 3}
+  m_Script: {fileID: 11500000, guid: 61e20a127c884c9f9a6964128e67515d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageDebugControls
-  health: {fileID: 0}
-  showHelp: 1
---- !u!114 &2016612356
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1246167062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b8f4d7c3a7141a8842a9a7b3cf5b11d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerLeanRigApplier
-  leanController: {fileID: 0}
-  humanoidAnimator: {fileID: 0}
-  hipsWeight: 0.1
-  spineWeight: 0.32
-  chestWeight: 0.35
-  upperChestWeight: 0.23
-  maximumLeanDegrees: 15
---- !u!114 &2016612357
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1246167062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa5e7fbea1a54b06a31b59ecff70bf3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerLeanController
-  input: {fileID: 0}
-  motor: {fileID: 0}
-  equipment: {fileID: 0}
-  health: {fileID: 0}
-  parachute: {fileID: 0}
-  animator: {fileID: 0}
-  leanSpeed: 20
-  cancelWhileSprinting: 0
-  cancelWhileProne: 1
-  cancelWhileAirborne: 1
-  airborneSuppressDelay: 0.12
-  cancelWhileReloading: 1
-  obstructionMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  clearanceRadius: 0.14
-  clearanceDistance: 0.42
---- !u!114 &2016612358
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1246167062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e5e34d6938541268d1df1f08f0b8a11, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.PlayerDebugHealthHotkeys
-  f5Damage: 5
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.ProtectiveEquipment
 --- !u!114 &2025946720 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4333071894151934173, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
@@ -26587,7 +26390,6 @@ GameObject:
   - component: {fileID: 7462382254432700371}
   - component: {fileID: 7469101424219793866}
   - component: {fileID: 7469101424219793867}
-  - component: {fileID: 7469101424219793873}
   - component: {fileID: 7469101424219793872}
   - component: {fileID: 7469101424219793871}
   - component: {fileID: 7469101424219793869}
@@ -27294,23 +27096,6 @@ MonoBehaviour:
   - {fileID: 283774133}
   - {fileID: 574377354}
   - {fileID: 1898389065}
---- !u!114 &7469101424219793873
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af6eaaf82fa555040862c38de7946c0b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.MatchStartHud
-  sequence: {fileID: 1831406594}
-  parachute: {fileID: 1137076256}
-  panelRoot: {fileID: 0}
-  titleText: {fileID: 0}
-  detailText: {fileID: 0}
 --- !u!114 &7469101424219793878
 MonoBehaviour:
   m_ObjectHideFlags: 0

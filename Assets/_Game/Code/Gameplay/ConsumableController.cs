@@ -80,17 +80,6 @@ namespace ROS.Game.Gameplay
             }
         }
 
-        public void SetHudEnabled(bool enabled)
-        {
-            showHud = enabled;
-            if (!showHud)
-            {
-                barRoot = null;
-                fill = null;
-                label = null;
-            }
-        }
-
         /// <summary>
         /// Intenta usar la primera cura valida del inventario. Es la misma ruta
         /// jugable usada por H y por la IA: respeta tiempo de uso, limites del

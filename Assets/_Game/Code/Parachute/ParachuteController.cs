@@ -75,17 +75,6 @@ namespace ROS.Game.Parachute
             enabled = false;
         }
 
-        public void ConfigureVisual(GameObject visual)
-        {
-            if (parachuteVisual != null && parachuteVisual != visual)
-            {
-                parachuteVisual.SetActive(false);
-            }
-
-            parachuteVisual = visual;
-            SetVisualActive(IsParachuting);
-        }
-
         public void PrepareForPlane()
         {
             EnsureReferences();

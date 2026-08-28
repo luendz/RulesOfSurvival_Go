@@ -114,17 +114,22 @@ namespace ROS.Game.Character
 
         private void Awake()
         {
-            if (_controller != null)
+            if (_controller == null ||
+                _input == null ||
+                cameraTransform == null ||
+                visualRoot == null ||
+                equipment == null ||
+                consumable == null)
             {
-                ApplyStanceHeightImmediate(
-                    standingHeight
+                Debug.LogError(
+                    $"[{nameof(PlayerMotor)}] Referencias incompletas en '{name}'. Completa el prefab o la instancia en el Editor.",
+                    this
                 );
+                enabled = false;
+                return;
             }
-        }
 
-        public void SetCamera(Transform targetCamera)
-        {
-            cameraTransform = targetCamera;
+            ApplyStanceHeightImmediate(standingHeight);
         }
 
         public void SetExternalMovementLocked(bool locked)

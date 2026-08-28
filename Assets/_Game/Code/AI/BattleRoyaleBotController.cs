@@ -65,18 +65,20 @@ namespace ROS.Game.AI
         [SerializeField] private bool debugHasUsableAmmo;
         [SerializeField] private bool debugEnemyThreatNearby;
 
-        private PlayerInputReader _input;
-        private PlayerMotor _motor;
-        private ParachuteController _parachute;
-        private WeaponEquipmentController _equipment;
-        private PlayerLootEquipment _lootEquipment;
-        private InventoryComponent _inventory;
-        private ConsumableController _consumables;
-        private Health _health;
+        [Header("References")]
+        [SerializeField] private PlayerInputReader _input;
+        [SerializeField] private PlayerMotor _motor;
+        [SerializeField] private ParachuteController _parachute;
+        [SerializeField] private WeaponEquipmentController _equipment;
+        [SerializeField] private PlayerLootEquipment _lootEquipment;
+        [SerializeField] private InventoryComponent _inventory;
+        [SerializeField] private ConsumableController _consumables;
+        [SerializeField] private Health _health;
+        [SerializeField] private Transform _controlFrame;
+
         private AirplaneController _airplane;
         private BattleRoyaleManager _matchManager;
         private SafeZoneController _safeZone;
-        [SerializeField] private Transform _controlFrame;
         private Health _target;
         private LootPickup _lootTarget;
         private LootIntent _lootIntent;
@@ -97,6 +99,18 @@ namespace ROS.Game.AI
         public int BotIndex { get; private set; }
         public Vector3 LandingTarget => _landingTarget;
         public BotState State => state;
+
+        private void Awake()
+        {
+            if (HasRequiredReferences())
+                return;
+
+            Debug.LogError(
+                $"[{nameof(BattleRoyaleBotController)}] Referencias incompletas en '{name}'. Completa el prefab del bot en el Editor.",
+                this
+            );
+            enabled = false;
+        }
 
         public static bool IsBot(Component component)
         {
@@ -144,7 +158,7 @@ namespace ROS.Game.AI
             _strafePhase = NextFloat(0f, Mathf.PI * 2f);
             _hasSafeZoneDestination = false;
 
-            EnsureReferences();
+            if (!HasRequiredReferences()) return;
             _input.EnableExternalControl();
             _input.ApplyExternalControl(Vector2.zero, false, false);
 
@@ -156,7 +170,6 @@ namespace ROS.Game.AI
                     enabled = false;
                     return;
                 }
-                _motor.SetCamera(_controlFrame);
             }
         }
 
@@ -165,7 +178,7 @@ namespace ROS.Game.AI
             Vector3 passengerOffset
         )
         {
-            EnsureReferences();
+            if (!HasRequiredReferences()) return;
             _jumped = false;
             _target = null;
             _lootTarget = null;
@@ -182,7 +195,7 @@ namespace ROS.Game.AI
 
         private void Update()
         {
-            EnsureReferences();
+            if (!HasRequiredReferences()) return;
 
             if (_health == null || !_health.IsAlive)
             {
@@ -1080,31 +1093,17 @@ namespace ROS.Game.AI
             );
         }
 
-        private void EnsureReferences()
+        private bool HasRequiredReferences()
         {
-            if (_input == null)
-                _input = GetComponent<PlayerInputReader>();
-
-            if (_motor == null)
-                _motor = GetComponent<PlayerMotor>();
-
-            if (_parachute == null)
-                _parachute = GetComponent<ParachuteController>();
-
-            if (_equipment == null)
-                _equipment = GetComponent<WeaponEquipmentController>();
-
-            if (_lootEquipment == null)
-                _lootEquipment = GetComponent<PlayerLootEquipment>();
-
-            if (_inventory == null)
-                _inventory = GetComponent<InventoryComponent>();
-
-            if (_consumables == null)
-                _consumables = GetComponent<ConsumableController>();
-
-            if (_health == null)
-                _health = GetComponent<Health>();
+            return _input != null &&
+                   _motor != null &&
+                   _parachute != null &&
+                   _equipment != null &&
+                   _lootEquipment != null &&
+                   _inventory != null &&
+                   _consumables != null &&
+                   _health != null &&
+                   _controlFrame != null;
         }
     }
 }

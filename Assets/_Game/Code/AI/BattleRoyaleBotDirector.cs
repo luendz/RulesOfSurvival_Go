@@ -1,10 +1,7 @@
 using System.Collections.Generic;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
-using ROS.Game.Core;
-using ROS.Game.Gameplay;
 using ROS.Game.Input;
-using ROS.Game.Interaction;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using ROS.Game.Parachute;
@@ -211,27 +208,8 @@ namespace ROS.Game.AI
             if (input != null)
                 input.EnableExternalControl();
 
-            // El bot recoge loot directamente desde su IA. El PlayerInteractor
-            // humano queda desactivado para que no dependa de la tecla F.
-            PlayerInteractor interactor =
-                botObject.GetComponent<PlayerInteractor>();
-            if (interactor != null)
-                interactor.enabled = false;
-
-            ConsumableController consumables =
-                botObject.GetComponent<ConsumableController>();
-            if (consumables != null)
-            {
-                consumables.enabled = true;
-                consumables.SetHudEnabled(false);
-            }
-
-            DisableAll<CombatFeedbackPresenter>(botObject);
-            DisableAll<DamageNumberSpawner>(botObject);
-            DisableAll<DamageDebugControls>(botObject);
-            DisableAll<VitalsDebugTester>(botObject);
-            DisableAll<UnityEngine.Camera>(botObject);
-            DisableAll<AudioListener>(botObject);
+            // Los componentes exclusivos de jugador local ya están desactivados
+            // físicamente en el prefab del bot.
         }
 
         private static void ClearStartingLoadout(GameObject botObject)
@@ -355,17 +333,6 @@ namespace ROS.Game.AI
                 1f
             );
             return Mathf.Lerp(0.1f, 0.82f, shuffled);
-        }
-
-        private static void DisableAll<T>(GameObject root)
-            where T : Behaviour
-        {
-            T[] components = root.GetComponentsInChildren<T>(true);
-            for (int i = 0; i < components.Length; i++)
-            {
-                if (components[i] != null)
-                    components[i].enabled = false;
-            }
         }
 
         private void OnDisable()
