@@ -1,4 +1,5 @@
 using ROS.Game.Combat;
+using ROS.Game.Core;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using UnityEngine;
