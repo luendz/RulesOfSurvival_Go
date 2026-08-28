@@ -78,6 +78,8 @@ namespace ROS.Game.Animation
 
         [Header("References")]
         [SerializeField] private Animator animator;
+        [Tooltip("Controller a asignar al Animator si llega sin uno en runtime (workaround para nested-prefab override bug).")]
+        [SerializeField] private RuntimeAnimatorController animatorControllerFallback;
         [SerializeField] private PlayerMotor motor;
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private WeaponEquipmentController equipment;
@@ -238,6 +240,13 @@ namespace ROS.Game.Animation
 
         private void Awake()
         {
+            if (animator != null &&
+                animator.runtimeAnimatorController == null &&
+                animatorControllerFallback != null)
+            {
+                animator.runtimeAnimatorController = animatorControllerFallback;
+            }
+
             if (!ValidateRequiredReferences())
             {
                 enabled = false;
@@ -301,6 +310,8 @@ namespace ROS.Game.Animation
             RestoreRootMotionDefault();
         }
 
+        private float _debugLogInterval;
+
         private void Update()
         {
             if (animator == null || motor == null || input == null)
@@ -311,6 +322,21 @@ namespace ROS.Game.Animation
             UpdateMovementParameters();
             UpdateBaseStateParameters();
             UpdateUpperBodyParametersAndLayers();
+
+#if UNITY_EDITOR
+            if (Time.time >= _debugLogInterval)
+            {
+                _debugLogInterval = Time.time + 2f;
+                AirDropState ps = parachute != null ? parachute.State : AirDropState.Inactive;
+                Debug.Log(
+                    $"[AnimCoordinator] running | parachute={ps}" +
+                    $" | fullBodyLayer={_fullBodyOverrideLayer}" +
+                    $" | weaponLayer={_weaponUpperBodyLayer}" +
+                    $" | controller={(animator != null ? animator.runtimeAnimatorController?.name ?? "NULL" : "no animator")}",
+                    this
+                );
+            }
+#endif
         }
 
         public void SetFullBodyOverride(bool active, bool useRootMotion = false)
@@ -1323,28 +1349,19 @@ namespace ROS.Game.Animation
 
         private bool ValidateRequiredReferences()
         {
-            bool valid = animator != null &&
-                         motor != null &&
-                         input != null &&
-                         equipment != null &&
-                         auxiliarySlots != null &&
-                         aimController != null &&
-                         leanController != null &&
-                         health != null &&
-                         parachute != null &&
-                         consumable != null &&
-                         gestureController != null &&
-                         interactor != null;
-
-            if (!valid)
-            {
-                Debug.LogError(
-                    "PlayerAnimationCoordinator tiene referencias sin asignar. " +
-                    "Completa el componente en el prefab antes de ejecutar.",
-                    this
-                );
-            }
-
+            bool valid = true;
+            if (animator == null)        { Debug.LogError("[AnimCoordinator] animator es null", this);        valid = false; }
+            if (motor == null)           { Debug.LogError("[AnimCoordinator] motor es null", this);           valid = false; }
+            if (input == null)           { Debug.LogError("[AnimCoordinator] input es null", this);           valid = false; }
+            if (equipment == null)       { Debug.LogError("[AnimCoordinator] equipment es null", this);       valid = false; }
+            if (auxiliarySlots == null)  { Debug.LogError("[AnimCoordinator] auxiliarySlots es null", this);  valid = false; }
+            if (aimController == null)   { Debug.LogError("[AnimCoordinator] aimController es null", this);   valid = false; }
+            if (leanController == null)  { Debug.LogError("[AnimCoordinator] leanController es null", this);  valid = false; }
+            if (health == null)          { Debug.LogError("[AnimCoordinator] health es null", this);          valid = false; }
+            if (parachute == null)       { Debug.LogError("[AnimCoordinator] parachute es null", this);       valid = false; }
+            if (consumable == null)      { Debug.LogError("[AnimCoordinator] consumable es null", this);      valid = false; }
+            if (gestureController == null){ Debug.LogError("[AnimCoordinator] gestureController es null", this); valid = false; }
+            if (interactor == null)      { Debug.LogError("[AnimCoordinator] interactor es null", this);      valid = false; }
             return valid;
         }
     }
