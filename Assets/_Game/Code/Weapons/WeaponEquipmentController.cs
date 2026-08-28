@@ -52,6 +52,19 @@ namespace ROS.Game.Weapons
         [SerializeField]
         private Transform hipSocket;
 
+        [Header("Back Socket Offsets")]
+        [SerializeField]
+        private Vector3 backSocket01LocalPosition = new Vector3(0.35f, -0.06f, -0.15f);
+
+        [SerializeField]
+        private Vector3 backSocket01LocalEulerAngles = new Vector3(0f, 0f, 45f);
+
+        [SerializeField]
+        private Vector3 backSocket02LocalPosition = new Vector3(-0.2f, -0.15f, -0.2f);
+
+        [SerializeField]
+        private Vector3 backSocket02LocalEulerAngles = new Vector3(0f, 0f, -30f);
+
         [Header("Startup")]
         [SerializeField]
         private bool startWithSlot1Equipped = true;
@@ -1158,11 +1171,23 @@ namespace ROS.Game.Weapons
                 HumanBodyBones.Spine
             );
 
+            if (backSocket01 != null)
+            {
+                backSocket01.localPosition = backSocket01LocalPosition;
+                backSocket01.localRotation = Quaternion.Euler(backSocket01LocalEulerAngles);
+            }
+
             BindSocket(
                 backSocket02,
                 HumanBodyBones.Chest,
                 HumanBodyBones.Spine
             );
+
+            if (backSocket02 != null)
+            {
+                backSocket02.localPosition = backSocket02LocalPosition;
+                backSocket02.localRotation = Quaternion.Euler(backSocket02LocalEulerAngles);
+            }
 
             BindSocket(
                 hipSocket,
