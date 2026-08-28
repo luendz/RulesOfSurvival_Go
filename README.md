@@ -61,36 +61,3 @@ En `07_BattleRoyaleTest` aparece un área de loot unos diez metros delante del j
 ## Control de versiones
 
 El proyecto incluye `.gitignore` y `.gitattributes` apropiados para Unity. Para recursos binarios grandes se recomienda habilitar Git LFS en el repositorio antes de añadir grandes cantidades de FBX, audio, vídeo o texturas fuente.
-
-## Historial de cambios
-
-Notas consolidadas de los parches previos (antes repartidas en varios `README_*.txt`). Las instrucciones de instalación tipo "copiar Assets sobre la raíz" ya no aplican al trabajar en este repo único.
-
-### Weapon Equipment System v1
-- `WeaponEquipmentController` con slots (PrimarySlot1 / PrimarySlot2 / SidearmSlot) y `WeaponMount` por arma.
-- Auto detección de sockets `Weapon_RightHand` / `Weapon_Back_01` / `Weapon_Back_02` / `Weapon_Hip` y auto binding a huesos Humanoid.
-- `HasRifle` sincronizado con el Animator; Aim/ADS y `WeaponController` desactivados cuando no hay arma equipada.
-
-### Combat V2
-- Spread independiente para Hip Fire y ADS, dinámico según caminar/correr/sprint/agachado/aire.
-- Bloom por disparo sostenido con recuperación automática.
-- Valores de precisión movidos a `WeaponDefinition` para permitir comportamiento por arma.
-- El recoil de cámara afecta los disparos siguientes porque el Aim usa la rotación real de la cámara.
-
-### Weapon Equipment v3.1
-- `WeaponMount` serializado de forma permanente en `Player_Prototype/WeaponRoot/PrototypeRifle`; offsets Hand/Back01/Back02/Hip visibles y persistentes en el Inspector fuera de Play Mode.
-- `WeaponEquipmentController` mantiene el fallback en runtime para armas futuras sin `WeaponMount`.
-
-### Combat Visual Integration v5
-- Crosshair y HUD de combate sin requerir un Canvas en la escena.
-- `PlayerAimController`, `WeaponEffects` y `WeaponRecoil` auto-creados/configurados por slot.
-- Muzzle flash y tracer en runtime; prefabs de impacto y bullet-hole cargados desde Resources.
-- `WeaponController` reconecta de forma lazy las referencias de Aim/Muzzle/Effects/Recoil.
-
-### v5 Hotfix 1
-- Corrige errores CS1061 donde `PlayerMotor`, `PlayerAnimatorDriver` y `ThirdPersonCamera` no encontraban `WeaponEquipmentController.CombatState`.
-- Restaura `CombatState` (Unarmed / HipFire / Aiming / Reloading), los slots y la integración visual v5.
-
-### CombatTest Animator Fix
-- `PlayerAnimatorDriver` con referencia directa al Animator del personaje y `AC_Player_Prototype.controller` asignado.
-- Apply Root Motion desactivado, de modo que `04_CombatTest` comparte la configuración de Animator de las variantes de `03_CharacterTest`.
