@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using NUnit.Framework;
 using ROS.Game.BattleRoyale;
 using ROS.Game.Combat;
@@ -27,9 +28,11 @@ namespace ROS.Game.Tests.PlayMode
             GameObject secondPlayer =
                 new GameObject("BattleRoyale_TestPlayer02");
 
-            firstPlayer.AddComponent<
-                ROS.Game.Character.PlayerMotor
-            >();
+            firstPlayer.SetActive(false);
+            secondPlayer.SetActive(false);
+
+            PlayerInputReader firstInput =
+                firstPlayer.AddComponent<PlayerInputReader>();
 
             PlayerInteractor interactor =
                 firstPlayer.AddComponent<PlayerInteractor>();
@@ -45,6 +48,26 @@ namespace ROS.Game.Tests.PlayMode
 
             InventoryComponent inventory =
                 firstPlayer.AddComponent<InventoryComponent>();
+
+            InventoryComponent secondInventory =
+                secondPlayer.AddComponent<InventoryComponent>();
+
+            PlayerEliminationController elimination =
+                AddConfiguredElimination(
+                    firstPlayer,
+                    firstHealth,
+                    inventory
+                );
+
+            PlayerEliminationController secondElimination =
+                AddConfiguredElimination(
+                    secondPlayer,
+                    secondHealth,
+                    secondInventory
+                );
+
+            firstPlayer.SetActive(true);
+            secondPlayer.SetActive(true);
 
             int matchFinishedCount = 0;
 
@@ -89,23 +112,19 @@ namespace ROS.Game.Tests.PlayMode
             Assert.That(manager.LastElimination.Killer, Is.SameAs(secondHealth));
             Assert.That(manager.LastElimination.Placement, Is.EqualTo(2));
 
-            PlayerEliminationController elimination =
-                firstPlayer.GetComponent<
-                    PlayerEliminationController
-                >();
-
             Assert.That(elimination, Is.Not.Null);
             Assert.That(elimination.IsEliminated, Is.True);
             Assert.That(
-                firstPlayer.GetComponent<PlayerInputReader>().enabled,
+                firstInput.enabled,
                 Is.False
             );
             Assert.That(interactor.enabled, Is.False);
             Assert.That(elimination.SpawnedLoot, Is.Not.Null);
             Assert.That(
                 elimination.SpawnedLoot.ItemCount,
-                Is.EqualTo(12)
+                Is.EqualTo(1)
             );
+            Assert.That(elimination.SpawnedLoot.TotalUnitCount, Is.EqualTo(12));
             Assert.That(inventory.Stacks, Is.Empty);
 
             secondHealth.ApplyDamage(
@@ -119,11 +138,6 @@ namespace ROS.Game.Tests.PlayMode
 
             Assert.That(matchFinishedCount, Is.EqualTo(1));
             Assert.That(manager.Winner, Is.SameAs(secondHealth));
-
-            PlayerEliminationController secondElimination =
-                secondPlayer.GetComponent<
-                    PlayerEliminationController
-                >();
 
             Object.Destroy(managerObject);
             Object.Destroy(firstPlayer);
@@ -224,7 +238,8 @@ namespace ROS.Game.Tests.PlayMode
                 );
 
             Assert.That(source.Stacks, Is.Empty);
-            Assert.That(container.ItemCount, Is.EqualTo(5));
+            Assert.That(container.ItemCount, Is.EqualTo(1));
+            Assert.That(container.TotalUnitCount, Is.EqualTo(5));
             Assert.That(
                 container.SourcePlayerName,
                 Is.EqualTo(sourceObject.name)
@@ -233,17 +248,6 @@ namespace ROS.Game.Tests.PlayMode
                 container.CanInteract(looterObject),
                 Is.True
             );
-
-            container.Interact(looterObject);
-
-            DeathLootPanelPresenter presenter =
-                Object.FindFirstObjectByType<
-                    DeathLootPanelPresenter
-                >();
-
-            Assert.That(presenter, Is.Not.Null);
-            Assert.That(presenter.IsOpen, Is.True);
-            Assert.That(input.UiBlocked, Is.True);
 
             int firstTransfer =
                 container.TryLoot(
@@ -254,7 +258,8 @@ namespace ROS.Game.Tests.PlayMode
 
             Assert.That(firstTransfer, Is.EqualTo(3));
             Assert.That(destination.GetAmount(item), Is.EqualTo(3));
-            Assert.That(container.ItemCount, Is.EqualTo(2));
+            Assert.That(container.ItemCount, Is.EqualTo(1));
+            Assert.That(container.TotalUnitCount, Is.EqualTo(2));
 
             destination.SetCapacity(10f);
 
@@ -263,9 +268,6 @@ namespace ROS.Game.Tests.PlayMode
                 Is.EqualTo(2)
             );
 
-            presenter.Close();
-
-            Assert.That(presenter.IsOpen, Is.False);
             Assert.That(input.UiBlocked, Is.False);
             Assert.That(destination.GetAmount(item), Is.EqualTo(5));
 
@@ -275,10 +277,39 @@ namespace ROS.Game.Tests.PlayMode
 
             Object.Destroy(sourceObject);
             Object.Destroy(looterObject);
-            Object.Destroy(presenter.gameObject);
             Object.Destroy(item);
 
             yield return null;
+        }
+
+        private static PlayerEliminationController AddConfiguredElimination(
+            GameObject player,
+            Health health,
+            InventoryComponent inventory)
+        {
+            PlayerEliminationController elimination =
+                player.AddComponent<PlayerEliminationController>();
+
+            SetPrivate(elimination, "health", health);
+            SetPrivate(elimination, "inventory", inventory);
+            SetPrivate(elimination, "visualRoot", player.transform);
+            SetPrivate(elimination, "input", player.GetComponent<PlayerInputReader>());
+            SetPrivate(elimination, "interactor", player.GetComponent<PlayerInteractor>());
+            return elimination;
+        }
+
+        private static void SetPrivate(
+            Object target,
+            string fieldName,
+            Object value)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic
+            );
+
+            Assert.That(field, Is.Not.Null, fieldName);
+            field.SetValue(target, value);
         }
     }
 }

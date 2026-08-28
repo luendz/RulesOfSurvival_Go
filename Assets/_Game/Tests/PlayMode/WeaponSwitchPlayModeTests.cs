@@ -24,8 +24,17 @@ namespace ROS.Game.Tests.PlayMode
                     player.AddComponent<WeaponEquipmentController>();
                 SetStartEquipped(equipment, false);
 
+                weaponObject.AddComponent<WeaponMount>();
                 WeaponController weapon =
                     weaponObject.AddComponent<WeaponController>();
+                LogAssert.Expect(
+                    LogType.Error,
+                    "WeaponSwitch_Target no tiene WeaponEffects configurado en su prefab."
+                );
+                LogAssert.Expect(
+                    LogType.Error,
+                    "WeaponSwitch_Target no tiene WeaponRecoil configurado en su prefab."
+                );
                 equipment.SetWeaponInSlot(1, weapon);
 
                 equipment.RequestEquipSlot(1);

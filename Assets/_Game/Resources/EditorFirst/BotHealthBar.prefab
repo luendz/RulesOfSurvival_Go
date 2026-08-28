@@ -74,8 +74,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4825b6d9c3d853e4c8a0ea55db07f202, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.BotHealthBar
-  fillRect: {fileID: 0}
-  fillGraphic: {fileID: 0}
+  fillRect: {fileID: 3846968917588476360}
+  fillGraphic: {fileID: 722199200121085457}
   verticalOffset: 2.5
 --- !u!1 &3938513313835576165
 GameObject:

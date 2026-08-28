@@ -1557,10 +1557,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Airplane_BattleRoyale
       objectReference: {fileID: 0}
+    - target: {fileID: 6411207065091886409, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
+      propertyPath: audioSource
+      value: 
+      objectReference: {fileID: 232900608}
     - target: {fileID: 8296968928423138634, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
       propertyPath: passengerAnchor
       value: 
-      objectReference: {fileID: 1600995640}
+      objectReference: {fileID: 232900606}
     - target: {fileID: 9136832160896209580, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
       propertyPath: m_LocalPosition.x
       value: -90
@@ -1610,14 +1614,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5753590475871959874, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 232900607}
+      addedObject: {fileID: 232900608}
   m_SourcePrefab: {fileID: 100100000, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
 --- !u!114 &232900604 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8296968928423138634, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
   m_PrefabInstance: {fileID: 232900603}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 232900606}
+  m_GameObject: {fileID: 232900607}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 73cd3934c744c454e8f3e32dc1ee87da, type: 3}
@@ -1628,28 +1632,113 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9136832160896209580, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
   m_PrefabInstance: {fileID: 232900603}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &232900606 stripped
+--- !u!4 &232900606 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8198418583191742763, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
+  m_PrefabInstance: {fileID: 232900603}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &232900607 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5753590475871959874, guid: 970b92f9c56284d47b6e217945e1639f, type: 3}
   m_PrefabInstance: {fileID: 232900603}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &232900607
-MonoBehaviour:
+--- !u!82 &232900608
+AudioSource:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 232900606}
+  m_GameObject: {fileID: 232900607}
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8aaa62d4168d11d4f9207b201e697ea3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.World.AirplaneFlightEffects
-  windColor: {r: 0.65, g: 0.9, b: 1, a: 0.55}
-  jetLightIntensity: 5.5
-  navigationLightIntensity: 3.5
-  windSweepPeriod: 0.42
-  windSweepHalf: 2.8
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &235725700
 GameObject:
   m_ObjectHideFlags: 0
@@ -1781,8 +1870,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.BattleRoyale.SafeZoneWallVisual
   safeZone: {fileID: 603740460}
-  wallMesh: {fileID: 0}
-  wallMaterial: {fileID: 0}
+  wallMesh: {fileID: 4300000, guid: fe1bf225243be3a45869a6d9e1849582, type: 2}
+  wallMaterial: {fileID: 2100000, guid: 8553c40c14159364883b4ffc90fa95f3, type: 2}
   segments: 128
   wallHeight: 50
   groundOffset: 0
@@ -3181,7 +3270,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 464198614}
-  - component: {fileID: 464198613}
   m_Layer: 0
   m_Name: CrosshairHUD
   m_TagString: Untagged
@@ -3189,31 +3277,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &464198613
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 464198612}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a0709abc8cc824469e2c310f99090e5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.HudPresenter
-  equipment: {fileID: 0}
-  input: {fileID: 0}
-  parachute: {fileID: 0}
-  showCrosshair: 1
-  crosshairArmLength: 8
-  crosshairThickness: 2
-  minCrosshairGap: 3
-  maxCrosshairGap: 45
-  pixelsPerSpreadDegree: 10
-  crosshairSmoothSpeed: 14
-  debugCurrentSpread: 0
-  debugTargetGap: 0
-  debugCurrentGap: 0
 --- !u!4 &464198614
 Transform:
   m_ObjectHideFlags: 0
@@ -4271,7 +4334,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.BattleRoyale.SafeZoneVisual
   safeZone: {fileID: 603740460}
-  lineMaterial: {fileID: 0}
+  lineMaterial: {fileID: 2100000, guid: 9f5446168ba9ac641af855a90e410726, type: 2}
   segments: 128
   yOffset: 0.15
   lineWidth: 0.35
@@ -5044,6 +5107,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 700344003}
   m_CullTransparentMesh: 1
+--- !u!114 &704085252 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3750115461826949654, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246167062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92d6b77dcb3b4da2ad72f07a17a11c46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.PlayerLootEquipment
+--- !u!114 &704085253 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9053975027515490960, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246167062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7304fdd2a887c63418222ee0f8793835, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Inventory.InventoryComponent
 --- !u!1 &705392828
 GameObject:
   m_ObjectHideFlags: 0
@@ -6241,8 +6326,9 @@ MonoBehaviour:
   target: {fileID: 2016612334}
   input: {fileID: 2016612333}
   weaponRecoil: {fileID: 0}
-  equipment: {fileID: 0}
-  leanController: {fileID: 0}
+  equipment: {fileID: 2016612335}
+  leanController: {fileID: 1137076257}
+  _parachute: {fileID: 1137076256}
   pivotOffset: {x: 0, y: 1.55, z: 0}
   shoulderOffset: {x: 0.55, y: 0, z: 0}
   normalDistance: 3.7
@@ -8308,6 +8394,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2122534061}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1137076256 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2837903182207075305, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246167062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e52bb1425a8604388f668e41e0972e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Parachute.ParachuteController
+--- !u!114 &1137076257 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9184125323709375707, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246167062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa5e7fbea1a54b06a31b59ecff70bf3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerLeanController
 --- !u!1001 &1139750208
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10511,7 +10619,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1502575285}
   - component: {fileID: 1502575284}
-  - component: {fileID: 1502575283}
   m_Layer: 0
   m_Name: BattleRoyaleSystem
   m_TagString: Untagged
@@ -10519,22 +10626,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1502575283
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1502575282}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce0d51c37d9224c4c99ce5237fcf56e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Core.DemoBootstrap
-  matchManager: {fileID: 1502575284}
-  players:
-  - {fileID: 2016612339}
-  beginOnStart: 0
 --- !u!114 &1502575284
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13526,11 +13617,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 340360135e614f9386d0c1ff12eebc5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.AI.BattleRoyaleBotDirector
-  sourcePlayer: {fileID: 1246167062}
+  sourcePlayer: {fileID: 7696175128083726300, guid: b1b850dfdc3f31b468923972d4d6673b, type: 3}
   airplane: {fileID: 232900604}
   matchManager: {fileID: 1502575284}
-  parachutePrefab: {fileID: 3303294615036459351, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
   sequence: {fileID: 1831406594}
+  botHealthBarPrefab: {fileID: 8837910987892454964, guid: 08773048bfbf65143b9e1ade1fe52f66, type: 3}
+  gameplayCamera: {fileID: 851681085}
   botCount: 10
 --- !u!1 &1855147426
 GameObject:
@@ -14595,6 +14687,17 @@ Transform:
   - {fileID: 5211457398199073012}
   m_Father: {fileID: 765916325}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1999789252 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6514459133859090107, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246167062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b7c0f2a0d9f4f0db49a4c685a5db1d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Animation.PlayerGestureController
 --- !u!1 &2012739978
 GameObject:
   m_ObjectHideFlags: 0
@@ -14798,6 +14901,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player_Prototype
       objectReference: {fileID: 0}
+    - target: {fileID: 1498631406561050719, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: aimCamera
+      value: 
+      objectReference: {fileID: 851681085}
+    - target: {fileID: 2257425146492110011, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+      propertyPath: deathCamera
+      value: 
+      objectReference: {fileID: 851681083}
     - target: {fileID: 4425118486816412173, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
       propertyPath: maxHealth
       value: 100
@@ -15003,7 +15114,7 @@ MonoBehaviour:
   input: {fileID: 0}
   motor: {fileID: 0}
   equipment: {fileID: 0}
-  animator: {fileID: 0}
+  controller: {fileID: 0}
   parachuteVisual: {fileID: 544348919}
   freeFallSpeed: 24
   freeFallAcceleration: 18
@@ -15030,25 +15141,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c071ab4e46745f4bcb5be79e86f9f46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.CombatFeedbackPresenter
-  health: {fileID: 0}
-  directionReference: {fileID: 0}
+  health: {fileID: 2016612339}
+  directionReference: {fileID: 851681086}
   audioSource: {fileID: 0}
   receivedDamageClips: []
   hitConfirmedClips: []
   hitmarkerDuration: 0.16
   damageIndicatorDuration: 0.65
-  hitmarkerRoot: {fileID: 0}
+  hitmarkerRoot: {fileID: 1824258850}
   hitmarkerParts:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  headshotLabel: {fileID: 0}
+  - {fileID: 929640395}
+  - {fileID: 1578166094}
+  - {fileID: 1461703269}
+  - {fileID: 1712825295}
+  headshotLabel: {fileID: 235725702}
   damageBars:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1628246391}
+  - {fileID: 1897399338}
+  - {fileID: 1600578236}
+  - {fileID: 736657618}
 --- !u!114 &2016612347
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15085,10 +15196,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f92271d87c5a40a4498c6f5f888545d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Gameplay.ConsumableController
+  _health: {fileID: 0}
+  _inventory: {fileID: 0}
+  _input: {fileID: 0}
   showHud: 1
-  barRoot: {fileID: 0}
-  fill: {fileID: 0}
-  label: {fileID: 0}
+  barRoot: {fileID: 1174718138}
+  fill: {fileID: 528022816}
+  label: {fileID: 603680637}
 --- !u!114 &2016612349
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15113,6 +15227,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 481ee4e1416596a428300a212a342fa1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.DamageNumberSpawner
+  _equipment: {fileID: 0}
+  _damageNumberPrefab: {fileID: 3312986627613197328, guid: 623cc0f040259e649aa6e734d3ac7c8b, type: 3}
+  _worldCamera: {fileID: 851681085}
 --- !u!114 &2016612351
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15167,6 +15284,7 @@ MonoBehaviour:
   unarmedRange: 1.6
   unarmedAttacksPerSecond: 1.5
   unarmedImpactForce: 3
+  _characterController: {fileID: 0}
 --- !u!114 &2016612353
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15185,10 +15303,12 @@ MonoBehaviour:
   equipment: {fileID: 2016612335}
   auxiliarySlots: {fileID: 0}
   aimController: {fileID: 2016612351}
+  leanController: {fileID: 0}
   health: {fileID: 2016612339}
   parachute: {fileID: 2016612345}
   consumable: {fileID: 2016612348}
   gestureController: {fileID: 0}
+  interactor: {fileID: 0}
   movementDampTime: 0.12
   fallAnimationDistance: 1.5
   fallAnimationMinDownVelocity: -0.2
@@ -15321,6 +15441,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.PlayerDebugHealthHotkeys
   f5Damage: 5
+--- !u!114 &2025946720 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4333071894151934173, guid: 776246a3c29b7984ab3c02116a0daf5a, type: 3}
+  m_PrefabInstance: {fileID: 2016612332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246167062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 911686af2aa2a434ca3ff26b7f017319, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Interaction.PlayerInteractor
 --- !u!4 &2039088810 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4789280016443997914, guid: e92bd4c55364b9c458d7c966740aff62, type: 3}
@@ -15738,75 +15869,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2115074632}
   m_CullTransparentMesh: 1
---- !u!1001 &2118859659
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 16783.275
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 14641.168
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 14769.493
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.04
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -5.44
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: -0.0043205647
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0.9999907
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
-      propertyPath: m_Name
-      value: maseratti
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: fdc1a808e37b9e04cbe77d474c7cd773, type: 3}
 --- !u!1 &2122534060
 GameObject:
   m_ObjectHideFlags: 0
@@ -16296,6 +16358,7 @@ MonoBehaviour:
   fillRect: {fileID: 0}
   fillGraphic: {fileID: 0}
   verticalOffset: 2.5
+  _cam: {fileID: 0}
 --- !u!222 &185698517273508777
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -16417,18 +16480,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 7}
   m_SizeDelta: {x: 2, y: 8}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &310030719373589845
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f16c8b9274da4e36a5c09b7812e34fd6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.EditorFirstHudRuntimeRoot
 --- !u!223 &320247993157817546
 Canvas:
   m_ObjectHideFlags: 0
@@ -22218,18 +22269,6 @@ MonoBehaviour:
     y: 0
     width: 1
     height: 1
---- !u!114 &4068608253830333870
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bc26976f9734c68a2a1b5e1e61db47a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.RulesOfSurvivalHUDRuntimePolish
 --- !u!224 &4073600539537541552
 RectTransform:
   m_ObjectHideFlags: 0
@@ -24281,13 +24320,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.GestureWheelUI
   ringRadius: 250
   selectionDeadZone: 75
-  canvas: {fileID: 0}
-  wheelOverlay: {fileID: 0}
-  wheelCenter: {fileID: 0}
-  selectionLabel: {fileID: 0}
-  hintRoot: {fileID: 0}
-  optionImages: []
-  optionTexts: []
+  canvas: {fileID: 320247993157817546}
+  wheelOverlay: {fileID: 1493827153437598384}
+  wheelCenter: {fileID: 8967887982572772653}
+  selectionLabel: {fileID: 7925370783899938304}
+  hintRoot: {fileID: 1182146823}
+  optionImages:
+  - {fileID: 1415014609657671203}
+  - {fileID: 2101597816911266639}
+  - {fileID: 4356138211246172357}
+  - {fileID: 3060687068183839699}
+  - {fileID: 84484377986749246}
+  - {fileID: 2996133048383306603}
+  - {fileID: 3537628410178675674}
+  - {fileID: 1332671129119262963}
+  - {fileID: 6360204296206269964}
+  optionTexts:
+  - {fileID: 4372654369246175393}
+  - {fileID: 954607755193043266}
+  - {fileID: 1235816193102422542}
+  - {fileID: 985997299064967580}
+  - {fileID: 5092907630813128002}
+  - {fileID: 4894342532976117852}
+  - {fileID: 8234857927124852302}
+  - {fileID: 733768770607669051}
+  - {fileID: 4745585310993389245}
+  _input: {fileID: 2016612333}
+  _gestureController: {fileID: 1999789252}
 --- !u!222 &5429629754978652643
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -26551,19 +26610,11 @@ GameObject:
   - component: {fileID: 6133386983637331446}
   - component: {fileID: 7462382254432700371}
   - component: {fileID: 7469101424219793866}
-  - component: {fileID: 310030719373589845}
-  - component: {fileID: 4068608253830333870}
-  - component: {fileID: 7469101424219793868}
   - component: {fileID: 7469101424219793867}
   - component: {fileID: 7469101424219793873}
   - component: {fileID: 7469101424219793872}
   - component: {fileID: 7469101424219793871}
-  - component: {fileID: 7469101424219793870}
   - component: {fileID: 7469101424219793869}
-  - component: {fileID: 7469101424219793877}
-  - component: {fileID: 7469101424219793876}
-  - component: {fileID: 7469101424219793875}
-  - component: {fileID: 7469101424219793874}
   - component: {fileID: 7469101424219793878}
   m_Layer: 0
   m_Name: HUD_ROS_EDITABLE
@@ -27057,24 +27108,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54d2d88466d542e4a7a445852397c741, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.RulesOfSurvivalHUD
-  worldCamera: {fileID: 0}
-  minimapCamera: {fileID: 0}
-  health: {fileID: 0}
-  equipment: {fileID: 0}
-  battleRoyale: {fileID: 0}
-  interactor: {fileID: 0}
-  canvas: {fileID: 0}
-  compassText: {fileID: 0}
-  killText: {fileID: 0}
-  leftText: {fileID: 0}
-  distanceText: {fileID: 0}
-  playerNameText: {fileID: 0}
-  healthFill: {fileID: 0}
-  armorFill: {fileID: 0}
-  healthValueText: {fileID: 0}
-  zoneText: {fileID: 0}
+  worldCamera: {fileID: 851681085}
+  minimapCamera: {fileID: 4288763988904507142}
+  health: {fileID: 2016612339}
+  equipment: {fileID: 2016612335}
+  battleRoyale: {fileID: 1502575284}
+  interactor: {fileID: 2025946720}
+  canvas: {fileID: 7336571815991305462}
+  compassText: {fileID: 4523618732398542118}
+  killText: {fileID: 3474826159501479045}
+  leftText: {fileID: 4473862153327780119}
+  distanceText: {fileID: 7263876496949067847}
+  playerNameText: {fileID: 1911219688791988270}
+  healthFill: {fileID: 565113365936834293}
+  armorFill: {fileID: 8926149575045462893}
+  healthValueText: {fileID: 6001948019265945547}
+  zoneText: {fileID: 1571115307574804072}
   interactionText: {fileID: 0}
-  lootPanel: {fileID: 0}
+  lootPanel: {fileID: 834422837945762308}
   lootRows:
   - {fileID: 0}
   - {fileID: 0}
@@ -27083,20 +27134,20 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  minimapPlayerArrow: {fileID: 0}
+  minimapPlayerArrow: {fileID: 2911968489392764602}
   weaponSlots:
-  - background: {fileID: 0}
-    slot: {fileID: 0}
-    name: {fileID: 0}
-    ammo: {fileID: 0}
-  - background: {fileID: 0}
-    slot: {fileID: 0}
-    name: {fileID: 0}
-    ammo: {fileID: 0}
-  - background: {fileID: 0}
-    slot: {fileID: 0}
-    name: {fileID: 0}
-    ammo: {fileID: 0}
+  - background: {fileID: 7135699121374384292}
+    slot: {fileID: 1044240692549700945}
+    name: {fileID: 8495465505459305263}
+    ammo: {fileID: 1090421321465496089}
+  - background: {fileID: 3106108872119327254}
+    slot: {fileID: 916829733315587616}
+    name: {fileID: 8835905963237791191}
+    ammo: {fileID: 844560260472937334}
+  - background: {fileID: 3969836044144117546}
+    slot: {fileID: 2035557087879368705}
+    name: {fileID: 8249855478451700241}
+    ammo: {fileID: 7231915853995646211}
 --- !u!114 &7469101424219793866
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27110,7 +27161,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.WeaponCrosshairPresenter
   normalArmLength: 8
-  normalThickness: 2
   normalMinGap: 3
   normalMaxGap: 45
   normalPixelsPerSpreadDegree: 10
@@ -27120,6 +27170,7 @@ MonoBehaviour:
   spreadForMaxGap: 7
   reloadBlinkSpeed: 4.5
   reloadMinimumAlpha: 0.42
+  equipment: {fileID: 2016612335}
   root: {fileID: 1916766857523311432}
   normalRoot: {fileID: 7288158359320785171}
   normalLeft: {fileID: 3652483567589164218}
@@ -27141,71 +27192,63 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f3dd2ab68f04c72b693d4b8086901e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.RulesOfSurvivalHUDNearbyLootPresenter
-  nearbyRoot: {fileID: 0}
-  nearbyTitle: {fileID: 0}
-  nearbyHint: {fileID: 0}
+  nearbyRoot: {fileID: 834422837945762308}
+  nearbyTitle: {fileID: 7992910735514939091}
+  nearbyHint: {fileID: 1472493779282178572}
   rowViews:
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    mainIcon: {fileID: 0}
-    name: {fileID: 0}
-    secondaryText: {fileID: 0}
-    secondaryIcon: {fileID: 0}
-    selection: {fileID: 0}
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    mainIcon: {fileID: 0}
-    name: {fileID: 0}
-    secondaryText: {fileID: 0}
-    secondaryIcon: {fileID: 0}
-    selection: {fileID: 0}
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    mainIcon: {fileID: 0}
-    name: {fileID: 0}
-    secondaryText: {fileID: 0}
-    secondaryIcon: {fileID: 0}
-    selection: {fileID: 0}
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    mainIcon: {fileID: 0}
-    name: {fileID: 0}
-    secondaryText: {fileID: 0}
-    secondaryIcon: {fileID: 0}
-    selection: {fileID: 0}
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    mainIcon: {fileID: 0}
-    name: {fileID: 0}
-    secondaryText: {fileID: 0}
-    secondaryIcon: {fileID: 0}
-    selection: {fileID: 0}
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    mainIcon: {fileID: 0}
-    name: {fileID: 0}
-    secondaryText: {fileID: 0}
-    secondaryIcon: {fileID: 0}
-    selection: {fileID: 0}
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    mainIcon: {fileID: 0}
-    name: {fileID: 0}
-    secondaryText: {fileID: 0}
-    secondaryIcon: {fileID: 0}
-    selection: {fileID: 0}
---- !u!114 &7469101424219793868
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d34f8ab3b1c4ea1af07bf6382c4721a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.RulesOfSurvivalHUDFunctionality
+  - root: {fileID: 935411252}
+    background: {fileID: 935411253}
+    mainIcon: {fileID: 1975504481}
+    name: {fileID: 1693787224}
+    secondaryText: {fileID: 882619227}
+    secondaryIcon: {fileID: 1093489168}
+    selection: {fileID: 1588158406}
+  - root: {fileID: 1829218084}
+    background: {fileID: 1829218085}
+    mainIcon: {fileID: 1275428647}
+    name: {fileID: 1595051286}
+    secondaryText: {fileID: 1111111664}
+    secondaryIcon: {fileID: 909148889}
+    selection: {fileID: 2115074634}
+  - root: {fileID: 1527306171}
+    background: {fileID: 1527306172}
+    mainIcon: {fileID: 1276125206}
+    name: {fileID: 279321715}
+    secondaryText: {fileID: 472195445}
+    secondaryIcon: {fileID: 1355697651}
+    selection: {fileID: 1855147428}
+  - root: {fileID: 944150824}
+    background: {fileID: 944150825}
+    mainIcon: {fileID: 648984324}
+    name: {fileID: 676492448}
+    secondaryText: {fileID: 1810528169}
+    secondaryIcon: {fileID: 1765401376}
+    selection: {fileID: 11112924}
+  - root: {fileID: 1343384866}
+    background: {fileID: 1343384867}
+    mainIcon: {fileID: 486329733}
+    name: {fileID: 621593026}
+    secondaryText: {fileID: 542713517}
+    secondaryIcon: {fileID: 2047604916}
+    selection: {fileID: 966224072}
+  - root: {fileID: 1947085780}
+    background: {fileID: 1947085781}
+    mainIcon: {fileID: 348790939}
+    name: {fileID: 344717770}
+    secondaryText: {fileID: 2145058695}
+    secondaryIcon: {fileID: 663613922}
+    selection: {fileID: 1551941907}
+  - root: {fileID: 1541806982}
+    background: {fileID: 1541806983}
+    mainIcon: {fileID: 1966966745}
+    name: {fileID: 2015602415}
+    secondaryText: {fileID: 1757340830}
+    secondaryIcon: {fileID: 146221852}
+    selection: {fileID: 1147374995}
+  _localInput: {fileID: 2016612333}
+  _interactor: {fileID: 2025946720}
+  _inventory: {fileID: 704085253}
+  _lootEquipment: {fileID: 704085252}
 --- !u!114 &7469101424219793869
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27218,41 +27261,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94bc3554fa608ea4e9a0acfa213ba128, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.QuickConsumePresenter
-  inventory: {fileID: 0}
-  consumable: {fileID: 0}
+  inventory: {fileID: 704085253}
+  consumable: {fileID: 2016612348}
   slots:
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    icon: {fileID: 0}
-    nameLabel: {fileID: 0}
-    countLabel: {fileID: 0}
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    icon: {fileID: 0}
-    nameLabel: {fileID: 0}
-    countLabel: {fileID: 0}
-  - root: {fileID: 0}
-    background: {fileID: 0}
-    icon: {fileID: 0}
-    nameLabel: {fileID: 0}
-    countLabel: {fileID: 0}
---- !u!114 &7469101424219793870
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 426a8545a3276cd4d8808c4b8b3b9251, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.EquipmentStatusPresenter
-  protection: {fileID: 0}
-  loot: {fileID: 0}
-  helmetLabel: {fileID: 0}
-  vestLabel: {fileID: 0}
-  backpackLabel: {fileID: 0}
+  - root: {fileID: 1173723575}
+    background: {fileID: 1173723577}
+    icon: {fileID: 26874729}
+    nameLabel: {fileID: 425099325}
+    countLabel: {fileID: 1755939588}
+  - root: {fileID: 1235333442}
+    background: {fileID: 1235333444}
+    icon: {fileID: 376554660}
+    nameLabel: {fileID: 705392830}
+    countLabel: {fileID: 1421779688}
+  - root: {fileID: 365512918}
+    background: {fileID: 365512920}
+    icon: {fileID: 1643886506}
+    nameLabel: {fileID: 1372972000}
+    countLabel: {fileID: 1644455513}
 --- !u!114 &7469101424219793871
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27265,13 +27291,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48d8e72bfddf38745beadf316816fd64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.DamageDirectionIndicator
-  health: {fileID: 0}
-  playerTransform: {fileID: 0}
+  health: {fileID: 2016612339}
+  playerTransform: {fileID: 2016612334}
   arrows:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1680529871}
+  - {fileID: 1759999472}
+  - {fileID: 1075650173}
+  - {fileID: 159817218}
 --- !u!114 &7469101424219793872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27284,14 +27310,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ee6b226b4dcaa54989037376abed9d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.KillFeedPresenter
-  manager: {fileID: 0}
-  localHealth: {fileID: 0}
+  manager: {fileID: 1502575284}
+  localHealth: {fileID: 2016612339}
   rows:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 153745300}
+  - {fileID: 1077222647}
+  - {fileID: 283774133}
+  - {fileID: 574377354}
+  - {fileID: 1898389065}
 --- !u!114 &7469101424219793873
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27304,69 +27330,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af6eaaf82fa555040862c38de7946c0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.MatchStartHud
-  sequence: {fileID: 0}
-  parachute: {fileID: 0}
+  sequence: {fileID: 1831406594}
+  parachute: {fileID: 1137076256}
   panelRoot: {fileID: 0}
   titleText: {fileID: 0}
   detailText: {fileID: 0}
---- !u!114 &7469101424219793874
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ecd38bed51636f64f88b3c47230e908c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.WeaponSlotsPresenter
-  equipment: {fileID: 0}
-  lootEquipment: {fileID: 0}
---- !u!114 &7469101424219793875
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 308113d55b0480b41ba0589135a5b0b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.MinimapSystem
-  playerTransform: {fileID: 0}
-  safeZone: {fileID: 0}
-  botDirector: {fileID: 0}
-  minimapCamera: {fileID: 0}
---- !u!114 &7469101424219793876
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b742a8ce735edb438c8920bf10ed8ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.CompassUI
-  playerTransform: {fileID: 0}
-  playerCamera: {fileID: 0}
---- !u!114 &7469101424219793877
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7140177316929008563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 37937f342263e3542b6e49708fd08ea6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.DeathLootPanelPresenter
-  boundInteractor: {fileID: 0}
-  container: {fileID: 0}
 --- !u!114 &7469101424219793878
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27379,10 +27347,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f9a1c2d7b6e43f0a8d5c1e279b6034a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.PlayerWeaponSlotsHudPresenter
-  weapons: {fileID: 0}
-  lootEquipment: {fileID: 0}
-  auxiliarySlots: {fileID: 0}
-  inventory: {fileID: 0}
+  weapons: {fileID: 2016612335}
+  lootEquipment: {fileID: 704085252}
+  auxiliarySlots: {fileID: 2016612352}
+  inventory: {fileID: 704085253}
+  _slots:
+  - Background: {fileID: 7135699121374384292}
+    Slot: {fileID: 1044240692549700945}
+    LegacyName: {fileID: 8495465505459305263}
+    Ammo: {fileID: 1090421321465496089}
+    Icon: {fileID: 2047875857}
+    FireModeRoot: {fileID: 56730074}
+    FireModeKey: {fileID: 1973144938}
+    FireModeText: {fileID: 1983486948}
+  - Background: {fileID: 3106108872119327254}
+    Slot: {fileID: 916829733315587616}
+    LegacyName: {fileID: 8835905963237791191}
+    Ammo: {fileID: 844560260472937334}
+    Icon: {fileID: 438071946}
+    FireModeRoot: {fileID: 721129197}
+    FireModeKey: {fileID: 1097353510}
+    FireModeText: {fileID: 1733391116}
+  - Background: {fileID: 3969836044144117546}
+    Slot: {fileID: 2035557087879368705}
+    LegacyName: {fileID: 8249855478451700241}
+    Ammo: {fileID: 7231915853995646211}
+    Icon: {fileID: 753112711}
+    FireModeRoot: {fileID: 0}
+    FireModeKey: {fileID: 0}
+    FireModeText: {fileID: 0}
+  - Background: {fileID: 936466702}
+    Slot: {fileID: 143049727}
+    LegacyName: {fileID: 1830150619}
+    Ammo: {fileID: 915122390}
+    Icon: {fileID: 1514551236}
+    FireModeRoot: {fileID: 0}
+    FireModeKey: {fileID: 0}
+    FireModeText: {fileID: 0}
+  - Background: {fileID: 1639274908}
+    Slot: {fileID: 337398264}
+    LegacyName: {fileID: 700344005}
+    Ammo: {fileID: 1654684695}
+    Icon: {fileID: 9748847}
+    FireModeRoot: {fileID: 0}
+    FireModeKey: {fileID: 0}
+    FireModeText: {fileID: 0}
 --- !u!224 &7491359160439312419
 RectTransform:
   m_ObjectHideFlags: 0
@@ -29749,4 +29758,3 @@ SceneRoots:
   - {fileID: 232900603}
   - {fileID: 1831406595}
   - {fileID: 18055494}
-  - {fileID: 2118859659}

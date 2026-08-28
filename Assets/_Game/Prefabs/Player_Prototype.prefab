@@ -79,6 +79,21 @@ GameObject:
   - component: {fileID: 5854610856599264315}
   - component: {fileID: 7000000000000000001}
   - component: {fileID: 4798319946083989295}
+  - component: {fileID: 3750115461826949654}
+  - component: {fileID: 259852442615330371}
+  - component: {fileID: 1498631406561050719}
+  - component: {fileID: 2837903182207075305}
+  - component: {fileID: 9184125323709375707}
+  - component: {fileID: 3532397403108670843}
+  - component: {fileID: 6514459133859090107}
+  - component: {fileID: 3181186746451611303}
+  - component: {fileID: 6345330468475479133}
+  - component: {fileID: 2996432441501125645}
+  - component: {fileID: 2642500773763188720}
+  - component: {fileID: 69153517704383285}
+  - component: {fileID: 5599779571766301083}
+  - component: {fileID: 3364378674638225108}
+  - component: {fileID: 2257425146492110011}
   m_Layer: 0
   m_Name: Player_Prototype
   m_TagString: Player
@@ -104,6 +119,7 @@ Transform:
   - {fileID: 5978597874908140264}
   - {fileID: 250811780292420497}
   - {fileID: 6949557386023753462}
+  - {fileID: 2424930661847386452}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &6338030949579157486
@@ -186,8 +202,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 911686af2aa2a434ca3ff26b7f017319, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Interaction.PlayerInteractor
-  input: {fileID: 0}
-  origin: {fileID: 0}
+  input: {fileID: 3875897436019806596}
+  origin: {fileID: 9184807692070804161}
   distance: 3
   centerHeight: 0.75
   mask:
@@ -206,9 +222,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerMotor
   cameraTransform: {fileID: 0}
-  visualRoot: {fileID: 3991268517132224514}
+  visualRoot: {fileID: 261398872554902634}
   equipment: {fileID: 7000000000000000001}
-  consumable: {fileID: 0}
+  consumable: {fileID: 259852442615330371}
   walkSpeed: 2.3
   runSpeed: 5.2
   sprintSpeed: 7.2
@@ -224,6 +240,8 @@ MonoBehaviour:
   standingHeight: 1.8
   crouchingHeight: 1.25
   proneHeight: 0.65
+  _controller: {fileID: 6338030949579157486}
+  _input: {fileID: 3875897436019806596}
 --- !u!114 &7000000000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -247,7 +265,7 @@ MonoBehaviour:
   hipSocket: {fileID: 0}
   startWithSlot1Equipped: 0
   autoDiscoverWeapons: 0
-  autoBindSocketsToHumanoidBones: 1
+  autoBindSocketsToHumanoidBones: 0
   weaponSwitchDuration: 0.75
   weaponSwapTime: 0.3
   debugEquippedSlot: 0
@@ -377,6 +395,448 @@ MonoBehaviour:
   skydiveWindFastClip: {fileID: 8300000, guid: 13c5e71d4eb22674f9c32a60cf358b4e, type: 3}
   skydiveLandingClip: {fileID: 8300000, guid: 992b51f4d0eef024dbaf23443b081a2f, type: 3}
   fastWindThreshold: 15
+--- !u!114 &3750115461826949654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92d6b77dcb3b4da2ad72f07a17a11c46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.PlayerLootEquipment
+  inventory: {fileID: 0}
+  protection: {fileID: 0}
+  weapons: {fileID: 0}
+  helmetItem: {fileID: 0}
+  vestItem: {fileID: 0}
+  backpackItem: {fileID: 0}
+  weaponItems:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+--- !u!114 &259852442615330371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f92271d87c5a40a4498c6f5f888545d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Gameplay.ConsumableController
+  _health: {fileID: 4425118486816412173}
+  _inventory: {fileID: 9053975027515490960}
+  _input: {fileID: 3875897436019806596}
+  showHud: 1
+  barRoot: {fileID: 0}
+  fill: {fileID: 0}
+  label: {fileID: 0}
+--- !u!114 &1498631406561050719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90bd573496504534aab1990c2be4480f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.PlayerAimController
+  aimCamera: {fileID: 0}
+  maxAimDistance: 1000
+  aimMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  triggerInteraction: 1
+  drawDebugRay: 0
+--- !u!114 &2837903182207075305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e52bb1425a8604388f668e41e0972e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Parachute.ParachuteController
+  input: {fileID: 3875897436019806596}
+  motor: {fileID: 5854610856599264315}
+  equipment: {fileID: 7000000000000000001}
+  controller: {fileID: 6338030949579157486}
+  parachuteVisual: {fileID: 0}
+  freeFallSpeed: 24
+  freeFallAcceleration: 18
+  freeFallHorizontalSpeed: 9
+  airControl: 3.5
+  autoDeployGroundHeight: 32
+  manualDeployDelay: 0.35
+  glideFallSpeed: 5
+  glideSpeed: 10
+  steerSpeed: 85
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  debugParachuteAnimationState: 0
+--- !u!114 &9184125323709375707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa5e7fbea1a54b06a31b59ecff70bf3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerLeanController
+  input: {fileID: 3875897436019806596}
+  motor: {fileID: 5854610856599264315}
+  equipment: {fileID: 7000000000000000001}
+  health: {fileID: 4425118486816412173}
+  parachute: {fileID: 2837903182207075305}
+  animator: {fileID: 6143050866421091856}
+  leanSpeed: 20
+  cancelWhileSprinting: 0
+  cancelWhileProne: 1
+  cancelWhileAirborne: 1
+  airborneSuppressDelay: 0.12
+  cancelWhileReloading: 1
+  obstructionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  clearanceRadius: 0.14
+  clearanceDistance: 0.42
+--- !u!114 &3532397403108670843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b8f4d7c3a7141a8842a9a7b3cf5b11d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerLeanRigApplier
+  leanController: {fileID: 9184125323709375707}
+  humanoidAnimator: {fileID: 6143050866421091856}
+  hipsWeight: 0.1
+  spineWeight: 0.32
+  chestWeight: 0.35
+  upperChestWeight: 0.23
+  maximumLeanDegrees: 15
+--- !u!114 &6514459133859090107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b7c0f2a0d9f4f0db49a4c685a5db1d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Animation.PlayerGestureController
+  animationCoordinator: {fileID: 6345330468475479133}
+  motor: {fileID: 5854610856599264315}
+  input: {fileID: 3875897436019806596}
+  equipment: {fileID: 7000000000000000001}
+  health: {fileID: 4425118486816412173}
+  parachute: {fileID: 2837903182207075305}
+  consumable: {fileID: 259852442615330371}
+  transitionDuration: 0.12
+  aimCancelTransitionDuration: 0.02
+  movementCancelThreshold: 0.18
+  combatInputGraceTime: 0.18
+--- !u!114 &3181186746451611303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38f1c4b7a9d24e02a5b6c13d7e8f9041, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.PlayerAuxiliaryWeaponSlots
+  input: {fileID: 3875897436019806596}
+  weapons: {fileID: 7000000000000000001}
+  lootEquipment: {fileID: 3750115461826949654}
+  animator: {fileID: 6143050866421091856}
+  rightHandSocket: {fileID: 5343884189623174180}
+  selectedAuxiliarySlot: 0
+  rawModelLocalPosition: {x: -0.044, y: 0.228, z: 0.021}
+  rawModelLocalEulerAngles: {x: 1.246, y: -88.748, z: 89.526}
+  rawModelLocalScale: {x: 40, y: 40, z: 40}
+  aimController: {fileID: 1498631406561050719}
+  health: {fileID: 4425118486816412173}
+  consumable: {fileID: 259852442615330371}
+  gestureController: {fileID: 6514459133859090107}
+  parachute: {fileID: 2837903182207075305}
+  meleeCastRadius: 0.35
+  meleeHitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  meleeTriggerInteraction: 2
+  unarmedDamage: 15
+  unarmedRange: 1.6
+  unarmedAttacksPerSecond: 1.5
+  unarmedImpactForce: 3
+  _characterController: {fileID: 6338030949579157486}
+--- !u!114 &6345330468475479133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a6b2b38127b4f39a7c9ef14c0d26a91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Animation.PlayerAnimationCoordinator
+  animator: {fileID: 6143050866421091856}
+  motor: {fileID: 5854610856599264315}
+  input: {fileID: 3875897436019806596}
+  equipment: {fileID: 7000000000000000001}
+  auxiliarySlots: {fileID: 3181186746451611303}
+  aimController: {fileID: 1498631406561050719}
+  leanController: {fileID: 9184125323709375707}
+  health: {fileID: 4425118486816412173}
+  parachute: {fileID: 2837903182207075305}
+  consumable: {fileID: 259852442615330371}
+  gestureController: {fileID: 6514459133859090107}
+  interactor: {fileID: 4333071894151934173}
+  movementDampTime: 0.12
+  fallAnimationDistance: 1.5
+  fallAnimationMinDownVelocity: -0.2
+  aimPitchRange: 70
+  aimYawRange: 70
+  pickupUpperBodyDuration: 0.65
+  airDropLandingMaxDuration: 4
+  classicFirePulseDuration: 0.08
+  debugUpperBodyArmed: 0
+  debugUpperBodyAim: 0
+  debugReloading: 0
+  debugHealing: 0
+  debugWeaponLayerActive: 0
+  debugActionsLayerActive: 0
+  debugFullBodyOverride: 0
+  debugReloadSpeed: 1
+  debugAimPitch: 0
+  debugAimYaw: 0
+  debugAirbornePeakY: 0
+  debugFallDistance: 0
+  debugShouldFall: 0
+  debugWeaponCategory: 0
+  debugWeaponStyle: 0
+  debugClassicWeaponType: 0
+  debugClassicFiring: 0
+  debugClassicStance: 0
+  debugClassicSprinting: 0
+  debugClassicAutoRunning: 0
+  debugClassicSwitchingWeapon: 0
+  debugClassicUsingConsumable: 0
+  debugClassicPickingUp: 0
+--- !u!114 &2996432441501125645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eab586a7a1f48a2ad90b4ee69896759, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.ProtectiveEquipment
+  helmetLevel: 0
+  helmetDurability: 0
+  vestLevel: 0
+  vestDurability: 0
+--- !u!114 &2642500773763188720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 278fc8bb90394f54bdf0a865787a5cd2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.PlayerDamageHitboxRig
+--- !u!114 &69153517704383285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9e909515a694f6bbdc9f2b55f176237, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.FallDamageReceiver
+  safeImpactSpeed: 12
+  lethalImpactSpeed: 28
+  maximumDamage: 100
+--- !u!114 &5599779571766301083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c071ab4e46745f4bcb5be79e86f9f46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.CombatFeedbackPresenter
+  health: {fileID: 0}
+  directionReference: {fileID: 0}
+  audioSource: {fileID: 0}
+  receivedDamageClips: []
+  hitConfirmedClips: []
+  hitmarkerDuration: 0.16
+  damageIndicatorDuration: 0.65
+  hitmarkerRoot: {fileID: 0}
+  hitmarkerParts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  headshotLabel: {fileID: 0}
+  damageBars:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+--- !u!114 &3364378674638225108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f46305e0e6f8426fbda9fc001850ad78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.LootDropController
+  inventory: {fileID: 0}
+  input: {fileID: 0}
+  dropDistance: 1.25
+  dropHeight: 0.25
+--- !u!114 &2257425146492110011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed0686974f20fed4397a4dc312e2d79a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.BattleRoyale.PlayerEliminationController
+  health: {fileID: 4425118486816412173}
+  inventory: {fileID: 9053975027515490960}
+  lootEquipment: {fileID: 3750115461826949654}
+  lootVisualDefinition: {fileID: 11400000, guid: 9676f3365a525044b8f8e11a498fd465, type: 2}
+  motor: {fileID: 5854610856599264315}
+  interactor: {fileID: 4333071894151934173}
+  aimController: {fileID: 1498631406561050719}
+  weaponEquipment: {fileID: 7000000000000000001}
+  weapons: []
+  input: {fileID: 3875897436019806596}
+  visualRoot: {fileID: 3991268517132224514}
+  deathCamera: {fileID: 0}
+  useFallbackPose: 1
+  fallbackDuration: 0.45
+  fallbackEuler: {x: 0, y: 0, z: 82}
+  fallbackOffset: {x: 0, y: 0.25, z: 0}
+--- !u!1 &840351809148888093
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2408262200445760952}
+  - component: {fileID: 8089522014671965872}
+  - component: {fileID: 8701083725313893145}
+  m_Layer: 0
+  m_Name: Hitbox_Leg_L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2408262200445760952
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 840351809148888093}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.14, y: 0.43, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2424930661847386452}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8089522014671965872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 840351809148888093}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 4
+  owner: {fileID: 4425118486816412173}
+--- !u!136 &8701083725313893145
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 840351809148888093}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.14
+  m_Height: 0.78
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1076798946957881265
 GameObject:
   m_ObjectHideFlags: 0
@@ -433,6 +893,146 @@ MonoBehaviour:
     m_HintWeight: 0
     m_MaintainTargetPositionOffset: 0
     m_MaintainTargetRotationOffset: 0
+--- !u!1 &1376893029262877969
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4741283646931106976}
+  - component: {fileID: 882754972068709388}
+  - component: {fileID: 8633845066967261566}
+  m_Layer: 0
+  m_Name: Hitbox_Arm_L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4741283646931106976
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376893029262877969}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: -0.38, y: 1.14, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2424930661847386452}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &882754972068709388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376893029262877969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 3
+  owner: {fileID: 4425118486816412173}
+--- !u!136 &8633845066967261566
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376893029262877969}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.12
+  m_Height: 0.58
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &2153029926788027282
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7025929742704638553}
+  - component: {fileID: 6340144887934357889}
+  - component: {fileID: 8417616682126953783}
+  m_Layer: 0
+  m_Name: Hitbox_Torso
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7025929742704638553
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2153029926788027282}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2424930661847386452}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6340144887934357889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2153029926788027282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 2
+  owner: {fileID: 4425118486816412173}
+--- !u!136 &8417616682126953783
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2153029926788027282}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.27
+  m_Height: 0.82
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2248311845660221212
 GameObject:
   m_ObjectHideFlags: 0
@@ -562,6 +1162,146 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &3133782551646794279
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7579918178952042341}
+  - component: {fileID: 3620401475908258783}
+  - component: {fileID: 623462594974046435}
+  m_Layer: 0
+  m_Name: Hitbox_Arm_R
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7579918178952042341
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3133782551646794279}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: 0.38, y: 1.14, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2424930661847386452}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3620401475908258783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3133782551646794279}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 3
+  owner: {fileID: 4425118486816412173}
+--- !u!136 &623462594974046435
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3133782551646794279}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.12
+  m_Height: 0.58
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &3342421827227348355
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2230012677211389146}
+  - component: {fileID: 5099047504733835294}
+  - component: {fileID: 485718126650984881}
+  m_Layer: 0
+  m_Name: Hitbox_Leg_R
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2230012677211389146
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3342421827227348355}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.14, y: 0.43, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2424930661847386452}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5099047504733835294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3342421827227348355}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 4
+  owner: {fileID: 4425118486816412173}
+--- !u!136 &485718126650984881
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3342421827227348355}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.14
+  m_Height: 0.78
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &4106907080999261345
 GameObject:
   m_ObjectHideFlags: 0
@@ -572,7 +1312,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3991268517132224514}
   - component: {fileID: 1999333874911906330}
-  - component: {fileID: 5791919284104222768}
   m_Layer: 0
   m_Name: VisualRoot
   m_TagString: Untagged
@@ -613,18 +1352,6 @@ MonoBehaviour:
   leftHand: {fileID: 6045938633698672106}
   head: {fileID: 9049389767752912249}
   spine: {fileID: 2340773043197145910}
---- !u!114 &5791919284104222768
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4106907080999261345}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6eb0d6268167ae94580ceb6e73b5ff5b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.Animation.PlayerAnimatorDriver
 --- !u!1 &7083389995347421912
 GameObject:
   m_ObjectHideFlags: 0
@@ -754,6 +1481,43 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &7865866564263357400
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2424930661847386452}
+  m_Layer: 0
+  m_Name: RuntimeDamageHitboxes
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2424930661847386452
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865866564263357400}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3572951727944287397}
+  - {fileID: 7025929742704638553}
+  - {fileID: 4741283646931106976}
+  - {fileID: 7579918178952042341}
+  - {fileID: 2408262200445760952}
+  - {fileID: 2230012677211389146}
+  m_Father: {fileID: 9184807692070804161}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7965734800436686835
 GameObject:
   m_ObjectHideFlags: 0
@@ -883,6 +1647,74 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &8398991457771784089
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3572951727944287397}
+  - component: {fileID: 184372189584482688}
+  - component: {fileID: 1029353452552624898}
+  m_Layer: 0
+  m_Name: Hitbox_Head
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3572951727944287397
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8398991457771784089}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.62, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2424930661847386452}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &184372189584482688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8398991457771784089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 1
+  owner: {fileID: 4425118486816412173}
+--- !u!135 &1029353452552624898
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8398991457771784089}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.19
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &9011340081611120608
 GameObject:
   m_ObjectHideFlags: 0

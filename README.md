@@ -8,13 +8,20 @@ Abra esta carpeta desde Unity Hub usando Unity 6000.3.11f1. No es necesario vers
 
 ## Estructura principal
 
-- `Assets/_Game/Scripts/Character`: movimiento y representación del jugador.
-- `Assets/_Game/Scripts/Camera`: cámara en tercera persona, aim y recoil visual.
-- `Assets/_Game/Scripts/Weapons`: definición, disparo, efectos y recoil de armas.
-- `Assets/_Game/Scripts/Combat`: vida, daño y apuntado.
-- `Assets/_Game/Scripts/Inventory`, `Loot`, `Interaction`: base de inventario y pickups.
-- `Assets/_Game/Scripts/BattleRoyale`: estado de partida y zona segura.
-- `Assets/_Game/Scripts/Vehicles`, `Parachute`, `World`: prototipos de sistemas posteriores.
+- `Assets/_Game/Code`: código del juego, agrupado por sistema.
+- `Assets/_Game/Code/Editor`: herramientas manuales de autoría y validación; nunca se ejecutan automáticamente.
+- `Assets/_Game/Prefabs`: objetos completos y configurados para instanciar.
+- `Assets/_Game/Scenes`: composición explícita de cada flujo jugable.
+- `Assets/_Game/Data`: definiciones y configuración compartida.
+- `Assets/_Game/Tests`: contratos EditMode y PlayMode.
+
+## Reglas de arquitectura
+
+- `PlayerAnimationCoordinator` es el único escritor de parámetros del Animator del jugador.
+- Las referencias estructurales se asignan en prefabs o escenas desde el Inspector; un script no se repara con `Find*`, `Resources.Load` ni `AddComponent` durante Play Mode.
+- El runtime puede instanciar entidades transitorias ya configuradas —bots, loot y efectos—, pero no construir jerarquías permanentes ni interfaces.
+- El HUD vive como una única jerarquía editable. No hay scripts de pulido, materializadores ni paneles heredados compitiendo entre sí.
+- Los errores de configuración deben fallar de forma visible y ser detectados por la validación del proyecto.
 
 ## Escenas de prueba
 

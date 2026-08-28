@@ -162,6 +162,7 @@ Transform:
   m_Children:
   - {fileID: 6646630569193876827}
   - {fileID: 8546919531654047000}
+  - {fileID: 8198418583191742763}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8296968928423138634
@@ -176,7 +177,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73cd3934c744c454e8f3e32dc1ee87da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.World.AirplaneController
-  passengerAnchor: {fileID: 0}
+  passengerAnchor: {fileID: 8198418583191742763}
   passengerOffset: {x: 0, y: -1.6, z: 0}
   flightDuration: 45
   exitDistance: 55
@@ -197,6 +198,37 @@ MonoBehaviour:
   audioSource: {fileID: 9107677659053866098}
   flyLoopClip: {fileID: 8300000, guid: 12145320b893a55429a900482a8d8e8d, type: 3}
   flyDaylightClip: {fileID: 8300000, guid: ab1095422a1eee8498489af2fecce14b, type: 3}
+--- !u!1 &6072971143364458754
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8198418583191742763}
+  m_Layer: 0
+  m_Name: PassengerAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8198418583191742763
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6072971143364458754}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -1.6, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9136832160896209580}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &6608797385054276272
 PrefabInstance:
   m_ObjectHideFlags: 0

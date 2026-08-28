@@ -215,7 +215,7 @@ namespace ROS.Game.Tests.EditMode
             );
             Assert.That(
                 FindState(airDrop, "FreeFall").transitions.Length,
-                Is.EqualTo(2)
+                Is.EqualTo(3)
             );
             Assert.That(
                 FindState(airDrop, "Parachute Deploy").transitions.Length,
@@ -306,52 +306,26 @@ namespace ROS.Game.Tests.EditMode
         }
 
         [Test]
-        public void ParachuteController_WritesClassicBooleanParameters()
+        public void ParachuteController_DoesNotWriteAnimatorParametersDirectly()
         {
-            AnimatorController controller =
-                AssetDatabase.LoadAssetAtPath<AnimatorController>(
-                    ClassicAnimatorPath
-                );
-            Assert.That(controller, Is.Not.Null);
+            string source = System.IO.File.ReadAllText(
+                "Assets/_Game/Code/Parachute/ParachuteController.cs"
+            );
 
-            GameObject player = new GameObject("ParachuteAnimator_Test");
-            GameObject model = new GameObject("Model");
-            model.transform.SetParent(player.transform, false);
-
-            try
-            {
-                player.AddComponent<CharacterController>();
-                Animator animator = model.AddComponent<Animator>();
-                animator.runtimeAnimatorController = controller;
-
-                ParachuteController parachute =
-                    player.AddComponent<ParachuteController>();
-
-                parachute.BeginAirDrop();
-                Assert.That(animator.GetBool("IsFreeFalling"), Is.True);
-                Assert.That(animator.GetBool("IsParachuting"), Is.False);
-                Assert.That(animator.GetInteger("ParachuteState"), Is.EqualTo(1));
-
-                Assert.That(parachute.TryDeploy(), Is.True);
-                Assert.That(animator.GetBool("IsFreeFalling"), Is.False);
-                Assert.That(animator.GetBool("IsParachuting"), Is.True);
-                Assert.That(animator.GetInteger("ParachuteState"), Is.EqualTo(2));
-            }
-            finally
-            {
-                Object.DestroyImmediate(player);
-            }
+            Assert.That(source, Does.Not.Contain("SetBool("));
+            Assert.That(source, Does.Not.Contain("SetInteger("));
+            Assert.That(source, Does.Not.Contain("SetTrigger("));
         }
 
         [Test]
         public void StaticSedan_HasConfiguredBattleRoyalePlacement()
         {
             Assert.That(
-                BattleRoyaleSetDressingBootstrap.SedanPosition.y,
+                BattleRoyaleSceneLayout.SedanPosition.y,
                 Is.GreaterThanOrEqualTo(0f)
             );
             Assert.That(
-                BattleRoyaleSetDressingBootstrap.SedanPosition,
+                BattleRoyaleSceneLayout.SedanPosition,
                 Is.Not.EqualTo(Vector3.zero)
             );
         }

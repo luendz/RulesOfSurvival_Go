@@ -4,6 +4,7 @@ using ROS.Game.Core;
 using ROS.Game.Inventory;
 using ROS.Game.Loot;
 using ROS.Game.Weapons;
+using UnityEditor;
 using UnityEngine;
 
 namespace ROS.Game.Tests.EditMode
@@ -60,7 +61,7 @@ namespace ROS.Game.Tests.EditMode
         {
             GameObject player = CreatePlayer(100f);
             PlayerLootEquipment equipment =
-                player.AddComponent<PlayerLootEquipment>();
+                CreateEquipment(player);
 
             InventoryItemDefinition backpack = CreateItem(
                 "backpack_test",
@@ -87,7 +88,7 @@ namespace ROS.Game.Tests.EditMode
         {
             GameObject player = CreatePlayer(100f);
             PlayerLootEquipment equipment =
-                player.AddComponent<PlayerLootEquipment>();
+                CreateEquipment(player);
 
             InventoryItemDefinition backpack1 = CreateItem(
                 "backpack_level_1",
@@ -190,6 +191,7 @@ namespace ROS.Game.Tests.EditMode
                 player.GetComponent<InventoryComponent>();
             LootDropController drop =
                 player.AddComponent<LootDropController>();
+            SetPrivate(drop, "inventory", inventory);
             InventoryItemDefinition item = CreateItem(
                 "heal_drop",
                 ItemType.Healing,
@@ -279,9 +281,11 @@ namespace ROS.Game.Tests.EditMode
             rightHand.transform.SetParent(player.transform, false);
 
             PlayerLootEquipment equipment =
-                player.AddComponent<PlayerLootEquipment>();
+                CreateEquipment(player);
             PlayerAuxiliaryWeaponSlots auxiliary =
                 player.AddComponent<PlayerAuxiliaryWeaponSlots>();
+            SetPrivate(auxiliary, "lootEquipment", equipment);
+            SetPrivate(auxiliary, "rightHandSocket", rightHand.transform);
 
             InventoryItemDefinition melee = CreateItem(
                 "weapon_item_melee_visual",
@@ -331,9 +335,10 @@ namespace ROS.Game.Tests.EditMode
         {
             GameObject player = CreatePlayer(100f);
             PlayerLootEquipment equipment =
-                player.AddComponent<PlayerLootEquipment>();
+                CreateEquipment(player);
             PlayerAuxiliaryWeaponSlots auxiliary =
                 player.AddComponent<PlayerAuxiliaryWeaponSlots>();
+            SetPrivate(auxiliary, "lootEquipment", equipment);
 
             InventoryItemDefinition melee = CreateItem(
                 "weapon_item_melee_attack",
@@ -354,6 +359,7 @@ namespace ROS.Game.Tests.EditMode
             target.name = "Melee_Target";
             target.transform.position = new Vector3(0f, 1f, 1.5f);
             Health targetHealth = target.AddComponent<Health>();
+            InitializeHealthForEditMode(targetHealth);
             _created.Add(target);
 
             Assert.That(equipment.TryEquip(melee, out _), Is.True);
@@ -375,9 +381,11 @@ namespace ROS.Game.Tests.EditMode
         public void UnarmedAttack_DamagesClosestTargetAndRaisesAnimationSignal()
         {
             GameObject player = CreatePlayer(100f);
-            player.AddComponent<PlayerLootEquipment>();
+            PlayerLootEquipment equipment =
+                CreateEquipment(player);
             PlayerAuxiliaryWeaponSlots auxiliary =
                 player.AddComponent<PlayerAuxiliaryWeaponSlots>();
+            SetPrivate(auxiliary, "lootEquipment", equipment);
 
             auxiliary.SelectMelee();
             Assert.That(
@@ -389,6 +397,7 @@ namespace ROS.Game.Tests.EditMode
             target.name = "Unarmed_Target";
             target.transform.position = new Vector3(0f, 1f, 1.25f);
             Health targetHealth = target.AddComponent<Health>();
+            InitializeHealthForEditMode(targetHealth);
             _created.Add(target);
 
             Physics.SyncTransforms();
@@ -420,7 +429,10 @@ namespace ROS.Game.Tests.EditMode
             DeathLootContainer container =
                 DeathLootContainer.Create(
                     Vector3.zero,
-                    sourceInventory
+                    sourceInventory,
+                    AssetDatabase.LoadAssetAtPath<DeathLootVisualDefinition>(
+                        "Assets/_Game/Resources/DeathLootContainerVisual.asset"
+                    )
                 );
             _created.Add(container.gameObject);
 
@@ -454,9 +466,54 @@ namespace ROS.Game.Tests.EditMode
             GameObject player = new GameObject("Loot_TestPlayer");
             InventoryComponent inventory =
                 player.AddComponent<InventoryComponent>();
+            player.AddComponent<ProtectiveEquipment>();
             inventory.SetCapacity(capacity);
             _created.Add(player);
             return player;
+        }
+
+        private static PlayerLootEquipment CreateEquipment(GameObject player)
+        {
+            PlayerLootEquipment equipment =
+                player.AddComponent<PlayerLootEquipment>();
+            SetPrivate(
+                equipment,
+                "inventory",
+                player.GetComponent<InventoryComponent>()
+            );
+            SetPrivate(
+                equipment,
+                "protection",
+                player.GetComponent<ProtectiveEquipment>()
+            );
+            return equipment;
+        }
+
+        private static void SetPrivate(
+            Object target,
+            string fieldName,
+            Object value)
+        {
+            var field = target.GetType().GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic
+            );
+
+            Assert.That(field, Is.Not.Null, fieldName);
+            field.SetValue(target, value);
+        }
+
+        private static void InitializeHealthForEditMode(Health health)
+        {
+            var awake = typeof(Health).GetMethod(
+                "Awake",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic
+            );
+
+            Assert.That(awake, Is.Not.Null);
+            awake.Invoke(health, null);
         }
 
         private InventoryItemDefinition CreateItem(

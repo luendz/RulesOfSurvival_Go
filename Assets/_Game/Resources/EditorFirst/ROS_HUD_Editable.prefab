@@ -1954,8 +1954,7 @@ GameObject:
   - component: {fileID: 3357991172210682279}
   - component: {fileID: 2019975235827467138}
   - component: {fileID: 2026696751738187163}
-  - component: {fileID: 9208351139795204356}
-  - component: {fileID: 4895773983127978495}
+  - component: {fileID: 1043174531864906026}
   m_Layer: 0
   m_Name: ROS_HUD_Editable
   m_TagString: Untagged
@@ -2064,7 +2063,7 @@ MonoBehaviour:
   shotgunLeft: {fileID: 5503665221432767856}
   shotgunRight: {fileID: 8804121260441700726}
   reloadTimerText: {fileID: 1287232915169331976}
---- !u!114 &9208351139795204356
+--- !u!114 &1043174531864906026
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2073,21 +2072,66 @@ MonoBehaviour:
   m_GameObject: {fileID: 1770144080776148962}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f16c8b9274da4e36a5c09b7812e34fd6, type: 3}
+  m_Script: {fileID: 11500000, guid: 8f3dd2ab68f04c72b693d4b8086901e4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.EditorFirstHudRuntimeRoot
---- !u!114 &4895773983127978495
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1770144080776148962}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bc26976f9734c68a2a1b5e1e61db47a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.RulesOfSurvivalHUDRuntimePolish
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.RulesOfSurvivalHUDNearbyLootPresenter
+  nearbyRoot: {fileID: 8075982172547040853}
+  nearbyTitle: {fileID: 1543419854268197506}
+  nearbyHint: {fileID: 8063845298941785693}
+  rowViews:
+  - root: {fileID: 6632123219372063698}
+    background: {fileID: 7641314366398121046}
+    mainIcon: {fileID: 1763872175038598635}
+    name: {fileID: 1486300441359946602}
+    secondaryText: {fileID: 5580647658674498991}
+    secondaryIcon: {fileID: 213894867207929149}
+    selection: {fileID: 5532557031422303825}
+  - root: {fileID: 3488197258430826884}
+    background: {fileID: 2523623796661966197}
+    mainIcon: {fileID: 4408332493641060505}
+    name: {fileID: 861751998822283085}
+    secondaryText: {fileID: 2251471274042005692}
+    secondaryIcon: {fileID: 8162656848888312067}
+    selection: {fileID: 8132124450794736050}
+  - root: {fileID: 9115249261629912094}
+    background: {fileID: 4018277665230274461}
+    mainIcon: {fileID: 8710459574535772128}
+    name: {fileID: 1909887336861525331}
+    secondaryText: {fileID: 594108206383810365}
+    secondaryIcon: {fileID: 8899774947211641814}
+    selection: {fileID: 5841561044079087191}
+  - root: {fileID: 965850837224516324}
+    background: {fileID: 1562973676817978591}
+    mainIcon: {fileID: 6559912122959396211}
+    name: {fileID: 2240858988496304739}
+    secondaryText: {fileID: 5996676741506161998}
+    secondaryIcon: {fileID: 7984812379967609152}
+    selection: {fileID: 6551910191426798970}
+  - root: {fileID: 7145409346439829188}
+    background: {fileID: 7281640374543651908}
+    mainIcon: {fileID: 332982688169683005}
+    name: {fileID: 8965219323052160425}
+    secondaryText: {fileID: 2738816831012542684}
+    secondaryIcon: {fileID: 5146454809744197163}
+    selection: {fileID: 7292538471145883404}
+  - root: {fileID: 6079440771551622428}
+    background: {fileID: 3511312400215758744}
+    mainIcon: {fileID: 883712374965758999}
+    name: {fileID: 7218804674684221285}
+    secondaryText: {fileID: 4716072088313031333}
+    secondaryIcon: {fileID: 8674069776864163317}
+    selection: {fileID: 8859673106924075265}
+  - root: {fileID: 7895428107203737117}
+    background: {fileID: 6472193978499755160}
+    mainIcon: {fileID: 6883354135162730793}
+    name: {fileID: 2502452175489373888}
+    secondaryText: {fileID: 5516000481249064802}
+    secondaryIcon: {fileID: 5798881087168930420}
+    selection: {fileID: 54822220739511514}
+  _localInput: {fileID: 0}
+  _interactor: {fileID: 0}
+  _inventory: {fileID: 0}
+  _lootEquipment: {fileID: 0}
 --- !u!1 &1779223658777701809
 GameObject:
   m_ObjectHideFlags: 0

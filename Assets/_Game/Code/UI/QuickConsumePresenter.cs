@@ -1,0 +1,118 @@
+using ROS.Game.Core;
+using ROS.Game.Gameplay;
+using ROS.Game.Input;
+using ROS.Game.Inventory;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace ROS.Game.UI
+{
+    [DisallowMultipleComponent]
+    public sealed class QuickConsumePresenter : MonoBehaviour
+    {
+        private const int MaxSlots = 3;
+
+        [SerializeField] private InventoryComponent inventory;
+        [SerializeField] private ConsumableController consumable;
+        [SerializeField] private ConsumeSlot[] slots = new ConsumeSlot[MaxSlots];
+
+        [System.Serializable]
+        private sealed class ConsumeSlot
+        {
+            public GameObject root;
+            public Image background;
+            public Image icon;
+            public Text nameLabel;
+            public Text countLabel;
+        }
+
+        private static readonly Color BgNormal =
+            new Color(0.06f, 0.06f, 0.06f, 0.82f);
+        private static readonly Color BgActive =
+            new Color(0.10f, 0.22f, 0.06f, 0.90f);
+
+        private void Awake()
+        {
+            if (inventory == null || consumable == null || slots == null || slots.Length != MaxSlots)
+            {
+                Debug.LogError($"[{nameof(QuickConsumePresenter)}] Referencias incompletas en '{name}'.", this);
+                enabled = false;
+            }
+        }
+
+        public void Bind(InventoryComponent playerInventory, ConsumableController controller)
+        {
+            inventory = playerInventory;
+            consumable = controller;
+        }
+
+        private void Update()
+        {
+            if (inventory == null || slots == null)
+                return;
+
+            var entries = new (InventoryItemDefinition item, int count)[MaxSlots];
+            int found = 0;
+
+            foreach (InventoryStack stack in inventory.Stacks)
+            {
+                if (stack.item == null || stack.amount <= 0 ||
+                    stack.item.itemType != ItemType.Healing)
+                    continue;
+
+                bool merged = false;
+                for (int i = 0; i < found; i++)
+                {
+                    if (entries[i].item != stack.item) continue;
+                    entries[i].count += stack.amount;
+                    merged = true;
+                    break;
+                }
+
+                if (!merged && found < MaxSlots)
+                    entries[found++] = (stack.item, stack.amount);
+            }
+
+            bool healActive = consumable != null && consumable.IsUsing;
+
+            for (int i = 0; i < MaxSlots; i++)
+            {
+                ConsumeSlot slot = slots[i];
+                if (slot == null || slot.root == null) continue;
+
+                bool hasItem = i < found;
+                slot.root.SetActive(hasItem);
+                if (!hasItem) continue;
+
+                InventoryItemDefinition item = entries[i].item;
+                bool first = i == 0;
+
+                if (slot.nameLabel != null)
+                    slot.nameLabel.text = ShortName(item.displayName);
+                if (slot.countLabel != null)
+                    slot.countLabel.text = entries[i].count.ToString();
+
+                if (slot.icon != null)
+                {
+                    slot.icon.sprite = item.icon;
+                    slot.icon.color = item.icon != null
+                        ? Color.white
+                        : LootIconHelper.GetIconColor(item.itemType);
+                }
+
+                if (slot.background != null)
+                    slot.background.color = first && !healActive
+                        ? BgActive
+                        : BgNormal;
+            }
+        }
+
+        private static string ShortName(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length <= 8)
+                return value;
+            return value.Substring(0, 7) + ".";
+        }
+
+    }
+}

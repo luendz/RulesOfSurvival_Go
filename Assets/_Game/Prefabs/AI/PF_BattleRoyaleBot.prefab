@@ -1,0 +1,2079 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &612264141541023924
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9145960891086668574}
+  - component: {fileID: 7768474580808233269}
+  - component: {fileID: 4763651212325148199}
+  m_Layer: 0
+  m_Name: Hitbox_Arm_L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9145960891086668574
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612264141541023924}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: -0.38, y: 1.14, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6518567716988289341}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7768474580808233269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612264141541023924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 3
+  owner: {fileID: 3126027295475445980}
+--- !u!136 &4763651212325148199
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612264141541023924}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.12
+  m_Height: 0.58
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1011073521211751665
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1709106100050919547}
+  - component: {fileID: 1606498054901173748}
+  m_Layer: 0
+  m_Name: AudioSource_Footstep
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1709106100050919547
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1011073521211751665}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4066192585010502977}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &1606498054901173748
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1011073521211751665}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.65
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!1 &1014989610194550989
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8337934031189355388}
+  - component: {fileID: 1740521903008408851}
+  m_Layer: 0
+  m_Name: AudioSource_Action
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8337934031189355388
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014989610194550989}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4066192585010502977}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &1740521903008408851
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014989610194550989}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.75
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!1 &1511180513318998816
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5930445482353849755}
+  - component: {fileID: 2160130584856430046}
+  m_Layer: 0
+  m_Name: VisualRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5930445482353849755
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1511180513318998816}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2718551663179322030}
+  m_Father: {fileID: 4066192585010502977}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2160130584856430046
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1511180513318998816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cd847984956eba47bc92c06291bc23d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerVisualAdapter
+  animator: {fileID: 3747227246736209371}
+  rightHand: {fileID: 3128059176826175471}
+  leftHand: {fileID: 3649936890169411105}
+  head: {fileID: 2077768463370729138}
+  spine: {fileID: 4700715445108099325}
+--- !u!1 &1760805221687996659
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 459615452157366795}
+  m_Layer: 0
+  m_Name: AIControlFrame
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &459615452157366795
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1760805221687996659}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4066192585010502977}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2365994187820811663
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4166653537482807693}
+  m_Layer: 0
+  m_Name: WeaponRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4166653537482807693
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2365994187820811663}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4066192585010502977}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2814646016060470781
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011410086144696399}
+  - component: {fileID: 5502916700513198782}
+  - component: {fileID: 5804840257416030643}
+  m_Layer: 0
+  m_Name: Hitbox_Head
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011410086144696399
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2814646016060470781}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.62, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6518567716988289341}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5502916700513198782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2814646016060470781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 1
+  owner: {fileID: 3126027295475445980}
+--- !u!135 &5804840257416030643
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2814646016060470781}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.19
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &4123969057038983441
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5844054732766909725}
+  - component: {fileID: 1845122402027290951}
+  m_Layer: 0
+  m_Name: AudioSource_Loop
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5844054732766909725
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4123969057038983441}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4066192585010502977}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &1845122402027290951
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4123969057038983441}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.55
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!1 &4965749663423683105
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 607578046542832098}
+  m_Layer: 0
+  m_Name: LeftHandIKProxy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &607578046542832098
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4965749663423683105}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7533013698203900915}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5196477259688376847
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5685737037072465179}
+  - component: {fileID: 6341468348121037904}
+  m_Layer: 0
+  m_Name: LeftHandIKConstraint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5685737037072465179
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5196477259688376847}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7533013698203900915}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6341468348121037904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5196477259688376847}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aeda7bfbf984f2a4da5ab4b8967b115d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.TwoBoneIKConstraint
+  m_Weight: 1
+  m_Data:
+    m_Root: {fileID: 4616472932734825950}
+    m_Mid: {fileID: 687655017664688917}
+    m_Tip: {fileID: 3649936890169411105}
+    m_Target: {fileID: 607578046542832098}
+    m_Hint: {fileID: 0}
+    m_TargetPositionWeight: 1
+    m_TargetRotationWeight: 0
+    m_HintWeight: 0
+    m_MaintainTargetPositionOffset: 0
+    m_MaintainTargetRotationOffset: 0
+--- !u!1 &5694683953002495278
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 686247841488342196}
+  - component: {fileID: 5771851841615648331}
+  - component: {fileID: 7117578305319872514}
+  m_Layer: 0
+  m_Name: Hitbox_Torso
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &686247841488342196
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5694683953002495278}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6518567716988289341}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5771851841615648331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5694683953002495278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 2
+  owner: {fileID: 3126027295475445980}
+--- !u!136 &7117578305319872514
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5694683953002495278}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.27
+  m_Height: 0.82
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &5928606294978015081
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7859930951813132644}
+  - component: {fileID: 8280634713316979765}
+  - component: {fileID: 7490379665205170517}
+  m_Layer: 0
+  m_Name: Hitbox_Leg_R
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7859930951813132644
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5928606294978015081}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.14, y: 0.43, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6518567716988289341}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8280634713316979765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5928606294978015081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 4
+  owner: {fileID: 3126027295475445980}
+--- !u!136 &7490379665205170517
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5928606294978015081}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.14
+  m_Height: 0.78
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &7696175128083726300
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4066192585010502977}
+  - component: {fileID: 5855296012714896344}
+  - component: {fileID: 2640033198694110004}
+  - component: {fileID: 3126027295475445980}
+  - component: {fileID: 8512140981779427804}
+  - component: {fileID: 958833814444231907}
+  - component: {fileID: 6004067574700781314}
+  - component: {fileID: 826845583909105141}
+  - component: {fileID: 5136814848124294455}
+  - component: {fileID: 3208074854048604277}
+  - component: {fileID: 2459768188170288252}
+  - component: {fileID: 8883835324140962748}
+  - component: {fileID: 1637742478793109868}
+  - component: {fileID: 5490318943654075748}
+  - component: {fileID: 4726019055090087045}
+  - component: {fileID: 4904778007827042823}
+  - component: {fileID: 8845560572302280376}
+  - component: {fileID: 5275068014695088290}
+  - component: {fileID: 6496514001200459371}
+  - component: {fileID: 634835440828062419}
+  - component: {fileID: 6186383132197128840}
+  - component: {fileID: 8985645191773734390}
+  - component: {fileID: 2528662277049582161}
+  - component: {fileID: 2811455123180896050}
+  - component: {fileID: 5279659830779842509}
+  - component: {fileID: 1622883635715581803}
+  - component: {fileID: 8739096674542442090}
+  m_Layer: 0
+  m_Name: PF_BattleRoyaleBot
+  m_TagString: Player
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4066192585010502977
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5930445482353849755}
+  - {fileID: 4166653537482807693}
+  - {fileID: 1709106100050919547}
+  - {fileID: 8337934031189355388}
+  - {fileID: 5844054732766909725}
+  - {fileID: 6518567716988289341}
+  - {fileID: 7363242763446206803}
+  - {fileID: 459615452157366795}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!143 &5855296012714896344
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 1.8
+  m_Radius: 0.32
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &2640033198694110004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f38075d20594164d988d173441ba6c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Input.PlayerInputReader
+  autoRunToggleKey: 0
+  cancelAutoRunOnBackwardInput: 1
+--- !u!114 &3126027295475445980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d2afe20f4298594285e7217aac2425a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.Health
+  maxHealth: 100
+  maxArmor: 100
+  armorAbsorption: 0.55
+--- !u!114 &8512140981779427804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7304fdd2a887c63418222ee0f8793835, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Inventory.InventoryComponent
+  capacity: 100
+  stacks: []
+--- !u!114 &958833814444231907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 911686af2aa2a434ca3ff26b7f017319, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Interaction.PlayerInteractor
+  input: {fileID: 2640033198694110004}
+  origin: {fileID: 4066192585010502977}
+  distance: 3
+  centerHeight: 0.75
+  mask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &6004067574700781314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7120ee38b9901ba4da5fccad24a98cd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerMotor
+  cameraTransform: {fileID: 0}
+  visualRoot: {fileID: 7124975566911811489}
+  equipment: {fileID: 826845583909105141}
+  consumable: {fileID: 2459768188170288252}
+  walkSpeed: 2.3
+  runSpeed: 5.2
+  sprintSpeed: 7.2
+  crouchSpeed: 2.2
+  proneSpeed: 1.25
+  rotationSharpness: 14
+  aimRotationSharpness: 16
+  jumpHeight: 1.25
+  gravity: -24
+  groundedGravity: -2
+  healingSpeedMultiplier: 0.5
+  reloadMovementSpeedMultiplier: 0.65
+  standingHeight: 1.8
+  crouchingHeight: 1.25
+  proneHeight: 0.65
+  _controller: {fileID: 5855296012714896344}
+  _input: {fileID: 2640033198694110004}
+--- !u!114 &826845583909105141
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c14b277b2da24d33a18c0ce8d5f7f947, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponEquipmentController
+  input: {fileID: 2640033198694110004}
+  animator: {fileID: 3747227246736209371}
+  primarySlot1: {fileID: 0}
+  primarySlot2: {fileID: 0}
+  sidearmSlot: {fileID: 0}
+  rightHandSocket: {fileID: 0}
+  backSocket01: {fileID: 0}
+  backSocket02: {fileID: 0}
+  hipSocket: {fileID: 0}
+  startWithSlot1Equipped: 0
+  autoDiscoverWeapons: 0
+  autoBindSocketsToHumanoidBones: 0
+  weaponSwitchDuration: 0.75
+  weaponSwapTime: 0.3
+  debugEquippedSlot: 0
+  debugEquippedWeapon: 
+  debugCombatState: 0
+  debugIsSwitchingWeapon: 0
+  debugPendingSlot: 0
+--- !u!114 &5136814848124294455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e930faab136bfb549bdadcf0ca5a780a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Audio.CharacterAudioController
+  footstepSource: {fileID: 1606498054901173748}
+  actionSource: {fileID: 1740521903008408851}
+  loopSource: {fileID: 1845122402027290951}
+  walkClips:
+  - {fileID: 8300000, guid: 3d146964ae9d1194caf5cd649986ed1e, type: 3}
+  - {fileID: 8300000, guid: 68d1d87380d65e84f81f6af2d44aaf64, type: 3}
+  - {fileID: 8300000, guid: 59808f65e1926154dad6e8d96284138c, type: 3}
+  - {fileID: 8300000, guid: 1c2c90d2a1313ae47b943e07aed6c57c, type: 3}
+  runClips:
+  - {fileID: 8300000, guid: fc4ab5ebd73a62a47b2901b8448ba1e7, type: 3}
+  - {fileID: 8300000, guid: 20fc58c1eb7a6be4a8a838a134421863, type: 3}
+  - {fileID: 8300000, guid: ae29770941c0d0646bfe1f465d322859, type: 3}
+  - {fileID: 8300000, guid: 735dcfa6a2effd5469a5c9af7184ec49, type: 3}
+  - {fileID: 8300000, guid: c3d691930db20624ea98b6bf721f7e3e, type: 3}
+  - {fileID: 8300000, guid: 81ed15971db831046b44e580f539043e, type: 3}
+  - {fileID: 8300000, guid: b6a151278d9513f42a1aff4c7d1c1eb3, type: 3}
+  sprintClips:
+  - {fileID: 8300000, guid: fc4ab5ebd73a62a47b2901b8448ba1e7, type: 3}
+  - {fileID: 8300000, guid: 20fc58c1eb7a6be4a8a838a134421863, type: 3}
+  - {fileID: 8300000, guid: ae29770941c0d0646bfe1f465d322859, type: 3}
+  - {fileID: 8300000, guid: 735dcfa6a2effd5469a5c9af7184ec49, type: 3}
+  - {fileID: 8300000, guid: c3d691930db20624ea98b6bf721f7e3e, type: 3}
+  - {fileID: 8300000, guid: 81ed15971db831046b44e580f539043e, type: 3}
+  - {fileID: 8300000, guid: b6a151278d9513f42a1aff4c7d1c1eb3, type: 3}
+  crouchWalkClips:
+  - {fileID: 8300000, guid: eecf46a45d0b95141b2a2e118008899b, type: 3}
+  - {fileID: 8300000, guid: 69464eb912669594e8627940ca1afeb7, type: 3}
+  - {fileID: 8300000, guid: 1c3553560f0dc724897841a24bf569e1, type: 3}
+  - {fileID: 8300000, guid: ce6e8f7e38068734eafa02fbc8929407, type: 3}
+  crawlClips:
+  - {fileID: 8300000, guid: 4d8b5ce679497d14f830925c5af20793, type: 3}
+  - {fileID: 8300000, guid: 42afad4465b012546a1c8c9ebdd89c5f, type: 3}
+  - {fileID: 8300000, guid: 8cf5b63a7c0f4b8469d8870ee83e2de0, type: 3}
+  - {fileID: 8300000, guid: 15ffeef5715b9444db0c725b29d74c1c, type: 3}
+  metalMoveClips:
+  - {fileID: 8300000, guid: 4b4785aae847b5246bba9948e125e8d7, type: 3}
+  - {fileID: 8300000, guid: 34a1904182853794493f74653618d481, type: 3}
+  - {fileID: 8300000, guid: a6c4847c13919f44fb93979399c54cb6, type: 3}
+  - {fileID: 8300000, guid: e6da0a3189e47e147bf9017c2830a66f, type: 3}
+  - {fileID: 8300000, guid: c7b003828bf4fa345b440d1f2d96ecba, type: 3}
+  - {fileID: 8300000, guid: a9e8edf09bfe59b449aed8c10f3ee8e0, type: 3}
+  - {fileID: 8300000, guid: 45df4635f7f7d404e87ed8cc6b1dadd0, type: 3}
+  walkInterval: 0.55
+  runInterval: 0.33
+  sprintInterval: 0.25
+  crouchInterval: 0.65
+  crawlInterval: 0.75
+  jumpClips:
+  - {fileID: 8300000, guid: a48707a6c3eaab74aa8da9f5e4ba8894, type: 3}
+  - {fileID: 8300000, guid: 8a78933cd86d36c42a4e52df5d5e776a, type: 3}
+  - {fileID: 8300000, guid: 3fb4e792c0218ab4fbdb022c3848ca67, type: 3}
+  jump3Clips:
+  - {fileID: 8300000, guid: c1e21d42418e2084c8ee844f5fed4c8a, type: 3}
+  - {fileID: 8300000, guid: f184b4108871214489aa972fce4768b2, type: 3}
+  - {fileID: 8300000, guid: 0d03615694770fe48afa4beacd24cd1b, type: 3}
+  hardLandClips:
+  - {fileID: 8300000, guid: 353680b9af3385c4f9d1376c62e13315, type: 3}
+  waterEntryClips:
+  - {fileID: 8300000, guid: f0c388dfcb9077244adab12365191838, type: 3}
+  - {fileID: 8300000, guid: e0d69ec4ccc248448b05b5163d3dc7df, type: 3}
+  proneDownClips:
+  - {fileID: 8300000, guid: 6d3ba78b4cb4b0c4881aa954afa64846, type: 3}
+  - {fileID: 8300000, guid: 14a4c3a1ff9a5b24d8efd64ba3f52250, type: 3}
+  - {fileID: 8300000, guid: 12777e286ff8a8a429a3611d0fad0c28, type: 3}
+  proneDownFoleyClips:
+  - {fileID: 8300000, guid: 6a385bf8e063006478ecf127f1487322, type: 3}
+  - {fileID: 8300000, guid: 57250744476373945b3ba57b0b97c660, type: 3}
+  - {fileID: 8300000, guid: ed29e25643c31d04b948899b64df4b38, type: 3}
+  proneUpClips:
+  - {fileID: 8300000, guid: f53143f6a14a1264180adbf135fd6af1, type: 3}
+  - {fileID: 8300000, guid: d5a4a1163bd0e844e8e5907a941d1802, type: 3}
+  - {fileID: 8300000, guid: 3b95e167e57e4374781a95cba4cb827d, type: 3}
+  proneUpFoleyClips:
+  - {fileID: 8300000, guid: aa7a887a1381f2d4686623a6a998ae30, type: 3}
+  - {fileID: 8300000, guid: 8d1b43a5233df3f4cb8b86b9043fe256, type: 3}
+  - {fileID: 8300000, guid: eea0c0523ec9b884ab3d9092ca2754da, type: 3}
+  crouchClips:
+  - {fileID: 8300000, guid: 205bd1d228464164bb842922345c9393, type: 3}
+  - {fileID: 8300000, guid: 11f593d8925830f4eb695fa6ee059ff4, type: 3}
+  - {fileID: 8300000, guid: 89e90987c2329994dad3f7fdb50612ae, type: 3}
+  dieClips:
+  - {fileID: 8300000, guid: bfb4e5ce2c2ea0d45975a1ca838fcb85, type: 3}
+  - {fileID: 8300000, guid: 4fef77a2b74747a48bcc135102f9ecb8, type: 3}
+  - {fileID: 8300000, guid: 1e698073733bfdf4eb8a13675bb72234, type: 3}
+  - {fileID: 8300000, guid: dad3ac52272e6a44a8ba15628d61df9e, type: 3}
+  pickupClips:
+  - {fileID: 8300000, guid: 0d2fecc5ad8eaff478de61ba3fd6dbd1, type: 3}
+  - {fileID: 8300000, guid: 45aac04f66bac544e80d93c5051753b1, type: 3}
+  - {fileID: 8300000, guid: 87e9b13006b081245b78135183e30878, type: 3}
+  pickupHandClips:
+  - {fileID: 8300000, guid: a47ae97d512d43844b9aac37b1f31458, type: 3}
+  - {fileID: 8300000, guid: 02a69703b98b7ec4a9c771d60d424ca8, type: 3}
+  - {fileID: 8300000, guid: 01ba80634e9f1ba4581b505767180e13, type: 3}
+  vaultClips:
+  - {fileID: 8300000, guid: d0181c56c884c694489d2ea7878b4f6b, type: 3}
+  - {fileID: 8300000, guid: e2a65471da633004aac252c743444df4, type: 3}
+  - {fileID: 8300000, guid: f45eee7d9873cc14a98f8414a7964933, type: 3}
+  throwGrenadeClips:
+  - {fileID: 8300000, guid: 8da90bf26c9c33147afb1b7348ecbda7, type: 3}
+  - {fileID: 8300000, guid: a50af6545b99ae749b1dc38067072e08, type: 3}
+  - {fileID: 8300000, guid: 9b4e20f12ef8e634bb9f4588de82d516, type: 3}
+  parachuteOpenClips:
+  - {fileID: 8300000, guid: 58263ec731cdb1f4fac87143e9c084e6, type: 3}
+  - {fileID: 8300000, guid: 9bfaf5c1eb765c845bda83e637a71a0e, type: 3}
+  - {fileID: 8300000, guid: 3bcdc82bdfd5db94f981a64da6df85cc, type: 3}
+  fallWindIntroClip: {fileID: 8300000, guid: 1663abc5352bea440bd95e474496b76e, type: 3}
+  skydiveWindClip: {fileID: 8300000, guid: e1b86035c49066743a369489cbe00864, type: 3}
+  skydiveWindFastClip: {fileID: 8300000, guid: 13c5e71d4eb22674f9c32a60cf358b4e, type: 3}
+  skydiveLandingClip: {fileID: 8300000, guid: 992b51f4d0eef024dbaf23443b081a2f, type: 3}
+  fastWindThreshold: 15
+--- !u!114 &3208074854048604277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92d6b77dcb3b4da2ad72f07a17a11c46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.PlayerLootEquipment
+  inventory: {fileID: 0}
+  protection: {fileID: 0}
+  weapons: {fileID: 0}
+  helmetItem: {fileID: 0}
+  vestItem: {fileID: 0}
+  backpackItem: {fileID: 0}
+  weaponItems:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+--- !u!114 &2459768188170288252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f92271d87c5a40a4498c6f5f888545d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Gameplay.ConsumableController
+  _health: {fileID: 3126027295475445980}
+  _inventory: {fileID: 8512140981779427804}
+  _input: {fileID: 2640033198694110004}
+  showHud: 1
+  barRoot: {fileID: 0}
+  fill: {fileID: 0}
+  label: {fileID: 0}
+--- !u!114 &8883835324140962748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90bd573496504534aab1990c2be4480f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.PlayerAimController
+  aimCamera: {fileID: 0}
+  maxAimDistance: 1000
+  aimMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  triggerInteraction: 1
+  drawDebugRay: 0
+--- !u!114 &1637742478793109868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e52bb1425a8604388f668e41e0972e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Parachute.ParachuteController
+  input: {fileID: 2640033198694110004}
+  motor: {fileID: 6004067574700781314}
+  equipment: {fileID: 826845583909105141}
+  controller: {fileID: 5855296012714896344}
+  parachuteVisual: {fileID: 431826155429353788}
+  freeFallSpeed: 24
+  freeFallAcceleration: 18
+  freeFallHorizontalSpeed: 9
+  airControl: 3.5
+  autoDeployGroundHeight: 32
+  manualDeployDelay: 0.35
+  glideFallSpeed: 5
+  glideSpeed: 10
+  steerSpeed: 85
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  debugParachuteAnimationState: 0
+--- !u!114 &5490318943654075748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa5e7fbea1a54b06a31b59ecff70bf3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerLeanController
+  input: {fileID: 2640033198694110004}
+  motor: {fileID: 6004067574700781314}
+  equipment: {fileID: 826845583909105141}
+  health: {fileID: 3126027295475445980}
+  parachute: {fileID: 1637742478793109868}
+  animator: {fileID: 3747227246736209371}
+  leanSpeed: 20
+  cancelWhileSprinting: 0
+  cancelWhileProne: 1
+  cancelWhileAirborne: 1
+  airborneSuppressDelay: 0.12
+  cancelWhileReloading: 1
+  obstructionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  clearanceRadius: 0.14
+  clearanceDistance: 0.42
+--- !u!114 &4726019055090087045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b8f4d7c3a7141a8842a9a7b3cf5b11d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Character.PlayerLeanRigApplier
+  leanController: {fileID: 5490318943654075748}
+  humanoidAnimator: {fileID: 3747227246736209371}
+  hipsWeight: 0.1
+  spineWeight: 0.32
+  chestWeight: 0.35
+  upperChestWeight: 0.23
+  maximumLeanDegrees: 15
+--- !u!114 &4904778007827042823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b7c0f2a0d9f4f0db49a4c685a5db1d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Animation.PlayerGestureController
+  animationCoordinator: {fileID: 5275068014695088290}
+  motor: {fileID: 6004067574700781314}
+  input: {fileID: 2640033198694110004}
+  equipment: {fileID: 826845583909105141}
+  health: {fileID: 3126027295475445980}
+  parachute: {fileID: 1637742478793109868}
+  consumable: {fileID: 2459768188170288252}
+  transitionDuration: 0.12
+  aimCancelTransitionDuration: 0.02
+  movementCancelThreshold: 0.18
+  combatInputGraceTime: 0.18
+--- !u!114 &8845560572302280376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38f1c4b7a9d24e02a5b6c13d7e8f9041, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.PlayerAuxiliaryWeaponSlots
+  input: {fileID: 2640033198694110004}
+  weapons: {fileID: 826845583909105141}
+  lootEquipment: {fileID: 3208074854048604277}
+  animator: {fileID: 3747227246736209371}
+  rightHandSocket: {fileID: 3128059176826175471}
+  selectedAuxiliarySlot: 0
+  rawModelLocalPosition: {x: -0.044, y: 0.228, z: 0.021}
+  rawModelLocalEulerAngles: {x: 1.246, y: -88.748, z: 89.526}
+  rawModelLocalScale: {x: 40, y: 40, z: 40}
+  aimController: {fileID: 8883835324140962748}
+  health: {fileID: 3126027295475445980}
+  consumable: {fileID: 2459768188170288252}
+  gestureController: {fileID: 4904778007827042823}
+  parachute: {fileID: 1637742478793109868}
+  meleeCastRadius: 0.35
+  meleeHitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  meleeTriggerInteraction: 2
+  unarmedDamage: 15
+  unarmedRange: 1.6
+  unarmedAttacksPerSecond: 1.5
+  unarmedImpactForce: 3
+  _characterController: {fileID: 5855296012714896344}
+--- !u!114 &5275068014695088290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a6b2b38127b4f39a7c9ef14c0d26a91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Animation.PlayerAnimationCoordinator
+  animator: {fileID: 3747227246736209371}
+  motor: {fileID: 6004067574700781314}
+  input: {fileID: 2640033198694110004}
+  equipment: {fileID: 826845583909105141}
+  auxiliarySlots: {fileID: 8845560572302280376}
+  aimController: {fileID: 8883835324140962748}
+  leanController: {fileID: 5490318943654075748}
+  health: {fileID: 3126027295475445980}
+  parachute: {fileID: 1637742478793109868}
+  consumable: {fileID: 2459768188170288252}
+  gestureController: {fileID: 4904778007827042823}
+  interactor: {fileID: 958833814444231907}
+  movementDampTime: 0.12
+  fallAnimationDistance: 1.5
+  fallAnimationMinDownVelocity: -0.2
+  aimPitchRange: 70
+  aimYawRange: 70
+  pickupUpperBodyDuration: 0.65
+  airDropLandingMaxDuration: 4
+  classicFirePulseDuration: 0.08
+  debugUpperBodyArmed: 0
+  debugUpperBodyAim: 0
+  debugReloading: 0
+  debugHealing: 0
+  debugWeaponLayerActive: 0
+  debugActionsLayerActive: 0
+  debugFullBodyOverride: 0
+  debugReloadSpeed: 1
+  debugAimPitch: 0
+  debugAimYaw: 0
+  debugAirbornePeakY: 0
+  debugFallDistance: 0
+  debugShouldFall: 0
+  debugWeaponCategory: 0
+  debugWeaponStyle: 0
+  debugClassicWeaponType: 0
+  debugClassicFiring: 0
+  debugClassicStance: 0
+  debugClassicSprinting: 0
+  debugClassicAutoRunning: 0
+  debugClassicSwitchingWeapon: 0
+  debugClassicUsingConsumable: 0
+  debugClassicPickingUp: 0
+--- !u!114 &6496514001200459371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eab586a7a1f48a2ad90b4ee69896759, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.ProtectiveEquipment
+  helmetLevel: 0
+  helmetDurability: 0
+  vestLevel: 0
+  vestDurability: 0
+--- !u!114 &634835440828062419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 278fc8bb90394f54bdf0a865787a5cd2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.PlayerDamageHitboxRig
+--- !u!114 &6186383132197128840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9e909515a694f6bbdc9f2b55f176237, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.FallDamageReceiver
+  safeImpactSpeed: 12
+  lethalImpactSpeed: 28
+  maximumDamage: 100
+--- !u!114 &8985645191773734390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c071ab4e46745f4bcb5be79e86f9f46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.CombatFeedbackPresenter
+  health: {fileID: 0}
+  directionReference: {fileID: 0}
+  audioSource: {fileID: 0}
+  receivedDamageClips: []
+  hitConfirmedClips: []
+  hitmarkerDuration: 0.16
+  damageIndicatorDuration: 0.65
+  hitmarkerRoot: {fileID: 0}
+  hitmarkerParts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  headshotLabel: {fileID: 0}
+  damageBars:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+--- !u!114 &2528662277049582161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f46305e0e6f8426fbda9fc001850ad78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Loot.LootDropController
+  inventory: {fileID: 0}
+  input: {fileID: 0}
+  dropDistance: 1.25
+  dropHeight: 0.25
+--- !u!114 &2811455123180896050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dcfd9dd3cb2dcd478decd243f3457d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Teams.TeamComponent
+  teamId: -1
+  squadSlot: 0
+--- !u!114 &5279659830779842509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91bfdf4df85e49c38d366c81dfcabaf4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.AI.BattleRoyaleBotController
+  state: 0
+  targetName: 
+  lootTargetName: 
+  debugHasWeapon: 0
+  debugHasUsableAmmo: 0
+  debugEnemyThreatNearby: 0
+  _controlFrame: {fileID: 459615452157366795}
+--- !u!114 &1622883635715581803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed0686974f20fed4397a4dc312e2d79a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.BattleRoyale.PlayerEliminationController
+  health: {fileID: 3126027295475445980}
+  inventory: {fileID: 8512140981779427804}
+  lootEquipment: {fileID: 3208074854048604277}
+  lootVisualDefinition: {fileID: 11400000, guid: 9676f3365a525044b8f8e11a498fd465, type: 2}
+  motor: {fileID: 6004067574700781314}
+  interactor: {fileID: 958833814444231907}
+  aimController: {fileID: 8883835324140962748}
+  weaponEquipment: {fileID: 826845583909105141}
+  weapons: []
+  input: {fileID: 2640033198694110004}
+  visualRoot: {fileID: 5930445482353849755}
+  deathCamera: {fileID: 0}
+  useFallbackPose: 1
+  fallbackDuration: 0.45
+  fallbackEuler: {x: 0, y: 0, z: 82}
+  fallbackOffset: {x: 0, y: 0.25, z: 0}
+--- !u!114 &8739096674542442090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696175128083726300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 679113f97fb3f224a8b62ee969d4992b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponAmmoConnector
+--- !u!1 &8217252276214733473
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6725117003813156372}
+  - component: {fileID: 2005363046869939033}
+  - component: {fileID: 583359053543132854}
+  m_Layer: 0
+  m_Name: Hitbox_Leg_L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6725117003813156372
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8217252276214733473}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.14, y: 0.43, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6518567716988289341}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2005363046869939033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8217252276214733473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 4
+  owner: {fileID: 3126027295475445980}
+--- !u!136 &583359053543132854
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8217252276214733473}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.14
+  m_Height: 0.78
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &8508292825742225194
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7533013698203900915}
+  - component: {fileID: 7770977102581062446}
+  - component: {fileID: 2350498881069528676}
+  m_Layer: 0
+  m_Name: WeaponRig
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7533013698203900915
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8508292825742225194}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5685737037072465179}
+  - {fileID: 607578046542832098}
+  m_Father: {fileID: 7124975566911811489}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7770977102581062446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8508292825742225194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70b342d8ce5c2fd48b8fa3147d48d1d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.Rig
+  m_Weight: 1
+  m_Effectors: []
+--- !u!114 &2350498881069528676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8508292825742225194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 821d98f71516e664d8d10428d5b0f951, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.WeaponLeftHandIKController
+  leftHandConstraint: {fileID: 6341468348121037904}
+  ikProxy: {fileID: 607578046542832098}
+  equipment: {fileID: 826845583909105141}
+  aimingWeight: 1
+  blendInSpeed: 8
+  blendOutSpeed: 10
+  debugWeaponEquipped: 0
+  debugActiveWeapon: 
+  debugHasLeftHandTarget: 0
+  debugCombatState: 0
+  debugTargetWeight: 0
+  debugCurrentWeight: 0
+--- !u!1 &8713359348944194516
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6518567716988289341}
+  m_Layer: 0
+  m_Name: RuntimeDamageHitboxes
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6518567716988289341
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8713359348944194516}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 9011410086144696399}
+  - {fileID: 686247841488342196}
+  - {fileID: 9145960891086668574}
+  - {fileID: 8345023259839251648}
+  - {fileID: 6725117003813156372}
+  - {fileID: 7859930951813132644}
+  m_Father: {fileID: 4066192585010502977}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8823041753408199576
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8345023259839251648}
+  - component: {fileID: 1332126188175702393}
+  - component: {fileID: 6530718315941182309}
+  m_Layer: 0
+  m_Name: Hitbox_Arm_R
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8345023259839251648
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8823041753408199576}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: 0.38, y: 1.14, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6518567716988289341}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1332126188175702393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8823041753408199576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd37ed056b88451c96320c2ab901bcfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Combat.DamageHitbox
+  hitZone: 3
+  owner: {fileID: 3126027295475445980}
+--- !u!136 &6530718315941182309
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8823041753408199576}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.12
+  m_Height: 0.58
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1001 &2894001924525498475
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4066192585010502977}
+    m_Modifications:
+    - target: {fileID: 3303294615036459351, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_Name
+      value: BattleRoyaleParachuteVisual
+      objectReference: {fileID: 0}
+    - target: {fileID: 3303294615036459351, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+--- !u!1 &431826155429353788 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3303294615036459351, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+  m_PrefabInstance: {fileID: 2894001924525498475}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7363242763446206803 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
+  m_PrefabInstance: {fileID: 2894001924525498475}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3855478553882762561
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5930445482353849755}
+    m_Modifications:
+    - target: {fileID: 108572386155161754, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 7ed1d476b8045e84a8f857f938baba85, type: 2}
+    - target: {fileID: 108572386155161754, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6420284881912075110, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      propertyPath: m_Name
+      value: MainCharacter_Male_01
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 6296479600047043296, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7533013698203900915}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6641198092777187418, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6737686051348914845}
+  m_SourcePrefab: {fileID: 100100000, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+--- !u!4 &687655017664688917 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4326380107330137684, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2077768463370729138 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2978249594219604979, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2718551663179322030 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1169622007122776047, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3128059176826175471 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2227153636911112878, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3649936890169411105 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 515177350627187552, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &3747227246736209371 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 108572386155161754, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4616472932734825950 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8471386335415691423, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4700715445108099325 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8411917732350383548, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7124975566911811489 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6296479600047043296, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7614231460382111003 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6641198092777187418, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
+  m_PrefabInstance: {fileID: 3855478553882762561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6737686051348914845
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7614231460382111003}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fff0960ef4ea6e04eac66b4a7fd2189d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.RigBuilder
+  m_RigLayers:
+  - m_Rig: {fileID: 7770977102581062446}
+    m_Active: 1
+  m_Effectors: []
