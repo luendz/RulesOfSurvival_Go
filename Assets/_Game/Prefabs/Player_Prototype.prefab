@@ -267,11 +267,11 @@ MonoBehaviour:
   hipSocket: {fileID: 0}
   startWithSlot1Equipped: 0
   autoDiscoverWeapons: 0
-  autoBindSocketsToHumanoidBones: 0
+  autoBindSocketsToHumanoidBones: 1
   weaponSwitchDuration: 0.75
   weaponSwapTime: 0.3
   debugEquippedSlot: 0
-  debugEquippedWeapon: 
+  debugEquippedWeapon:
   debugCombatState: 0
   debugIsSwitchingWeapon: 0
   debugPendingSlot: 0

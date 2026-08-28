@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using ROS.Game.Character;
 using ROS.Game.Combat;
 using ROS.Game.Core;
 using ROS.Game.Input;
@@ -1130,11 +1129,21 @@ namespace ROS.Game.Weapons
 
         private void BindSocketsToBones()
         {
-            if (
-                animator == null ||
-                !animator.isHuman
-            )
+            if (animator == null)
             {
+                Debug.LogWarning(
+                    $"[WeaponEquipmentController] Animator nulo en {gameObject.name} — sockets no vinculados.",
+                    this
+                );
+                return;
+            }
+
+            if (!animator.isHuman)
+            {
+                Debug.LogWarning(
+                    $"[WeaponEquipmentController] Animator '{animator.name}' no es Humanoid — sockets no vinculados.",
+                    this
+                );
                 return;
             }
 
@@ -1166,42 +1175,31 @@ namespace ROS.Game.Weapons
             params HumanBodyBones[] candidates
         )
         {
-            if (
-                socket == null ||
-                animator == null
-            )
-            {
+            if (socket == null || animator == null)
                 return;
-            }
 
             Transform bone = null;
 
-            foreach (
-                HumanBodyBones candidate
-                in candidates
-            )
+            foreach (HumanBodyBones candidate in candidates)
             {
-                bone =
-                    animator.GetBoneTransform(
-                        candidate
-                    );
-
+                bone = animator.GetBoneTransform(candidate);
                 if (bone != null)
-                {
                     break;
-                }
             }
 
             if (bone == null)
             {
+                Debug.LogWarning(
+                    $"[WeaponEquipmentController] No se encontró hueso para socket '{socket.name}'.",
+                    this
+                );
                 return;
             }
 
-            BoneSocketFollower follower =
-                socket.GetComponent<BoneSocketFollower>()
-                ?? socket.gameObject.AddComponent<BoneSocketFollower>();
-
-            follower.Bind(bone);
+            // Reparentar el socket directamente al hueso:
+            // worldPositionStays=false preserva localPosition=(0,0,0),
+            // lo que coloca el socket exactamente en la posición del hueso.
+            socket.SetParent(bone, false);
         }
 
         private void SetSwitchingWeaponState(
