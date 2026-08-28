@@ -734,10 +734,12 @@ namespace ROS.Game.Animation
                                   !dead &&
                                   !motor.IsProne;
 
+            // Esta capa también contiene las poses y ataques desarmados.
+            // Mantenerla en peso cero cuando no hay arma permite que sus estados
+            // avancen en el Animator, pero impide que la pose llegue al personaje.
             bool weaponLayerActive = !dead &&
                                      !fullBodyOverride &&
-                                     !motor.IsProne &&
-                                     (hasWeapon || switchingWeapon);
+                                     !motor.IsProne;
 
             bool actionsLayerActive = !dead &&
                                       !fullBodyOverride &&
@@ -798,11 +800,13 @@ namespace ROS.Game.Animation
 
             SetLayerWeightSafe(_locomotionLayer, 1f);
             SetLayerWeightSafe(_weaponUpperBodyLayer, weaponLayerActive ? 1f : 0f);
-            // Este layer permanece listo en peso 1. Su estado Empty no contiene
-            // motion, por lo que no altera la pose base; las transiciones visibles
-            // del Animator deciden cuándo una acción afecta el torso. Evita perder
-            // acciones muy cortas por sincronizar peso y transición en el mismo frame.
-            SetLayerWeightSafe(_upperBodyActionsLayer, 1f);
+            // Esta capa es Override y está por encima de UpperBody_Weapon con la
+            // misma máscara. Solo debe aportar pose mientras exista una acción;
+            // en Empty debe quedar en cero para no neutralizar las capas inferiores.
+            SetLayerWeightSafe(
+                _upperBodyActionsLayer,
+                actionsLayerActive ? 1f : 0f
+            );
             SetLayerWeightSafe(
                 _aimRecoilLayer,
                 aiming && !dead && !fullBodyOverride ? 1f : 0f
@@ -1183,7 +1187,7 @@ namespace ROS.Game.Animation
 
             SetLayerWeightSafe(_locomotionLayer, 1f);
             SetLayerWeightSafe(_weaponUpperBodyLayer, 0f);
-            SetLayerWeightSafe(_upperBodyActionsLayer, 1f);
+            SetLayerWeightSafe(_upperBodyActionsLayer, 0f);
             SetLayerWeightSafe(_aimRecoilLayer, 0f);
             SetLayerWeightSafe(_fullBodyOverrideLayer, 0f);
         }
