@@ -52,6 +52,9 @@ namespace ROS.Game.Weapons
         [SerializeField]
         private Transform hipSocket;
 
+        [SerializeField]
+        private Transform backMeleeSocket;
+
         [Header("Back Socket Offsets")]
         [SerializeField]
         private Vector3 backSocket01LocalPosition = new Vector3(0.35f, -0.06f, -0.15f);
@@ -64,6 +67,12 @@ namespace ROS.Game.Weapons
 
         [SerializeField]
         private Vector3 backSocket02LocalEulerAngles = new Vector3(0f, 0f, -30f);
+
+        [SerializeField]
+        private Vector3 backMeleeSocketLocalPosition = new Vector3(0f, 0.05f, -0.15f);
+
+        [SerializeField]
+        private Vector3 backMeleeSocketLocalEulerAngles = new Vector3(0f, 0f, 0f);
 
         [Header("Startup")]
         [SerializeField]
@@ -103,6 +112,8 @@ namespace ROS.Game.Weapons
 
         [SerializeField]
         private int debugPendingSlot;
+
+        public Transform BackMeleeSocket => backMeleeSocket;
 
         public WeaponController PrimarySlot1 =>
             primarySlot1;
@@ -1138,6 +1149,15 @@ namespace ROS.Game.Weapons
                         "Weapon_Hip"
                     );
             }
+
+            if (backMeleeSocket == null)
+            {
+                backMeleeSocket =
+                    FindChildRecursive(
+                        transform,
+                        "Weapon_Back_Melee"
+                    );
+            }
         }
 
         private void BindSocketsToBones()
@@ -1193,6 +1213,17 @@ namespace ROS.Game.Weapons
                 hipSocket,
                 HumanBodyBones.Hips
             );
+
+            BindSocket(
+                backMeleeSocket,
+                HumanBodyBones.Hips
+            );
+
+            if (backMeleeSocket != null)
+            {
+                backMeleeSocket.localPosition = backMeleeSocketLocalPosition;
+                backMeleeSocket.localRotation = Quaternion.Euler(backMeleeSocketLocalEulerAngles);
+            }
         }
 
         private void BindSocket(

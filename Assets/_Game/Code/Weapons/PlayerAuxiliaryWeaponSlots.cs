@@ -24,6 +24,12 @@ namespace ROS.Game.Weapons
         [SerializeField] private PlayerWeaponSlot selectedAuxiliarySlot =
             PlayerWeaponSlot.None;
 
+        [Header("Melee Back Socket")]
+        [SerializeField] private Transform meleeBackSocket;
+        [SerializeField] private Vector3 meleeHolsteredLocalPosition = Vector3.zero;
+        [SerializeField] private Vector3 meleeHolsteredLocalEulerAngles = new Vector3(90f, 0f, 0f);
+        [SerializeField] private Vector3 meleeHolsteredLocalScale = new Vector3(40f, 40f, 40f);
+
         [Header("Raw Model Hand Mount")]
         [Tooltip(
             "Transform provisional para modelos FBX usados directamente como weaponPrefab. " +
@@ -54,6 +60,7 @@ namespace ROS.Game.Weapons
         [SerializeField, Min(0f)] private float unarmedImpactForce = 3f;
 
         private GameObject _heldVisualInstance;
+        private GameObject _holsteredMeleeVisual;
         [SerializeField] private CharacterController _characterController;
         private bool _meleeFireLatched;
         private float _nextMeleeAttackTime;
@@ -76,6 +83,12 @@ namespace ROS.Game.Weapons
             RefreshHeldVisual();
         }
 
+        private void Start()
+        {
+            ResolveMeleeBackSocket();
+            RefreshHolsteredMeleeVisual();
+        }
+
         private void OnEnable()
         {
             if (weapons != null)
@@ -91,6 +104,28 @@ namespace ROS.Game.Weapons
             }
 
             RefreshHeldVisual();
+        }
+
+        private void ResolveMeleeBackSocket()
+        {
+            if (meleeBackSocket != null)
+                return;
+
+            if (weapons != null)
+                meleeBackSocket = weapons.BackMeleeSocket;
+
+            if (meleeBackSocket != null)
+                return;
+
+            Transform[] all = transform.root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].name == "Weapon_Back_Melee")
+                {
+                    meleeBackSocket = all[i];
+                    break;
+                }
+            }
         }
 
         private void Update()
@@ -360,17 +395,20 @@ namespace ROS.Game.Weapons
             if (selectedAuxiliarySlot == slot)
             {
                 RefreshHeldVisual();
+                RefreshHolsteredMeleeVisual();
                 return;
             }
 
             selectedAuxiliarySlot = slot;
             RefreshHeldVisual();
+            RefreshHolsteredMeleeVisual();
             AuxiliarySlotChanged?.Invoke(slot);
         }
 
         private void HandleEquipmentChanged()
         {
             RefreshHeldVisual();
+            RefreshHolsteredMeleeVisual();
         }
 
         private void RefreshHeldVisual()
@@ -426,6 +464,67 @@ namespace ROS.Game.Weapons
             DisableVisualPhysics(_heldVisualInstance);
         }
 
+        private void RefreshHolsteredMeleeVisual()
+        {
+            DestroyHolsteredMeleeVisual();
+
+            if (meleeBackSocket == null)
+                return;
+
+            if (lootEquipment == null)
+                return;
+
+            InventoryItemDefinition meleeItem =
+                lootEquipment.GetWeaponItem(PlayerWeaponSlot.Melee);
+
+            if (meleeItem == null)
+                return;
+
+            if (selectedAuxiliarySlot == PlayerWeaponSlot.Melee)
+                return;
+
+            GameObject visualPrefab = meleeItem.weaponPrefab != null
+                ? meleeItem.weaponPrefab
+                : meleeItem.worldModel;
+
+            if (visualPrefab == null)
+                return;
+
+            _holsteredMeleeVisual = Instantiate(visualPrefab, meleeBackSocket);
+            _holsteredMeleeVisual.name = $"Holstered_{meleeItem.displayName}";
+
+            Transform visualTransform = _holsteredMeleeVisual.transform;
+            WeaponMount mount = _holsteredMeleeVisual.GetComponent<WeaponMount>();
+            if (mount != null)
+            {
+                visualTransform.localPosition = Vector3.zero;
+                visualTransform.localRotation = Quaternion.identity;
+                visualTransform.localScale = Vector3.one;
+                mount.Apply(WeaponMountPoint.BackMelee);
+            }
+            else
+            {
+                visualTransform.localPosition = meleeHolsteredLocalPosition;
+                visualTransform.localRotation = Quaternion.Euler(meleeHolsteredLocalEulerAngles);
+                visualTransform.localScale = meleeHolsteredLocalScale;
+            }
+
+            DisableVisualPhysics(_holsteredMeleeVisual);
+        }
+
+        private void DestroyHolsteredMeleeVisual()
+        {
+            if (_holsteredMeleeVisual == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(_holsteredMeleeVisual);
+            else
+                DestroyImmediate(_holsteredMeleeVisual);
+
+            _holsteredMeleeVisual = null;
+        }
+
         private void DestroyHeldVisual()
         {
             if (_heldVisualInstance == null)
@@ -465,6 +564,7 @@ namespace ROS.Game.Weapons
                 lootEquipment.EquipmentChanged -= HandleEquipmentChanged;
 
             DestroyHeldVisual();
+            DestroyHolsteredMeleeVisual();
         }
     }
 }

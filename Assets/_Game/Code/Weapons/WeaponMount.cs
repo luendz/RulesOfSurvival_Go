@@ -7,7 +7,8 @@ namespace ROS.Game.Weapons
         RightHand,
         Back01,
         Back02,
-        Hip
+        Hip,
+        BackMelee
     }
 
     /// <summary>
@@ -37,6 +38,12 @@ namespace ROS.Game.Weapons
 
         [SerializeField] private Vector3 backVisualScale =
             new Vector3(40f, 40f, 40f);
+
+        [Header("Back Melee - Visual_*")]
+        [SerializeField] private Vector3 backMeleeLocalPosition =
+            new Vector3(0f, 0.05f, -0.03f);
+        [SerializeField] private Vector3 backMeleeLocalEulerAngles =
+            new Vector3(90f, 0f, 0f);
 
         [Header("Hip")]
         [SerializeField] private Vector3 hipLocalPosition = new Vector3(0.18f, -0.05f, 0f);
@@ -113,6 +120,10 @@ namespace ROS.Game.Weapons
 
                 case WeaponMountPoint.Back02:
                     ApplyBackVisual(back02LocalPosition, back02LocalEulerAngles);
+                    break;
+
+                case WeaponMountPoint.BackMelee:
+                    ApplyBackVisual(backMeleeLocalPosition, backMeleeLocalEulerAngles);
                     break;
 
                 case WeaponMountPoint.Hip:
