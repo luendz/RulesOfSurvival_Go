@@ -91,7 +91,6 @@ GameObject:
   - component: {fileID: 2996432441501125645}
   - component: {fileID: 2642500773763188720}
   - component: {fileID: 69153517704383285}
-  - component: {fileID: 5599779571766301083}
   - component: {fileID: 3364378674638225108}
   - component: {fileID: 2257425146492110011}
   m_Layer: 0
@@ -695,37 +694,6 @@ MonoBehaviour:
   safeImpactSpeed: 12
   lethalImpactSpeed: 28
   maximumDamage: 100
---- !u!114 &5599779571766301083
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 671814729856690070}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c071ab4e46745f4bcb5be79e86f9f46, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ROS.Game::ROS.Game.UI.CombatFeedbackPresenter
-  health: {fileID: 0}
-  directionReference: {fileID: 0}
-  audioSource: {fileID: 0}
-  receivedDamageClips: []
-  hitConfirmedClips: []
-  hitmarkerDuration: 0.16
-  damageIndicatorDuration: 0.65
-  hitmarkerRoot: {fileID: 0}
-  hitmarkerParts:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  headshotLabel: {fileID: 0}
-  damageBars:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
 --- !u!114 &3364378674638225108
 MonoBehaviour:
   m_ObjectHideFlags: 0

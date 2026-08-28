@@ -33,6 +33,10 @@ namespace ROS.Game.Gameplay
 
         private void Awake()
         {
+            if (_health == null) _health = GetComponent<Health>();
+            if (_inventory == null) _inventory = GetComponent<InventoryComponent>();
+            if (_input == null) _input = GetComponent<PlayerInputReader>();
+
             if (_health == null || _inventory == null || _input == null ||
                 (showHud && (barRoot == null || fill == null || label == null)))
             {
