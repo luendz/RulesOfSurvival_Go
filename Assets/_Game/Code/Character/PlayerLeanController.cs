@@ -84,7 +84,17 @@ namespace ROS.Game.Character
         private float _ungroundedTime;
         private void Awake()
         {
-            EnsureReferences();
+            if (!HasValidReferences())
+            {
+                Debug.LogError(
+                    "PlayerLeanController tiene referencias sin asignar. " +
+                    "Completa el prefab antes de ejecutar.",
+                    this
+                );
+                enabled = false;
+                return;
+            }
+
             CacheHumanoidBones();
         }
 
@@ -103,8 +113,6 @@ namespace ROS.Game.Character
 
         private void Update()
         {
-            EnsureReferences();
-
             if (input == null)
             {
                 SetCenter();
@@ -332,28 +340,19 @@ namespace ROS.Game.Character
             return Mathf.Sign(requestedLean) * allowedLean;
         }
 
-        private void EnsureReferences()
+        private bool HasValidReferences()
         {
-            if (input == null ||
-                motor == null ||
-                equipment == null ||
-                health == null ||
-                parachute == null ||
-                animator == null ||
-                !animator.isHuman)
-            {
-                Debug.LogError(
-                    "PlayerLeanController tiene referencias sin asignar. " +
-                    "Completa el prefab antes de ejecutar.",
-                    this
-                );
-            }
+            return input != null &&
+                   motor != null &&
+                   equipment != null &&
+                   health != null &&
+                   parachute != null &&
+                   animator != null &&
+                   animator.isHuman;
         }
 
         private void CacheHumanoidBones()
         {
-            EnsureReferences();
-
             if (animator == null || !animator.isHuman)
             {
                 _hips = null;

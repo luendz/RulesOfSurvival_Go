@@ -4,6 +4,7 @@ using System.IO;
 using ROS.Game.AI;
 using ROS.Game.BattleRoyale;
 using ROS.Game.CameraSystem;
+using ROS.Game.Character;
 using ROS.Game.Lobby;
 using ROS.Game.UI;
 using UnityEditor;
@@ -114,6 +115,21 @@ namespace ROS.Game.Editor
                         "input"
                     );
                 }
+                foreach (PlayerLeanController lean in
+                         root.GetComponentsInChildren<PlayerLeanController>(true))
+                {
+                    RequireReferences(
+                        lean,
+                        errors,
+                        path,
+                        "input",
+                        "motor",
+                        "equipment",
+                        "health",
+                        "parachute",
+                        "animator"
+                    );
+                }
                 PrefabUtility.UnloadPrefabContents(root);
             }
         }
@@ -173,6 +189,7 @@ namespace ROS.Game.Editor
                         "_input",
                         "_gestureController"
                     );
+                    ValidateLeanControllers(scene, path, errors);
                     BattleRoyaleBotDirector bots = FindInScene<BattleRoyaleBotDirector>(scene);
                     if (bots != null)
                         RequireReferences(bots, errors, path, "sourcePlayer", "airplane", "matchManager",
@@ -193,6 +210,34 @@ namespace ROS.Game.Editor
                 if (value != null) return value;
             }
             return null;
+        }
+
+        private static void ValidateLeanControllers(
+            Scene scene,
+            string path,
+            List<string> errors)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (PlayerLeanController lean in
+                         root.GetComponentsInChildren<PlayerLeanController>(true))
+                {
+                    RequireReferences(
+                        lean,
+                        errors,
+                        path,
+                        "input",
+                        "motor",
+                        "equipment",
+                        "health",
+                        "parachute",
+                        "animator"
+                    );
+
+                    if (lean.GetComponents<PlayerLeanController>().Length > 1)
+                        errors.Add($"{path}: {lean.name} tiene PlayerLeanController duplicado.");
+                }
+            }
         }
 
         private static void RequireReferences(
