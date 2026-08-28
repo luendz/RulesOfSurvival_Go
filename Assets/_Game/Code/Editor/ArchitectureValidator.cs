@@ -298,7 +298,7 @@ namespace ROS.Game.Editor
             foreach (ParachuteController parachute in
                      root.GetComponentsInChildren<ParachuteController>(true))
                 RequireReferences(parachute, errors, path, "input", "motor", "equipment",
-                    "controller");
+                    "controller", "parachuteVisual", "parachuteBackpackVisual");
 
             foreach (ConsumableController consumable in
                      root.GetComponentsInChildren<ConsumableController>(true))

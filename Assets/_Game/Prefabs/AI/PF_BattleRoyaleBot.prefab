@@ -927,6 +927,7 @@ Transform:
   - {fileID: 6518567716988289341}
   - {fileID: 7363242763446206803}
   - {fileID: 459615452157366795}
+  - {fileID: 920000000000000003}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &5855296012714896344
@@ -1281,6 +1282,7 @@ MonoBehaviour:
   equipment: {fileID: 826845583909105141}
   controller: {fileID: 5855296012714896344}
   parachuteVisual: {fileID: 431826155429353788}
+  parachuteBackpackVisual: {fileID: 920000000000000002}
   freeFallSpeed: 24
   freeFallAcceleration: 18
   freeFallHorizontalSpeed: 9
@@ -1947,6 +1949,65 @@ GameObject:
 Transform:
   m_CorrespondingSourceObject: {fileID: 5622446361142026552, guid: 1dc1b3efd7db60d4785ce3c36f477332, type: 3}
   m_PrefabInstance: {fileID: 2894001924525498475}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &920000000000000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4066192585010502977}
+    m_Modifications:
+    - target: {fileID: 745100000000000001, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_Name
+      value: BattleRoyaleParachuteBackpackVisual
+      objectReference: {fileID: 0}
+    - target: {fileID: 745100000000000001, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 745100000000000002, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 745100000000000002, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.35
+      objectReference: {fileID: 0}
+    - target: {fileID: 745100000000000002, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 745100000000000002, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 745100000000000002, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 745100000000000002, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 745100000000000002, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+--- !u!1 &920000000000000002 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 745100000000000001, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+  m_PrefabInstance: {fileID: 920000000000000001}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &920000000000000003 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 745100000000000002, guid: c5dc4f488d9c42e8b7f0932f962ad175, type: 3}
+  m_PrefabInstance: {fileID: 920000000000000001}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3855478553882762561
 PrefabInstance:

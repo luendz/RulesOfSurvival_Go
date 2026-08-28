@@ -14,6 +14,60 @@ namespace ROS.Game.Tests.EditMode
     {
         private const string ClassicAnimatorPath =
             "Assets/_Game/Animations/AC_Player_ROS_Classic.controller";
+        private const string PlayerPrefabPath =
+            "Assets/_Game/Prefabs/Player_Prototype.prefab";
+        private const string BotPrefabPath =
+            "Assets/_Game/Prefabs/AI/PF_BattleRoyaleBot.prefab";
+        private const string ParachuteCamouflageModelPath =
+            "Assets/_Game/Art/Parachute/Models/Parachute_Camouflage.fbx";
+        private const string ParachuteBackpackModelPath =
+            "Assets/_Game/Art/Parachute/Models/ParachuteBackpack.fbx";
+
+        [TestCase(PlayerPrefabPath)]
+        [TestCase(BotPrefabPath)]
+        public void AirDropCharacter_HasSerializedParachuteVisuals(
+            string prefabPath
+        )
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                prefabPath
+            );
+            Assert.That(prefab, Is.Not.Null, prefabPath);
+
+            ParachuteController parachute =
+                prefab.GetComponent<ParachuteController>();
+            Assert.That(parachute, Is.Not.Null, prefabPath);
+
+            SerializedObject serializedParachute =
+                new SerializedObject(parachute);
+            Assert.That(
+                serializedParachute.FindProperty("parachuteVisual")
+                    .objectReferenceValue,
+                Is.Not.Null,
+                prefabPath
+            );
+            Assert.That(
+                serializedParachute.FindProperty("parachuteBackpackVisual")
+                    .objectReferenceValue,
+                Is.Not.Null,
+                prefabPath
+            );
+
+            string[] dependencies = AssetDatabase.GetDependencies(
+                prefabPath,
+                true
+            );
+            CollectionAssert.Contains(
+                dependencies,
+                ParachuteCamouflageModelPath,
+                prefabPath
+            );
+            CollectionAssert.Contains(
+                dependencies,
+                ParachuteBackpackModelPath,
+                prefabPath
+            );
+        }
 
         [TestCase(32f, 32f, true)]
         [TestCase(12f, 32f, true)]

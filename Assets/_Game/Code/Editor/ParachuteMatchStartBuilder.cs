@@ -8,7 +8,9 @@ namespace ROS.Game.Editor
     public static class ParachuteMatchStartBuilder
     {
         private const string ParachuteModelPath =
-            "Assets/_Game/Art/Parachute/Models/Parachute.fbx";
+            "Assets/_Game/Art/Parachute/Models/Parachute_Camouflage.fbx";
+        private const string ParachuteBackpackModelPath =
+            "Assets/_Game/Art/Parachute/Models/ParachuteBackpack.fbx";
         private const string AirplaneModelPath =
             "Assets/_Game/Art/Vehicles/Aircraft/Airplane_Starfighter/" +
             "Airplane_Starfighter.fbx";
@@ -16,6 +18,8 @@ namespace ROS.Game.Editor
             "Assets/_Game/Resources/Parachute";
         private const string ParachutePrefabPath =
             ResourcesFolder + "/PF_ParachuteVisual.prefab";
+        private const string ParachuteBackpackPrefabPath =
+            ResourcesFolder + "/PF_ParachuteBackpackVisual.prefab";
         private const string AirplanePrefabPath =
             ResourcesFolder + "/PF_AirplaneStart.prefab";
 
@@ -32,6 +36,14 @@ namespace ROS.Game.Editor
                 ParachuteController.ModelEulerAngles,
                 false
             );
+            bool parachuteBackpackCreated = CreateVisualPrefab(
+                ParachuteBackpackModelPath,
+                ParachuteBackpackPrefabPath,
+                "PF_ParachuteBackpackVisual",
+                0.75f,
+                ParachuteController.ModelEulerAngles,
+                false
+            );
             bool airplaneCreated = CreateVisualPrefab(
                 AirplaneModelPath,
                 AirplanePrefabPath,
@@ -44,10 +56,12 @@ namespace ROS.Game.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            if (parachuteCreated && airplaneCreated)
+            if (parachuteCreated &&
+                parachuteBackpackCreated &&
+                airplaneCreated)
             {
                 Debug.Log(
-                    "Inicio de partida generado con avión y paracaídas reales."
+                    "Inicio de partida generado con avión, mochila y paracaídas."
                 );
             }
 
@@ -63,12 +77,17 @@ namespace ROS.Game.Editor
             GameObject airplane = AssetDatabase.LoadAssetAtPath<GameObject>(
                 AirplanePrefabPath
             );
+            GameObject parachuteBackpack =
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    ParachuteBackpackPrefabPath
+                );
 
             bool valid = ValidateVisual(
                 parachute,
                 "paracaídas"
             );
             valid &= ValidateVisual(airplane, "avión");
+            valid &= ValidateVisual(parachuteBackpack, "mochila de paracaídas");
             valid &= airplane != null &&
                      airplane.GetComponent<AirplaneController>() != null;
             valid &= ValidateModelRotation(
@@ -81,6 +100,11 @@ namespace ROS.Game.Editor
                 AirplaneController.ModelEulerAngles,
                 "avión"
             );
+            valid &= ValidateModelRotation(
+                parachuteBackpack,
+                ParachuteController.ModelEulerAngles,
+                "mochila de paracaídas"
+            );
 
             if (!valid)
             {
@@ -92,7 +116,7 @@ namespace ROS.Game.Editor
 
             Debug.Log(
                 "Validación de inicio de partida correcta: " +
-                "avión, ruta, salto y paracaídas listos."
+                "avión, ruta, salto, mochila y paracaídas listos."
             );
         }
 

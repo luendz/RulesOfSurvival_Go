@@ -19,6 +19,7 @@ namespace ROS.Game.Parachute
         [SerializeField] private WeaponEquipmentController equipment;
         [SerializeField] private CharacterController controller;
         [SerializeField] private GameObject parachuteVisual;
+        [SerializeField] private GameObject parachuteBackpackVisual;
 
         [Header("Free Fall")]
         [Min(1f)]
@@ -71,7 +72,7 @@ namespace ROS.Game.Parachute
         private void Awake()
         {
             EnsureReferences();
-            SetVisualActive(false);
+            ApplyVisualState(State);
             enabled = false;
         }
 
@@ -79,7 +80,6 @@ namespace ROS.Game.Parachute
         {
             EnsureReferences();
             SetState(AirDropState.InPlane);
-            SetVisualActive(false);
             _horizontalVelocity = Vector3.zero;
             _verticalSpeed = 0f;
             _airborneElapsed = 0f;
@@ -128,7 +128,6 @@ namespace ROS.Game.Parachute
             _verticalSpeed = Mathf.Min(initialVelocity.y, -2f);
             _airborneElapsed = 0f;
             _airborneMovementStarted = false;
-            SetVisualActive(false);
             SetState(AirDropState.FreeFall);
             enabled = true;
         }
@@ -141,7 +140,6 @@ namespace ROS.Game.Parachute
             }
 
             _verticalSpeed = Mathf.Max(_verticalSpeed, -glideFallSpeed);
-            SetVisualActive(true);
             SetState(AirDropState.Parachuting);
             ParachuteDeployed?.Invoke();
             return true;
@@ -250,7 +248,6 @@ namespace ROS.Game.Parachute
         {
             _horizontalVelocity = Vector3.zero;
             _verticalSpeed = 0f;
-            SetVisualActive(false);
             SetState(AirDropState.Landed);
 
             if (motor != null)
@@ -269,7 +266,9 @@ namespace ROS.Game.Parachute
             if (controller == null ||
                 input == null ||
                 motor == null ||
-                equipment == null)
+                equipment == null ||
+                parachuteVisual == null ||
+                parachuteBackpackVisual == null)
             {
                 Debug.LogError(
                     "ParachuteController tiene referencias sin asignar. " +
@@ -340,12 +339,16 @@ namespace ROS.Game.Parachute
 
         private void SetState(AirDropState state)
         {
-            if (State == state)
-                return;
+            bool changed = State != state;
 
             State = state;
             debugParachuteAnimationState = ResolveAnimatorParachuteState(state);
-            StateChanged?.Invoke(state);
+            ApplyVisualState(state);
+
+            if (changed)
+            {
+                StateChanged?.Invoke(state);
+            }
         }
 
         private static int ResolveAnimatorParachuteState(AirDropState state)
@@ -363,11 +366,20 @@ namespace ROS.Game.Parachute
             }
         }
 
-        private void SetVisualActive(bool active)
+        private void ApplyVisualState(AirDropState state)
         {
             if (parachuteVisual != null)
             {
-                parachuteVisual.SetActive(active);
+                parachuteVisual.SetActive(
+                    state == AirDropState.Parachuting
+                );
+            }
+
+            if (parachuteBackpackVisual != null)
+            {
+                parachuteBackpackVisual.SetActive(
+                    state == AirDropState.FreeFall
+                );
             }
         }
     }
