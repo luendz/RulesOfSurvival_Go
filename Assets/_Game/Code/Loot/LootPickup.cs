@@ -119,6 +119,7 @@ namespace ROS.Game.Loot
             BoxCollider interactionCollider =
                 pickupObject.AddComponent<BoxCollider>();
 
+            interactionCollider.isTrigger = true;
             interactionCollider.center = Vector3.up * 0.25f;
             interactionCollider.size =
                 new Vector3(0.8f, 0.6f, 0.8f);
