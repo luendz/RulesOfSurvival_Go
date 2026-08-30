@@ -28,9 +28,13 @@ MonoBehaviour:
   weaponPrefab: {fileID: 2296173273336619356, guid: 7b05ace326599b34385cb7da085f9821, type: 3}
   preferredWeaponSlot: 2
   icon: {fileID: 21300000, guid: 76017e10c866bf547931a43f0a0d157d, type: 3}
-  nearbySecondaryText: SMG
+  nearbySecondaryText: Submachine Gun
   nearbySecondaryIcon: {fileID: 0}
   worldModel: {fileID: 919132149155446097, guid: e32aef3b56303d94dbe884efc9c3694d, type: 3}
   worldOffset: {x: 0, y: 0.28, z: 0}
   worldEulerAngles: {x: 1.246, y: -88.748, z: 89.526}
   worldScale: {x: 40, y: 40, z: 40}
+  overrideHandTransform: 0
+  handLocalPosition: {x: 0, y: 0, z: 0}
+  handLocalEulerAngles: {x: 0, y: 0, z: 0}
+  handLocalScale: {x: 1, y: 1, z: 1}

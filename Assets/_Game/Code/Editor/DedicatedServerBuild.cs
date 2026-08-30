@@ -11,7 +11,7 @@ namespace ROS.Game.Editor
         [MenuItem("ROS Battle Royale/Build/Windows Dedicated Server")]
         public static void BuildWindowsServer()
         {
-            string scenePath = "Assets/_Game/Scenes/07_BattleRoyaleTest.unity";
+            string scenePath = "Assets/_Game/Scenes/08_EchoValley.unity";
             if (!File.Exists(scenePath))
             {
                 EditorUtility.DisplayDialog("ROS Battle Royale", "Primero genera las escenas con el menú 01.", "OK");

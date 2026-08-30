@@ -17,6 +17,7 @@ MonoBehaviour:
   family: 0
   ammoType: 0
   fireMode: 2
+  animationStyle: 10
   supportsSingle: 1
   supportsBurst: 0
   supportsAuto: 1
@@ -25,9 +26,20 @@ MonoBehaviour:
   shotsPerSecond: 10
   range: 320
   projectilesPerShot: 1
+  muzzleVelocity: 800
+  gravityScale: 1
+  damageFalloffStart: 40
+  damageFalloffEnd: 200
+  minimumDamageMultiplier: 0.55
+  armorPenetration: 0.1
+  headDamageMultiplier: 2
+  torsoDamageMultiplier: 1
+  armDamageMultiplier: 0.75
+  legDamageMultiplier: 0.65
   impactScale: 1
   bulletHoleScale: 1
   tracerWidth: 0.012
+  impactForce: 8
   magazineSize: 30
   startingReserveAmmo: 90
   reloadTime: 2.15
@@ -37,6 +49,15 @@ MonoBehaviour:
   horizontalRecoil: 0.32
   recoilReturnSpeed: 8
   recoilSnappiness: 14
+  recoilKickBack: 0.035
+  adsRecoilMultiplier: 0.78
+  crouchRecoilMultiplier: 0.82
+  movingRecoilMultiplier: 1.15
+  airborneRecoilMultiplier: 1.45
+  recoilGrowthPerShot: 0.04
+  maxRecoilGrowthMultiplier: 1.65
+  recoilPatternResetDelay: 0.22
+  recoilPattern: []
   hipSpreadDegrees: 1.25
   adsSpreadDegrees: 0.25
   walkSpreadMultiplier: 1.2

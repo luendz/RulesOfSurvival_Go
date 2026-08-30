@@ -182,7 +182,7 @@ namespace ROS.Game.Editor
             if (errors == 0)
             {
                 Debug.Log(
-                    "Validación de armas por familia correcta: 5 armas, loot y balística listos."
+                    "Validación de armas por familia correcta: 9 armas, loot y balística listos."
                 );
             }
             else
@@ -220,6 +220,7 @@ namespace ROS.Game.Editor
                     family = WeaponFamily.AssaultRifle,
                     ammoType = AmmoType.Rifle,
                     modelPath = "Assets/_Game/Art/Weapons/Models/AssaultRifles/M4A1.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/assault_rifles__M4A1.png",
                     rarity = LootRarity.Uncommon,
                     lootWeight = 6f,
                     inventoryWeight = 6f,
@@ -248,6 +249,77 @@ namespace ROS.Game.Editor
                 },
                 new WeaponProfile
                 {
+                    assetName = "AKM",
+                    weaponId = "weapon_akm",
+                    itemId = "weapon_item_akm",
+                    displayName = "AKM",
+                    family = WeaponFamily.AssaultRifle,
+                    ammoType = AmmoType.Rifle,
+                    modelPath = "Assets/_Game/Art/Weapons/Models/AssaultRifles/AKM.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/assault_rifles__M4A1.png",
+                    rarity = LootRarity.Uncommon,
+                    lootWeight = 5.5f,
+                    inventoryWeight = 6.5f,
+                    preferredSlot = 1,
+                    damage = 38f,
+                    shotsPerSecond = 9f,
+                    range = 300f,
+                    magazineSize = 30,
+                    reserveAmmo = 90,
+                    reloadTime = 2.3f,
+                    emptyReloadTime = 2.8f,
+                    supportsSingle = true,
+                    supportsAuto = true,
+                    initialMode = WeaponFireMode.Auto,
+                    projectiles = 1,
+                    hipSpread = 1.45f,
+                    adsSpread = 0.3f,
+                    bloomPerShot = 0.12f,
+                    maxBloom = 1.2f,
+                    verticalRecoil = 1.45f,
+                    horizontalRecoil = 0.42f,
+                    impactScale = 1.05f,
+                    bulletHoleScale = 1f,
+                    tracerWidth = 0.013f,
+                    muzzleX = 0.0105f
+                },
+                new WeaponProfile
+                {
+                    assetName = "M14EBR",
+                    weaponId = "weapon_m14ebr",
+                    itemId = "weapon_item_m14ebr",
+                    displayName = "M14 EBR",
+                    family = WeaponFamily.SniperRifle,
+                    ammoType = AmmoType.Rifle,
+                    modelPath = "Assets/_Game/Art/Weapons/Models/AssaultRifles/M14EBR.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/M14EBR.png",
+                    rarity = LootRarity.Rare,
+                    lootWeight = 3f,
+                    inventoryWeight = 7.5f,
+                    preferredSlot = 1,
+                    damage = 58f,
+                    shotsPerSecond = 4.2f,
+                    range = 520f,
+                    magazineSize = 20,
+                    reserveAmmo = 60,
+                    reloadTime = 2.55f,
+                    emptyReloadTime = 3.05f,
+                    supportsSingle = true,
+                    initialMode = WeaponFireMode.Single,
+                    projectiles = 1,
+                    hipSpread = 1.8f,
+                    adsSpread = 0.12f,
+                    bloomPerShot = 0.28f,
+                    maxBloom = 1.25f,
+                    verticalRecoil = 1.9f,
+                    horizontalRecoil = 0.48f,
+                    impactScale = 1.25f,
+                    bulletHoleScale = 1.15f,
+                    tracerWidth = 0.016f,
+                    muzzleX = 0.011f
+                },
+                new WeaponProfile
+                {
                     assetName = "MP7",
                     weaponId = "weapon_mp7",
                     itemId = "weapon_item_mp7",
@@ -255,6 +327,7 @@ namespace ROS.Game.Editor
                     family = WeaponFamily.SubmachineGun,
                     ammoType = AmmoType.SMG,
                     modelPath = "Assets/_Game/Art/Weapons/Models/SMGs/MP7.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/MP7.png",
                     rarity = LootRarity.Common,
                     lootWeight = 7f,
                     inventoryWeight = 4f,
@@ -283,6 +356,42 @@ namespace ROS.Game.Editor
                 },
                 new WeaponProfile
                 {
+                    assetName = "Thompson",
+                    weaponId = "weapon_thompson",
+                    itemId = "weapon_item_thompson",
+                    displayName = "Thompson",
+                    family = WeaponFamily.SubmachineGun,
+                    ammoType = AmmoType.SMG,
+                    modelPath = "Assets/_Game/Art/Weapons/Models/SMGs/Thompson.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/Thompson.png",
+                    rarity = LootRarity.Common,
+                    lootWeight = 6.5f,
+                    inventoryWeight = 4.8f,
+                    preferredSlot = 2,
+                    damage = 27f,
+                    shotsPerSecond = 11f,
+                    range = 165f,
+                    magazineSize = 30,
+                    reserveAmmo = 120,
+                    reloadTime = 2.15f,
+                    emptyReloadTime = 2.55f,
+                    supportsSingle = true,
+                    supportsAuto = true,
+                    initialMode = WeaponFireMode.Auto,
+                    projectiles = 1,
+                    hipSpread = 1.65f,
+                    adsSpread = 0.42f,
+                    bloomPerShot = 0.1f,
+                    maxBloom = 1f,
+                    verticalRecoil = 0.95f,
+                    horizontalRecoil = 0.3f,
+                    impactScale = 0.85f,
+                    bulletHoleScale = 0.8f,
+                    tracerWidth = 0.01f,
+                    muzzleX = 0.009f
+                },
+                new WeaponProfile
+                {
                     assetName = "AWM",
                     weaponId = "weapon_awm",
                     itemId = "weapon_item_awm",
@@ -290,6 +399,7 @@ namespace ROS.Game.Editor
                     family = WeaponFamily.SniperRifle,
                     ammoType = AmmoType.Sniper,
                     modelPath = "Assets/_Game/Art/Weapons/Models/SniperRifles/AWM.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/AWM.png",
                     rarity = LootRarity.Rare,
                     lootWeight = 2f,
                     inventoryWeight = 8f,
@@ -324,6 +434,7 @@ namespace ROS.Game.Editor
                     family = WeaponFamily.Shotgun,
                     ammoType = AmmoType.Shotgun,
                     modelPath = "Assets/_Game/Art/Weapons/Models/Shotguns/M1887.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/m1887__M1887.png",
                     rarity = LootRarity.Common,
                     lootWeight = 5f,
                     inventoryWeight = 5f,
@@ -351,6 +462,41 @@ namespace ROS.Game.Editor
                 },
                 new WeaponProfile
                 {
+                    assetName = "M870",
+                    weaponId = "weapon_m870",
+                    itemId = "weapon_item_m870",
+                    displayName = "M870",
+                    family = WeaponFamily.Shotgun,
+                    ammoType = AmmoType.Shotgun,
+                    modelPath = "Assets/_Game/Art/Weapons/Models/Shotguns/M870.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/M870.png",
+                    rarity = LootRarity.Common,
+                    lootWeight = 5.5f,
+                    inventoryWeight = 5.5f,
+                    preferredSlot = 2,
+                    damage = 14f,
+                    shotsPerSecond = 0.85f,
+                    range = 72f,
+                    magazineSize = 5,
+                    reserveAmmo = 25,
+                    reloadTime = 2.8f,
+                    emptyReloadTime = 3.35f,
+                    supportsSingle = true,
+                    initialMode = WeaponFireMode.Single,
+                    projectiles = 9,
+                    hipSpread = 4.5f,
+                    adsSpread = 3.1f,
+                    bloomPerShot = 0.82f,
+                    maxBloom = 2.7f,
+                    verticalRecoil = 2.45f,
+                    horizontalRecoil = 0.72f,
+                    impactScale = 0.68f,
+                    bulletHoleScale = 0.68f,
+                    tracerWidth = 0.006f,
+                    muzzleX = 0.011f
+                },
+                new WeaponProfile
+                {
                     assetName = "DesertEagle",
                     weaponId = "weapon_desert_eagle",
                     itemId = "weapon_item_desert_eagle",
@@ -358,6 +504,7 @@ namespace ROS.Game.Editor
                     family = WeaponFamily.Pistol,
                     ammoType = AmmoType.Pistol,
                     modelPath = "Assets/_Game/Art/Weapons/Models/Pistols/DesertEagle.fbx",
+                    iconPath = "Assets/_Game/UI/Icons/Weapons/Desert_Eagle.png",
                     rarity = LootRarity.Uncommon,
                     lootWeight = 6f,
                     inventoryWeight = 2f,
@@ -394,6 +541,9 @@ namespace ROS.Game.Editor
             definition.displayName = profile.displayName;
             definition.family = profile.family;
             definition.ammoType = profile.ammoType;
+            definition.animationStyle = profile.family == WeaponFamily.Pistol
+                ? WeaponAnimationStyle.Pistol
+                : WeaponAnimationStyle.Rifle;
             definition.dataConfidence = DataConfidence.Estimated;
             definition.fireMode = profile.initialMode;
             definition.supportsSingle = profile.supportsSingle;
@@ -434,6 +584,17 @@ namespace ROS.Game.Editor
             WeaponDefinition definition,
             GameObject model)
         {
+            string prefabPath =
+                $"{PrefabFolder}/PF_Weapon_{profile.assetName}.prefab";
+
+            GameObject existingPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+
+            if (existingPrefab != null)
+            {
+                return existingPrefab;
+            }
+
             GameObject root =
                 new GameObject($"Weapon_{profile.assetName}");
 
@@ -536,9 +697,6 @@ namespace ROS.Game.Editor
             mountObject.FindProperty("visualRoot").objectReferenceValue = modelInstance.transform;
             mountObject.ApplyModifiedPropertiesWithoutUndo();
 
-            string prefabPath =
-                $"{PrefabFolder}/PF_Weapon_{profile.assetName}.prefab";
-
             GameObject savedPrefab =
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
 
@@ -564,6 +722,16 @@ namespace ROS.Game.Editor
             item.weaponDefinition = definition;
             item.weaponPrefab = weaponPrefab;
             item.preferredWeaponSlot = profile.preferredSlot;
+            item.icon = AssetDatabase.LoadAssetAtPath<Sprite>(profile.iconPath);
+            item.nearbySecondaryText = profile.family switch
+            {
+                WeaponFamily.AssaultRifle => "Assault Rifle",
+                WeaponFamily.SubmachineGun => "Submachine Gun",
+                WeaponFamily.SniperRifle => "Marksman / Sniper Rifle",
+                WeaponFamily.Shotgun => "Shotgun",
+                WeaponFamily.Pistol => "Pistol",
+                _ => "Weapon"
+            };
             item.worldModel = model;
             item.worldOffset = new Vector3(0f, 0.28f, 0f);
             item.worldEulerAngles =
@@ -792,6 +960,7 @@ namespace ROS.Game.Editor
             public WeaponFamily family;
             public AmmoType ammoType;
             public string modelPath;
+            public string iconPath;
             public LootRarity rarity;
             public float lootWeight;
             public float inventoryWeight;

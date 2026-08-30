@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ROS.Game::ROS.Game.Lobby.LobbySceneBootstrap
   characterPrefab: {fileID: 6420284881912075110, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
-  battleRoyaleSceneName: 08_EditorFirstFunctionalTest
+  battleRoyaleSceneName: 08_EchoValley
   mapName: Ghillie Island
   playerName: Jugador
   playerLevel: 1

@@ -20,7 +20,7 @@ namespace ROS.Game.Lobby
         [SerializeField] private GameObject _character;
 
         [Header("Flow")]
-        [SerializeField] private string battleRoyaleSceneName = "07_BattleRoyaleTest";
+        [SerializeField] private string battleRoyaleSceneName = "08_EchoValley";
         [SerializeField] private string mapName = "Ghillie Island";
 
         [Header("Profile")]

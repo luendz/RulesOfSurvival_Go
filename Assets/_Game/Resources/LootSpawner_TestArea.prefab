@@ -64,6 +64,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0ca298bedc281c347b8d4b879e985110, type: 2}
   - {fileID: 11400000, guid: 30e6054662f816148ba9b68c93057e18, type: 2}
   - {fileID: 11400000, guid: f615b4abe0169284ca9ee2b81e36acfe, type: 2}
+  - {fileID: 11400000, guid: 7aa5f53c1bb1dbd4b9d59c7b130687c6, type: 2}
+  - {fileID: 11400000, guid: 10267cacb8e72ae40a28153fc8e3d270, type: 2}
+  - {fileID: 11400000, guid: c366089c4cc2c574682506d091d90818, type: 2}
+  - {fileID: 11400000, guid: 491aae4570d95b4498a1b2a48743d03a, type: 2}
   minimumSpacing: 1.2
   positionAttempts: 20
   randomizeRotationY: 0

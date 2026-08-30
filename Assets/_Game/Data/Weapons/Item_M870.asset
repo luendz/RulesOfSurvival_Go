@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdacdae2af089a645b074e6fd169d980, type: 3}
+  m_Name: Item_M870
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Inventory.InventoryItemDefinition
+  itemId: weapon_item_m870
+  displayName: M870
+  itemType: 0
+  dataConfidence: 4
+  maxStack: 1
+  weight: 5.5
+  rarity: 0
+  pickupMode: 2
+  protectionLevel: 0
+  backpackCapacity: 0
+  ammoType: 5
+  consumableDefinition: {fileID: 0}
+  weaponDefinition: {fileID: 11400000, guid: 5a35b76d3e401b64fb6b7238cae1e914, type: 2}
+  weaponPrefab: {fileID: 4946014023115718336, guid: 41eb9c0e2904bec44b900e746659659e, type: 3}
+  preferredWeaponSlot: 2
+  icon: {fileID: 21300000, guid: 31da08401f0de9e4c9b9ab073ea307aa, type: 3}
+  nearbySecondaryText: Shotgun
+  nearbySecondaryIcon: {fileID: 0}
+  worldModel: {fileID: 919132149155446097, guid: 9babea6c3843d5a4d9bddabb9bb23cc3, type: 3}
+  worldOffset: {x: 0, y: 0.28, z: 0}
+  worldEulerAngles: {x: 1.246, y: -88.748, z: 89.526}
+  worldScale: {x: 40, y: 40, z: 40}
+  overrideHandTransform: 0
+  handLocalPosition: {x: 0, y: 0, z: 0}
+  handLocalEulerAngles: {x: 0, y: 0, z: 0}
+  handLocalScale: {x: 1, y: 1, z: 1}

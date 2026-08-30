@@ -93,6 +93,7 @@ GameObject:
   - component: {fileID: 69153517704383285}
   - component: {fileID: 3364378674638225108}
   - component: {fileID: 2257425146492110011}
+  - component: {fileID: 1122334455667788990}
   m_Layer: 0
   m_Name: Player_Prototype
   m_TagString: Player
@@ -738,6 +739,18 @@ MonoBehaviour:
   fallbackDuration: 0.45
   fallbackEuler: {x: 0, y: 0, z: 82}
   fallbackOffset: {x: 0, y: 0.25, z: 0}
+--- !u!114 &1122334455667788990
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671814729856690070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7fa47681ce87f34cb668aa68d5df746, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ROS.Game.Character::ROS.Game.Character.LocalPlayerBroadcaster
 --- !u!1 &840351809148888093
 GameObject:
   m_ObjectHideFlags: 0
@@ -1770,7 +1783,7 @@ PrefabInstance:
     - target: {fileID: 108572386155161754, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: 7ed1d476b8045e84a8f857f938baba85, type: 2}
+      objectReference: {fileID: 9100000, guid: 29786ae0d686ee8409c06df31003ce95, type: 2}
     - target: {fileID: 108572386155161754, guid: c7f0115806a440545a118a0aeb0bd352, type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0

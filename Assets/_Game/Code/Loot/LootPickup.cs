@@ -20,6 +20,13 @@ namespace ROS.Game.Loot
         [SerializeField]
         private Transform visualRoot;
 
+        [Tooltip(
+            "Visual materializado en el Editor. Si está asignado, Awake no " +
+            "instancia un modelo nuevo durante Play Mode."
+        )]
+        [SerializeField]
+        private GameObject authoredVisual;
+
         private bool _consumed;
 
         private GameObject _runtimeVisual;
@@ -69,6 +76,26 @@ namespace ROS.Game.Loot
                 Time.time + Mathf.Max(0f, pickupDelay);
 
             RefreshVisual();
+        }
+
+        public void ConfigureAuthored(
+            InventoryItemDefinition definition,
+            int quantity,
+            Transform authoredVisualRoot,
+            GameObject visual
+        )
+        {
+            item = definition;
+            amount = Mathf.Max(1, quantity);
+            visualRoot = authoredVisualRoot;
+            authoredVisual = visual;
+            _consumed = false;
+
+            if (authoredVisual != null)
+            {
+                authoredVisual.SetActive(item != null);
+                DisableVisualPhysics(authoredVisual);
+            }
         }
 
         public static LootPickup SpawnRuntime(
@@ -354,6 +381,13 @@ namespace ROS.Game.Loot
                 visualRoot == null
             )
             {
+                return;
+            }
+
+            if (authoredVisual != null)
+            {
+                authoredVisual.SetActive(true);
+                DisableVisualPhysics(authoredVisual);
                 return;
             }
 

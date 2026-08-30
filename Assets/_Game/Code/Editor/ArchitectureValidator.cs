@@ -24,8 +24,8 @@ namespace ROS.Game.Editor
     {
         private static readonly string[] CoreScenes =
         {
-            "Assets/_Game/Scenes/07_BattleRoyaleTest.unity",
             "Assets/_Game/Scenes/08_EditorFirstFunctionalTest.unity",
+            "Assets/_Game/Scenes/08_EchoValley.unity",
             "Assets/_Game/Scenes/08_Lobby.unity"
         };
 

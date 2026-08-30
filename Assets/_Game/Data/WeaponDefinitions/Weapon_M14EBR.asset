@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780d0a94668b4ae4d9234a000990f76e, type: 3}
+  m_Name: Weapon_M14EBR
+  m_EditorClassIdentifier: ROS.Game::ROS.Game.Weapons.WeaponDefinition
+  weaponId: weapon_m14ebr
+  displayName: M14 EBR
+  family: 2
+  ammoType: 0
+  fireMode: 0
+  animationStyle: 10
+  supportsSingle: 1
+  supportsBurst: 0
+  supportsAuto: 0
+  dataConfidence: 4
+  damage: 58
+  shotsPerSecond: 4.2
+  range: 520
+  projectilesPerShot: 1
+  muzzleVelocity: 800
+  gravityScale: 1
+  damageFalloffStart: 40
+  damageFalloffEnd: 200
+  minimumDamageMultiplier: 0.55
+  armorPenetration: 0.1
+  headDamageMultiplier: 2
+  torsoDamageMultiplier: 1
+  armDamageMultiplier: 0.75
+  legDamageMultiplier: 0.65
+  impactScale: 1.25
+  bulletHoleScale: 1.15
+  tracerWidth: 0.016
+  impactForce: 8
+  magazineSize: 20
+  startingReserveAmmo: 60
+  reloadTime: 2.55
+  emptyReloadTime: 3.05
+  burstCount: 3
+  verticalRecoil: 1.9
+  horizontalRecoil: 0.48
+  recoilReturnSpeed: 8
+  recoilSnappiness: 14
+  recoilKickBack: 0.035
+  adsRecoilMultiplier: 0.78
+  crouchRecoilMultiplier: 0.82
+  movingRecoilMultiplier: 1.15
+  airborneRecoilMultiplier: 1.45
+  recoilGrowthPerShot: 0.04
+  maxRecoilGrowthMultiplier: 1.65
+  recoilPatternResetDelay: 0.22
+  recoilPattern: []
+  hipSpreadDegrees: 1.8
+  adsSpreadDegrees: 0.12
+  walkSpreadMultiplier: 1.2
+  runSpreadMultiplier: 1.6
+  sprintSpreadMultiplier: 2.35
+  crouchSpreadMultiplier: 0.72
+  airborneSpreadMultiplier: 2.75
+  spreadBloomPerShot: 0.28
+  maxSpreadBloom: 1.25
+  spreadRecoveryPerSecond: 3.5
+  spreadDegrees: 1.8
